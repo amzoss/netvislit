@@ -110,7 +110,9 @@ stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.
     ##   `Demo-ResponseID` = col_character(),
     ##   Dataset = col_integer(),
     ##   DatasetDuration = col_integer(),
-    ##   DatasetStartTime = col_integer()
+    ##   DatasetStartTime = col_integer(),
+    ##   Condition = col_character(),
+    ##   DatasetOrder = col_integer()
     ## )
 
 ``` r
@@ -130,6 +132,27 @@ stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
     ##   `Demo-weeklygaming` = col_integer()
     ## )
     ## See spec(...) for full column specifications.
+
+``` r
+responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
+```
+
+    ## Parsed with column specification:
+    ## cols(
+    ##   `Demo-ResponseID` = col_character(),
+    ##   QType = col_character(),
+    ##   Condition = col_character(),
+    ##   Dataset = col_integer(),
+    ##   Task = col_character(),
+    ##   Coord = col_character(),
+    ##   Response = col_character(),
+    ##   DatasetOrder = col_integer(),
+    ##   TaskOrder = col_integer()
+    ## )
+
+``` r
+#responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
+```
 
 Slight processing for analysis
 ------------------------------
@@ -153,11 +176,64 @@ ggplot(stats_demo) +
 
 ``` r
 ggplot(stats_demo) +
-  geom_bar(aes(`Stats-Group`)) +
+#  geom_histogram(aes(`Stats-Q_TotalDuration`)) +
+  geom_dotplot(aes(x = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60)), binwidth = 1) +
+  scale_x_continuous(limits = c(0,25), name = "Average duration in minutes per dataset (bins = 1 minute each)") +
   facet_grid(filename~.)
 ```
 
 ![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-6-1.png)
+
+``` r
+ggplot(stats_demo) +
+  geom_boxplot(aes(x = filename, y = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60)))
+```
+
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
+
+``` r
+ggplot(stats_datasets_tall) +
+  geom_boxplot(aes(x = factor(DatasetOrder), y = (DatasetDuration / 60))) + 
+  facet_grid(filename~.)
+```
+
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-8-1.png)
+
+``` r
+three.block.duration <- stats_datasets_tall %>% filter(filename=="PilotStudents") %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% dplyr::select(`Demo-ResponseID`,totalDuration)
+
+two.block.duration <- stats_datasets_tall %>% filter(filename=="PilotStudents") %>% filter(DatasetOrder < 3) %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% dplyr::select(`Demo-ResponseID`,totalDuration)
+  
+ggplot(two.block.duration) + geom_boxplot(aes(y=totalDuration,x="all"))
+```
+
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-9-1.png)
+
+``` r
+median(two.block.duration$totalDuration)
+```
+
+    ## [1] 11.43333
+
+``` r
+median(three.block.duration$totalDuration)
+```
+
+    ## [1] 14.01667
+
+``` r
+median(stats_demo$`Stats-Q_TotalDuration`/60)
+```
+
+    ## [1] 15.05
+
+``` r
+ggplot(stats_demo) +
+  geom_bar(aes(`Stats-Group`)) +
+  facet_grid(filename~.)
+```
+
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-11-1.png)
 
 ``` r
 # Note: only 2 people went all the way through Frucht
@@ -169,7 +245,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-12-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -177,7 +253,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-8-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-13-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -185,7 +261,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-9-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-14-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -195,7 +271,7 @@ ggplot(stats_demo) +
 
     ## `stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-10-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-15-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -203,7 +279,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-11-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-16-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -211,7 +287,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-12-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-17-1.png)
 
 ``` r
 table(stats_demo$`Demo-lang_TEXT`, stats_demo$filename)
@@ -230,7 +306,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-14-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-19-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -238,7 +314,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-15-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-20-1.png)
 
 ``` r
 # TO DO : process -99 and NA(?) values in stats and demo columns (file 3-ProcessingCombinedData)
@@ -264,7 +340,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-17-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-22-1.png)
 
 ``` r
 ggplot(stats_demo) +
@@ -276,7 +352,7 @@ ggplot(stats_demo) +
 
     ## Warning: Removed 1 rows containing non-finite values (stat_bindot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-18-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-23-1.png)
 
 ``` r
 freq4 <- c("None", "A little", "Some", "A lot")
@@ -290,7 +366,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-19-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-24-1.png)
 
 ``` r
 stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`, 
@@ -299,10 +375,11 @@ stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`,
 
 ggplot(stats_demo) +
   geom_bar(aes(`Demo-expdatavis`)) +
+  scale_x_discrete(drop=FALSE) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-20-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-25-1.png)
 
 ``` r
 stats_demo$`Demo-expreadnetvis` <- factor(stats_demo$`Demo-expreadnetvis`, 
@@ -314,7 +391,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-21-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-26-1.png)
 
 ``` r
 stats_demo$`Demo-expcreatenetvis` <- factor(stats_demo$`Demo-expcreatenetvis`, 
@@ -326,7 +403,7 @@ ggplot(stats_demo) +
   facet_grid(filename~.)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-22-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-27-1.png)
 
 ``` r
 IDs <- stats_datasets_tall %>% group_by(`Demo-ResponseID`) %>% summarise(TotalDuration = sum(DatasetDuration)) %>% arrange(TotalDuration) %>% select(`Demo-ResponseID`) %>% unlist()
@@ -341,7 +418,7 @@ ggplot(stats_datasets_tall) +
   coord_flip()
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-23-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-28-1.png)
 
 ``` r
 ggplot(stats_datasets_tall) +
@@ -349,7 +426,7 @@ ggplot(stats_datasets_tall) +
   facet_grid(.~filename)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-24-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-29-1.png)
 
 Figures
 -------
@@ -364,7 +441,7 @@ graded_num_ans <- left_join(graded_num_ans, stats_demo)
 graded_num_ans <- left_join(graded_num_ans, stats_datasets_tall)
 ```
 
-    ## Joining, by = c("Demo-ResponseID", "Dataset", "filename")
+    ## Joining, by = c("Demo-ResponseID", "Condition", "Dataset", "DatasetOrder", "filename")
 
     ## Warning: Column `Demo-ResponseID` joining character vector and factor,
     ## coercing into character vector
@@ -379,7 +456,7 @@ graded_nodes <- left_join(graded_nodes, stats_demo)
 graded_nodes <- left_join(graded_nodes, stats_datasets_tall)
 ```
 
-    ## Joining, by = c("Demo-ResponseID", "Dataset", "filename")
+    ## Joining, by = c("Demo-ResponseID", "Condition", "Dataset", "DatasetOrder", "filename")
 
     ## Warning: Column `Demo-ResponseID` joining character vector and factor,
     ## coercing into character vector
@@ -397,7 +474,7 @@ ggplot(graded_num_ans) +
 
     ## Warning: Removed 49 rows containing non-finite values (stat_density).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-26-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-31-1.png)
 
 ``` r
 ggplot(graded_num_ans) +
@@ -410,7 +487,7 @@ ggplot(graded_num_ans) +
 
     ## Warning: Removed 49 rows containing non-finite values (stat_boxplot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-27-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-32-1.png)
 
 ``` r
 ggplot(graded_num_ans) +
@@ -423,7 +500,7 @@ ggplot(graded_num_ans) +
 
     ## Warning: Removed 49 rows containing non-finite values (stat_boxplot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-28-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-33-1.png)
 
 ``` r
 ggplot(graded_num_ans) +
@@ -435,7 +512,9 @@ ggplot(graded_num_ans) +
 
     ## Warning: Transformation introduced infinite values in continuous y-axis
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-29-1.png)
+    ## Warning: Removed 92 rows containing missing values (geom_point).
+
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-34-1.png)
 
 ``` r
 ggplot(graded_num_ans) +
@@ -448,7 +527,7 @@ ggplot(graded_num_ans) +
 
     ## Warning: Removed 49 rows containing non-finite values (stat_boxplot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-30-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-35-1.png)
 
 ``` r
 ggplot(graded_num_ans) +
@@ -461,7 +540,7 @@ ggplot(graded_num_ans) +
 
     ## Warning: Removed 49 rows containing non-finite values (stat_boxplot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-31-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-36-1.png)
 
 ``` r
 # TO DO : factor Condition so all of the graphical conditions are together and all the layout conditions are together
@@ -471,7 +550,7 @@ ggplot(graded_num_ans) +
   facet_grid(Task~Dataset)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-32-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-37-1.png)
 
 ``` r
 ggplot(graded_num_ans %>% filter(!is.na(ClustConf))) +
@@ -493,7 +572,7 @@ ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust
 
     ## Warning: Removed 2 rows containing non-finite values (stat_boxplot).
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-33-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-38-1.png)
 
 ### Compare results to some of the demographics?
 
@@ -507,7 +586,7 @@ ggplot() +
   theme_bw()
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-34-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-39-1.png)
 
 ``` r
 ggplot() + 
@@ -519,7 +598,7 @@ ggplot() +
   theme_bw()
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-35-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-40-1.png)
 
 ``` r
 ggplot(graded_nodes %>% filter(Task == "BC")) +
@@ -527,7 +606,7 @@ ggplot(graded_nodes %>% filter(Task == "BC")) +
   facet_grid(filename~Condition)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-36-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-41-1.png)
 
 ``` r
 ggplot(graded_nodes %>% filter(Task == "ClickHighDeg")) +
@@ -535,4 +614,4 @@ ggplot(graded_nodes %>% filter(Task == "ClickHighDeg")) +
   facet_grid(filename~Condition)
 ```
 
-![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-37-1.png)
+![](AnalyzingCombinedData_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-42-1.png)

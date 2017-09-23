@@ -113,9 +113,19 @@ ggplot(stats_datasets_tall) +
 
 ```{r}
 
-stats_datasets_tall %>% filter(filename=="PilotStudents") %>% filter(DatasetOrder < 3) %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% ggplot() + geom_boxplot(aes(y=totalDuration,x=1))
+three.block.duration <- stats_datasets_tall %>% filter(filename=="PilotStudents") %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% dplyr::select(`Demo-ResponseID`,totalDuration)
 
-#TODO: calculate actual median time expected for 2 datasets - should be around 11.5 or 12!
+two.block.duration <- stats_datasets_tall %>% filter(filename=="PilotStudents") %>% filter(DatasetOrder < 3) %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% dplyr::select(`Demo-ResponseID`,totalDuration)
+  
+ggplot(two.block.duration) + geom_boxplot(aes(y=totalDuration,x="all"))
+```
+
+```{r}
+median(two.block.duration$totalDuration)
+
+median(three.block.duration$totalDuration)
+
+median(stats_demo$`Stats-Q_TotalDuration`/60)
 
 ```
 
@@ -253,6 +263,7 @@ stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`,
 
 ggplot(stats_demo) +
   geom_bar(aes(`Demo-expdatavis`)) +
+  scale_x_discrete(drop=FALSE) +
   facet_grid(filename~.)
 
 ```

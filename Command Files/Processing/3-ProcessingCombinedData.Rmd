@@ -55,11 +55,8 @@ all_responses <- dir(path = path_to_responses, pattern = "*.csv", full.names = T
 
 # hate using for loop, but can't figure out any other way to automate
 
-# for some reason, the last column in each of the parsed csv files was completely null, so need to remove before setting names
-
 for (file in names(all_responses)){
   nm <- unlist(new_names[[file]])
-  all_responses[[file]] <- all_responses[[file]] %>% select(-ncol(all_responses[[file]]))
   all_responses[[file]] <- setNames(all_responses[[file]],nm)
 }
 
@@ -367,6 +364,8 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 ## Grade the questions
 
 ```{r}
+
+# TO DO: change percentage to correct calculation
 
 #graded_clusters <- dplyr::mutate(joined_clusters,
 #                                 AvgCorrectValue = (MinCorrectValue + MaxCorrectValue)/2,
