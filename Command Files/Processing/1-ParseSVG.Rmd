@@ -1,0 +1,382 @@
+---
+title: "Parse SVG files into node and edge properties"
+output: github_document
+---
+
+```{r}
+
+require(tidyverse)
+require(xml2)
+
+
+```
+
+```{r}
+
+originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+path_to_svg <- file.path(originalDataDir,"Raw data/node positions")
+
+generatedDataDir <- file.path(originalDataDir, "Generated data")
+
+filenames <- dir(path = path_to_svg, pattern = "*.svg") %>% sapply(function(x){sub(".svg","",x)})
+
+svg_files <- dir(path = path_to_svg, pattern = "*.svg", full.names = TRUE) %>% map(read_xml) %>% lapply(function(x){xml_children(x)[2] %>% xml_children()})
+
+edges <- lapply(svg_files, function(x) {
+  attributes <- xml_attrs(x)
+  names <- x %>% xml_name()
+  return(attributes[names == "line"] %>% map_df(~as.list(.)))
+})
+
+all_edges <- edges %>% reduce(rbind)
+
+rep_filenames <- rep(filenames, map(edges, nrow))
+
+all_edges$filename <- rep_filenames
+
+all_edges <- all_edges %>% select(-class)
+
+all_edges <- all_edges %>% mutate(filename_copy = filename) %>% unite("source",c("filename_copy","x1","y1"))
+
+all_edges <- all_edges %>% mutate(filename_copy = filename) %>% unite("target",c("filename_copy","x2","y2"))
+
+```
+
+
+```{r}
+
+processGEXF <- function(filename, directory=path_to_svg, finalMinX, finalMaxX, finalMinY, finalMaxY, transposeMax){
+  
+  if(substr(filename, (nchar(filename)+1)-5,nchar(filename)) != ".gexf") {
+    print("Warning: file extension is not .gexf.")
+  }
+  
+  xml_data <- read_xml(file.path(directory, filename)) %>% xml_child(x=.,search=2)
+  
+  edges <- xml_data %>% 
+    xml_child(x=.,search = 2) %>% 
+    xml_children() %>% 
+    xml_attrs() %>% 
+    map_df(~as.list(.)) %>% 
+    select(-weight) %>% 
+    type_convert()
+  
+  node_xml <- xml_data %>% 
+    xml_child(x=.,search = 1) %>% 
+    xml_children()
+  
+  ids <- node_xml %>% xml_attr(x=.,attr="id")
+  
+  xs <- node_xml %>% lapply(function(x){xml_child(x, search=3) %>% 
+      xml_attr(x=.,attr="x")}) %>% 
+    unlist()
+  
+  ys <- node_xml %>% 
+    lapply(function(x){xml_child(x, search=3) %>% 
+        xml_attr(x=.,attr="y")}) %>% unlist()
+
+  nodes <- bind_cols(NodeID=ids,x=xs,y=ys) %>% 
+    type_convert()
+  
+  join1 <- left_join(edges, nodes, by=c("source" = "NodeID"))
+  
+  names(join1) <- c("SourceID","TargetID","source_x","source_y")
+  
+  join2 <- left_join(join1, nodes, by=c("TargetID" = "NodeID"))
+  
+  names(join2) <- c("SourceID","TargetID","source_x","source_y","target_x","target_y")
+  
+  #Cir9MinY <- 13.6
+  #Cir9MaxY <- 336.4
+  #Cir9MinX <- 13.7 
+  #Cir9MaxX <- 336.4
+  
+  XMLMinY <- min(c(join2$target_y,join2$source_y))
+  
+  XMLMaxY <- max(c(join2$target_y,join2$source_y))
+  
+  XMLMinX <- min(c(join2$target_x,join2$source_x))
+  
+  XMLMaxX <- max(c(join2$target_x,join2$source_x))
+  
+  join2$SourceXOriginal <- rescale_point(join2$source_x, XMLMinX, XMLMaxX, finalMinX, finalMaxX)
+  
+  #join2$SourceYOriginal <- 350 - rescale_point(join2$source_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  
+  join2$SourceYOriginal <- transposeMax - rescale_point(join2$source_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  
+  join2$TargetXOriginal <- rescale_point(join2$target_x, XMLMinX, XMLMaxX, finalMinX, finalMaxX)
+  
+  #join2$TargetYOriginal <- 350 - rescale_point(join2$target_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  
+  join2$TargetYOriginal <- transposeMax - rescale_point(join2$target_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  
+  
+  #join2$filename <- "Cir_9"
+  
+  join2$filename <- sub(".gexf", "", filename)
+  
+  join2$source <- paste(join2$filename, join2$SourceXOriginal, join2$SourceYOriginal, sep="_")
+  join2$target <- paste(join2$filename, join2$TargetXOriginal, join2$TargetYOriginal, sep="_")
+  
+  final_edges <- join2 %>% select(source, target, filename)
+  
+  return(final_edges)
+}
+
+rescale_point <- function(value, origMin, origMax, newMin, newMax){
+  return((value - origMin) / (origMax - origMin) * (newMax-newMin) + newMin)
+}
+
+
+```
+
+```{r, eval=FALSE}
+
+test_Cir_9 <- read_xml(file.path(path_to_svg, "Cir_9.gexf")) %>% xml_child(x=.,search=2)
+
+test_edges <- test_Cir_9 %>% xml_child(x=.,search = 2) %>% xml_children() %>% xml_attrs() %>% map_df(~as.list(.)) %>% select(-weight) %>% type_convert()
+
+
+
+test_node_xml <- test_Cir_9 %>% xml_child(x=.,search = 1) %>% xml_children()
+
+ids <- test_node_xml %>% xml_attr(x=.,attr="id")
+xs <- test_node_xml %>% lapply(function(x){xml_child(x, search=3) %>% xml_attr(x=.,attr="x")}) %>% unlist()
+ys <- test_node_xml %>% lapply(function(x){xml_child(x, search=3) %>% xml_attr(x=.,attr="y")}) %>% unlist()
+
+test_nodes <- bind_cols(NodeID=ids,x=xs,y=ys) %>% type_convert()
+
+join1 <- left_join(test_edges, test_nodes, by=c("source" = "NodeID"))
+
+names(join1) <- c("SourceID","TargetID","source_x","source_y")
+
+join2 <- left_join(join1, test_nodes, by=c("TargetID" = "NodeID"))
+
+names(join2) <- c("SourceID","TargetID","source_x","source_y","target_x","target_y")
+
+Cir9MinY <- 13.6
+
+Cir9MaxY <- 336.4
+
+Cir9MinX <- 13.7 
+
+Cir9MaxX <- 336.4
+
+XMLMinY <- min(c(join2$target_y,join2$source_y))
+
+XMLMaxY <- max(c(join2$target_y,join2$source_y))
+
+XMLMinX <- min(c(join2$target_x,join2$source_x))
+
+XMLMaxX <- max(c(join2$target_x,join2$source_x))
+
+join2$SourceXOriginal <- (join2$source_x - XMLMinX) / (XMLMaxX - XMLMinX) * (Cir9MaxX-Cir9MinX) + Cir9MinX
+
+join2$SourceYOriginal <- 350 - ((join2$source_y - XMLMinY) / (XMLMaxY - XMLMinY) * (Cir9MaxY-Cir9MinY) + Cir9MinY)
+
+join2$TargetXOriginal <- (join2$target_x - XMLMinX) / (XMLMaxX - XMLMinX) * (Cir9MaxX-Cir9MinX) + Cir9MinX
+
+join2$TargetYOriginal <- 350 - ((join2$target_y - XMLMinY) / (XMLMaxY - XMLMinY) * (Cir9MaxY-Cir9MinY) + Cir9MinY)
+
+
+#join2$SourceXAdjusted <- (join2$source_x * (Cir9MaxX-Cir9MinX)) + Cir9MinX
+
+#join2$SourceYAdjusted <- (join2$source_y * (Cir9MaxY-Cir9MinY)) + Cir9MinY
+
+#join2$TargetXAdjusted <- (join2$target_x * (Cir9MaxX-Cir9MinX)) + Cir9MinX
+
+#join2$TargetYAdjusted <- (join2$target_y * (Cir9MaxY-Cir9MinY)) + Cir9MinY
+
+
+join2$filename <- "Cir_9"
+
+join2$source <- paste(join2$filename, join2$SourceXOriginal, join2$SourceYOriginal, sep="_")
+join2$target <- paste(join2$filename, join2$TargetXOriginal, join2$TargetYOriginal, sep="_")
+
+Cir_9_edges <- join2 %>% select(source, target, filename)
+
+all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(Cir_9_edges)
+
+
+```
+
+```{r, eval=FALSE}
+
+test_Ord_9 <- read_xml(file.path(path_to_svg, "Ord_9_nooverlap.gexf")) %>% xml_child(x=.,search=2)
+
+test_edges <- test_Ord_9 %>% xml_child(x=.,search = 2) %>% xml_children() %>% xml_attrs() %>% map_df(~as.list(.)) %>% select(-weight) %>% type_convert()
+
+
+
+test_node_xml <- test_Ord_9 %>% xml_child(x=.,search = 1) %>% xml_children()
+
+ids <- test_node_xml %>% xml_attr(x=.,attr="id")
+xs <- test_node_xml %>% lapply(function(x){xml_child(x, search=3) %>% xml_attr(x=.,attr="x")}) %>% unlist()
+ys <- test_node_xml %>% lapply(function(x){xml_child(x, search=3) %>% xml_attr(x=.,attr="y")}) %>% unlist()
+
+test_nodes <- bind_cols(NodeID=ids,x=xs,y=ys) %>% type_convert()
+
+join1 <- left_join(test_edges, test_nodes, by=c("source" = "NodeID"))
+
+names(join1) <- c("SourceID","TargetID","source_x","source_y")
+
+join2 <- left_join(join1, test_nodes, by=c("TargetID" = "NodeID"))
+
+names(join2) <- c("SourceID","TargetID","source_x","source_y","target_x","target_y")
+
+Ord9MinY <- 13.6
+
+Ord9MaxY <- 336.404
+
+Ord9MinX <- 14.5 
+
+Ord9MaxX <- 335.6
+
+XMLMinY <- min(c(join2$target_y,join2$source_y))
+
+XMLMaxY <- max(c(join2$target_y,join2$source_y))
+
+XMLMinX <- min(c(join2$target_x,join2$source_x))
+
+XMLMaxX <- max(c(join2$target_x,join2$source_x))
+
+join2$SourceXOriginal <- (join2$source_x - XMLMinX) / (XMLMaxX - XMLMinX) * (Ord9MaxX-Ord9MinX) + Ord9MinX
+
+join2$SourceYOriginal <- 350 - ((join2$source_y - XMLMinY) / (XMLMaxY - XMLMinY) * (Ord9MaxY-Ord9MinY) + Ord9MinY)
+
+join2$TargetXOriginal <- (join2$target_x - XMLMinX) / (XMLMaxX - XMLMinX) * (Ord9MaxX-Ord9MinX) + Ord9MinX
+
+join2$TargetYOriginal <- 350 - ((join2$target_y - XMLMinY) / (XMLMaxY - XMLMinY) * (Ord9MaxY-Ord9MinY) + Ord9MinY)
+
+
+
+#join2$SourceXAdjusted <- (join2$source_x * (Ord9MaxX-Ord9MinX)) + Ord9MinX
+
+#join2$SourceYAdjusted <- (join2$source_y * (Ord9MaxY-Ord9MinY)) + Ord9MinY
+
+#join2$TargetXAdjusted <- (join2$target_x * (Ord9MaxX-Ord9MinX)) + Ord9MinX
+
+#join2$TargetYAdjusted <- (join2$target_y * (Ord9MaxY-Ord9MinY)) + Ord9MinY
+
+
+
+join2$filename <- "Ord_9"
+
+join2$source <- paste(join2$filename, join2$SourceXOriginal, join2$SourceYOriginal, sep="_")
+join2$target <- paste(join2$filename, join2$TargetXOriginal, join2$TargetYOriginal, sep="_")
+
+Ord_9_edges <- join2 %>% select(source, target, filename)
+
+all_edges <- all_edges %>% filter(filename!="Ord_9") %>% bind_rows(Ord_9_edges)
+
+
+```
+
+```{r}
+
+Cir_9_edges <- processGEXF("Cir_9.gexf", directory=path_to_svg, 13.7, 336.4, 13.6, 336.4, 350)
+Ord_9_edges <- processGEXF("Ord_9.gexf", directory=path_to_svg, 14.5, 335.6, 13.6, 336.4, 336.404)
+
+all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(Cir_9_edges)
+all_edges <- all_edges %>% filter(filename!="Ord_9") %>% bind_rows(Ord_9_edges)
+
+```
+
+```{r}
+
+# Do something here to fix the Fru 9 nodes, which can't be read properly from the line elements in the svg because of arrowheads on the lines
+
+# will use "path" elements in the svg, which work well to locate the nodes but make it harder to match up the edges than using GEXF from Gephi
+
+# (was able to get GEXF from Gephi for circle, which was the saved version, and OpenOrd, which is deterministic if you don't change the seed, but with Fruchterman I often manipulated node positions a bit to reduce crossings)
+
+# - create node position dictionary, using "path" element in svg
+
+Fru_9_xml <- read_xml(file.path(path_to_svg, "Fru_9.svg"))
+
+Fru_9_elements <- xml_children(Fru_9_xml)[2]
+
+Fru_9_attrs <- xml_children(Fru_9_elements) %>% xml_attrs() 
+
+Fru_9_names <- xml_children(Fru_9_elements) %>% xml_name()
+
+Fru_9_paths <- Fru_9_attrs[Fru_9_names == "path"] %>% map_df(~as.list(.))
+
+#Fru_9_paths <- data_frame(path=nodes[[23]][[1]])
+Fru_9_paths$d <- sub("M","",Fru_9_paths$d)
+Fru_9_paths$d <- sub("c",",",Fru_9_paths$d)
+Fru_9_paths <- Fru_9_paths %>% separate(d,c("RealX","RealY"),sep="[,]",extra="drop", convert=TRUE)
+
+Fru_9_paths <- Fru_9_paths %>% mutate(RealID=paste("Fru_9", RealX, RealY, sep="_"))
+Fru_9_paths <- Fru_9_paths %>% mutate(RealX=RealX-1.9)
+Fru_9_paths$filename <- "Fru_9"
+
+
+# - join every edge endpoint with every possible node
+
+Fru_9_edges <- all_edges %>% filter(filename=="Fru_9")
+Fru_9_edges$EdgeID <- seq.int(nrow(Fru_9_edges))
+Fru_9_edges_wide <- Fru_9_edges %>% gather("end","FuzzyID",1:2)
+
+Fru_9_edges_wide <- Fru_9_edges_wide %>% separate(FuzzyID, c("Condition","Dataset","FuzzyX","FuzzyY"),sep="[_]",convert=TRUE,remove=FALSE) %>% select(-Condition, -Dataset)
+
+Fru_9_joined <- full_join(Fru_9_edges_wide,Fru_9_paths)
+
+
+# - calculate distance of each node (source and target) to the node position dictionary
+
+Fru_9_joined <- dplyr::mutate(Fru_9_joined, Distance = sqrt((RealX-FuzzyX)^2 + (RealY-FuzzyY)^2))
+
+# - find smallest distance for each node
+
+Fru_9_joined_top <- Fru_9_joined %>% group_by(EdgeID, FuzzyID) %>% top_n(-1, Distance)
+
+# - replace bad location with good location
+
+Fru_9_joined_tall <- Fru_9_joined_top %>% spread(end, RealID, convert=TRUE)
+
+Fru_9_real_edges <- full_join(Fru_9_joined_tall[!is.na(Fru_9_joined_tall$source),],Fru_9_joined_tall[!is.na(Fru_9_joined_tall$target),], by="EdgeID") %>% ungroup()
+
+Fru_9_real_edges <- Fru_9_real_edges %>% select(source.x, target.y, filename.x)
+
+names(Fru_9_real_edges) <- c("source","target","filename")
+
+# - reincorporate into all_edges
+
+all_edges <- all_edges %>% filter(filename!="Fru_9") %>% bind_rows(Fru_9_real_edges)
+
+```
+
+```{r}
+
+all_edges_wide <- all_edges %>% select(-filename) %>% gather("end","NodeID",1:2)
+
+all_nodes <- all_edges_wide %>% group_by(NodeID) %>% distinct(NodeID)
+
+all_nodes <- all_nodes %>% separate(NodeID, c("Condition","Dataset","NodeXOriginal","NodeYOriginal"),remove=FALSE,sep="[_]", convert = TRUE)
+
+all_nodes <- all_nodes %>% mutate(NodeXAdjusted = NodeXOriginal * 150 / 72, 
+                                  NodeYAdjusted = NodeYOriginal * 150 / 72)
+
+table(all_edges$filename)
+
+table(all_nodes$Condition, all_nodes$Dataset)
+
+write_csv(all_edges, file.path(generatedDataDir,"all_edges.csv"))
+
+write_csv(all_nodes, file.path(generatedDataDir,"all_nodes.csv"))
+
+
+```
+
+
+```{r}
+
+ggplot(all_nodes) +
+  geom_point(aes(NodeXAdjusted, NodeYAdjusted)) +
+  facet_grid(Condition ~ Dataset)
+
+```

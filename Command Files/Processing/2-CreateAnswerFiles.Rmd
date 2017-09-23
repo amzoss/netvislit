@@ -1,0 +1,184 @@
+---
+title: "Create Answer Files"
+output: github_document
+---
+
+## Load packages
+
+```{r}
+
+require(tidyverse)
+require(igraph)
+
+
+```
+
+## Environmental Variables
+
+```{r}
+
+originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+generatedDataDir <- file.path(originalDataDir, "Generated data")
+
+
+```
+
+## Loading raw data files
+
+```{r, echo=FALSE}
+
+all_edges <- read_csv(file.path(generatedDataDir, "all_edges.csv"))
+
+filenames <- sort(unique(all_edges$filename))
+
+all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
+
+```
+
+## Creating graph objects
+
+```{r}
+
+graphs <- lapply(filenames, function(x) {
+  graph_object <- graph_from_data_frame(filter(all_edges,filename == x), directed=FALSE)
+  return(graph_object)
+  })
+
+```
+
+```{r}
+
+# node level attributes (degree, bc)
+
+degrees <- lapply(graphs, function(x) {
+  df <- as.data.frame(degree(x))
+  df <- rownames_to_column(df)
+  names(df) <- c("NodeID","NodeValue")
+  return(df)
+  })
+
+bcs <- lapply(graphs, function(x) {
+  df <- as.data.frame(betweenness(x), directed=FALSE)
+  df <- rownames_to_column(df)
+  names(df) <- c("NodeID","NodeValue")
+  return(df)
+  })
+
+nodes_with_degree <- degrees %>% reduce(rbind)
+nodes_with_bc <- bcs %>% reduce(rbind)
+
+node_degree_lookup <- left_join(all_nodes, nodes_with_degree, by="NodeID")
+node_degree_lookup$Task <- "ClickHighDeg"
+
+node_bc_lookup <- left_join(all_nodes, nodes_with_bc, by="NodeID")
+node_bc_lookup$Task <- "BC"
+
+node_degree_lookup <- node_degree_lookup %>% 
+  group_by(Condition, Dataset) %>% 
+  summarize(MaxValue = max(NodeValue)) %>% 
+  right_join(node_degree_lookup)
+
+node_degree_lookup <- node_degree_lookup %>%
+  group_by(Condition, Dataset) %>% 
+  mutate(NodeRank = dense_rank(desc(NodeValue)))
+
+# When creating node_lookup, don't just calculate node rank. Also calculate percentage error between node value and max value, like with normal numerical answers; e.g., (MaxValue - NodeValue)/MaxValue
+
+node_degree_lookup <- node_degree_lookup %>%
+  mutate(Percentage = abs(MaxValue - NodeValue)/MaxValue)
+
+node_bc_lookup <- node_bc_lookup %>% 
+  group_by(Condition, Dataset) %>% 
+  summarize(MaxValue = max(NodeValue)) %>% 
+  right_join(node_bc_lookup)
+
+node_bc_lookup <- node_bc_lookup %>%
+  group_by(Condition, Dataset) %>% 
+  mutate(NodeRank = dense_rank(desc(NodeValue)))
+
+node_bc_lookup <- node_bc_lookup %>%
+  mutate(Percentage = abs(MaxValue - NodeValue)/MaxValue)
+
+
+node_lookup <- bind_rows(node_degree_lookup, node_bc_lookup)
+```
+
+```{r}
+
+#For click questions that depend on node location (e.g., degree and BC), Phrasing/Color/Size conditions share positions with Ctrl.  Make 3 copies of Ctrl node positions and append to node_lookup.
+
+phr_nodes <- node_lookup %>% filter(Condition == "Ctrl")
+
+phr_nodes$Condition <- "Phr"
+
+col_nodes <- node_lookup %>% filter(Condition == "Ctrl")
+
+col_nodes$Condition <- "Col"
+
+siz_nodes <- node_lookup %>% filter(Condition == "Ctrl")
+
+siz_nodes$Condition <- "Siz"
+
+
+node_lookup <- bind_rows(node_lookup, phr_nodes, col_nodes, siz_nodes)
+
+
+```
+
+
+```{r}
+#write_csv(node_degree_lookup, file.path(originalDataDir,"node_deg_lookup.csv"))
+#write_csv(node_bc_lookup, file.path(originalDataDir,"node_bc_lookup.csv"))
+
+write_csv(node_lookup, file.path(generatedDataDir,"node_lookup.csv"))
+
+```
+
+```{r}
+
+# use node_degree lookup to calculate highest degree node and average node degree
+
+numerical_answer_lookup <- node_degree_lookup %>% group_by(Dataset) %>% summarise(NumHighDegree=max(MaxValue),AvgDeg=mean(NodeValue))
+
+
+```
+
+```{r}
+
+# graph level attributes: number of nodes, number of links
+
+graphs_one_layout <- graphs[c(1:8)]
+
+num_nodes <- lapply(graphs_one_layout, vcount) %>% unlist()
+
+num_edges <- lapply(graphs_one_layout, ecount) %>% unlist()
+
+density <- lapply(graphs_one_layout, edge_density) %>% unlist()
+
+# try calculating clusters automatically
+
+clusters <- lapply(graphs_one_layout, cluster_fast_greedy)
+
+num_clusters <- clusters %>% lapply(length) %>% unlist()
+
+modularity <- clusters %>% lapply(modularity) %>% unlist()
+
+#num_clusters_optimal <- cluster_optimal(graphs[[3]]) %>% groups() %>% length()
+
+num_nodes_biggest_cluster <- clusters %>% lapply(sizes) %>% lapply(max) %>% unlist()
+
+# join to total number nodes in graph, divide to create percentage
+
+
+
+counts <- data_frame(filenames = filenames[c(1:8)], NumNodes = num_nodes, NumLinks = num_edges, Density = density, NumClust = num_clusters, NumNodesClust1 = num_nodes_biggest_cluster, Modularity = modularity) %>% separate(filenames, c("Condition","Dataset"),sep="[_]", convert=TRUE) %>% select(-Condition) %>% distinct()
+
+counts$LargeClust1 <- (counts$NumNodesClust1 / counts$NumNodes) * 100
+
+numerical_answer_lookup <- full_join(numerical_answer_lookup, counts) %>% gather("Task","CorrectAnswer",-1)
+
+write_csv(numerical_answer_lookup, file.path(generatedDataDir,"numerical_answer_lookup.csv"))
+
+```

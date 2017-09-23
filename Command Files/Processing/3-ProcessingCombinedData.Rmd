@@ -1,0 +1,430 @@
+---
+title: "Processing Combined NetVisLit Data"
+author: "Angela Zoss"
+date: "June 23, 2017"
+output: github_document
+---
+
+Possible data processing steps:
+
+* Having your software open your importable data files.
+* Cleaning the data to resolve any errors or discrepancies.
+* Removing variables or cases that you do not need. 
+* Combining data from different importable data files.
+* Transposing a data table so that columns become rows and rows become columns.
+* Generating new variables
+* Saving intermediate and analysis data files.
+
+## Load packages
+
+```{r}
+
+require(tidyverse)
+require(readxl)
+
+```
+
+
+## Environmental Variables
+
+```{r}
+
+originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+generatedDataDir <- file.path(originalDataDir, "Generated data")
+path_to_qualtrics <- file.path(originalDataDir,"Raw data/Qualtrics data")
+path_to_responses <- file.path(path_to_qualtrics,"responses")
+
+```
+
+## Loading raw data files
+
+```{r, echo=FALSE}
+
+# Make sure none of the files are open, or Excel will have a temp file in the same directory that messes this up
+
+new_names <- dir(path = path_to_responses, pattern = "*.xlsx", full.names = TRUE) %>% 
+  set_names(., sub("-new-names.xlsx","",basename(.))) %>%
+  map(read_excel) %>% lapply(function(x){select(x, NewName)})
+  #map_df(read_excel, .id="filename")
+
+all_responses <- dir(path = path_to_responses, pattern = "*.csv", full.names = TRUE) %>% 
+  set_names(., sub("-rawdata.csv","",basename(.))) %>%
+  map(read_csv, skip=2, col_names=FALSE, col_types = cols(.default = "c"))
+
+# hate using for loop, but can't figure out any other way to automate
+
+# for some reason, the last column in each of the parsed csv files was completely null, so need to remove before setting names
+
+for (file in names(all_responses)){
+  nm <- unlist(new_names[[file]])
+  all_responses[[file]] <- all_responses[[file]] %>% select(-ncol(all_responses[[file]]))
+  all_responses[[file]] <- setNames(all_responses[[file]],nm)
+}
+
+raw_responses_full <- type_convert(bind_rows(all_responses, .id="filename"))
+
+
+num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.csv"))
+
+node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
+
+all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
+
+
+block_ids <- read_tsv(file.path(path_to_qualtrics, "blockIDs.csv"))
+
+training_task_order <- read_csv(file.path(path_to_qualtrics, "training_task_order.csv"))
+
+
+```
+
+## Process raw data
+
+```{r}
+
+# Remove bizarre R0 version of the ClickHighDeg question; 
+# I must have defined a region of interest, but have no need for it
+
+#raw_responses_full <- raw_responses_full %>% select(-contains("R0"),-contains("R1"))
+
+raw_responses <- raw_responses_full %>% select(-contains("R0"),-contains("R1"))
+
+# remove responses where the "Finished" flag is false
+
+raw_responses <- raw_responses %>% filter(`Extra-Finished`==1)
+
+```
+
+
+## Subset the experimental and training columns
+
+```{r}
+
+exp_responses <- dplyr::select(raw_responses, "Demo-ResponseID", starts_with("Exp"), starts_with("Training"))
+
+exp_responses_tall <- gather(exp_responses, "Question", "Response", -1)
+
+exp_responses_split <- separate(exp_responses_tall,Question,c("QType","Condition","Dataset","Task"),sep="[-]", convert=TRUE)
+
+# remove unfortunate underscore in one of the tasks
+
+exp_responses_split$Task <- sub("LargeClust_1","LargeClust1",exp_responses_split$Task)
+
+#also separating click questions from coords, so the join with QuestionOrder data works better
+
+exp_responses_split <- separate(exp_responses_split,Task,c("Task","Coord"),sep="[_]", convert=TRUE)
+
+#exp_responses_split$Dataset <- as.numeric(exp_responses_split$Dataset)
+
+# change skipped responses to NA
+
+exp_responses_split$Response <- sub("-99",NA,exp_responses_split$Response)
+
+# remove all NA responses
+
+exp_responses_split <- exp_responses_split[!is.na(exp_responses_split$Response),]
+
+# Save file out?
+
+#write_csv(exp_responses_split, file.path(analysisDataDir,"ExperimentalResponses.csv"))
+
+```
+
+```{r}
+
+# Omit anyone?
+
+# 
+#omit_IDs <- raw_responses_full %>% filter(`Stats-dataset_count` != 3) %>% select(`Demo-ResponseID`)
+
+# testing for how many experimental tasks they *did* answer, because someone who answers none won't even show up in this query; picking 5 tasks as a somewhat arbitrary cutoff (it's at least half)
+
+keep_IDs <- exp_responses_split %>% filter(QType == "Exp") %>% group_by(`Demo-ResponseID`) %>% summarise(num_tasks = n_distinct(Task)) %>% filter(num_tasks >= 5) %>% select(`Demo-ResponseID`)
+
+#answers_per_dataset <- exp_responses_split %>% group_by(`Demo-ResponseID`,Dataset) %>% summarise(num_tasks = n_distinct(Task)) %>% mutate(include = num_tasks>4) 
+
+raw_responses <- raw_responses %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
+
+exp_responses_split <- exp_responses_split %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
+
+```
+
+## Process the demographic/stats columns
+
+```{r}
+
+# Join demo data to exp response data?  What files need this data?  All graded files?
+
+demo <- dplyr::select(raw_responses, "Demo-ResponseID", starts_with("Demo"))
+
+stats <- dplyr::select(raw_responses, "filename", "Demo-ResponseID", starts_with("Stats"), -contains("training"), -contains("dataset-"))
+
+stats_datasets <- dplyr::select(raw_responses, "filename", "Demo-ResponseID", starts_with("Stats-training"), starts_with("Stats-dataset-"))
+
+stats_datasets_tall <- stats_datasets %>% gather("ColName","Value",-c(1,2)) %>% separate(ColName, c("Group","Subgroup","Dataset","Measurement"), sep="[-]", convert=TRUE) %>% select(-Group, -Subgroup) %>% filter(!(Measurement %in% c("order","yn"))) %>% spread(Measurement, Value)
+
+names(stats_datasets_tall)[names(stats_datasets_tall) == "start"] <- "DatasetStartTime"
+
+names(stats_datasets_tall)[names(stats_datasets_tall) == "duration"] <- "DatasetDuration"
+
+stats_datasets_tall <- stats_datasets_tall %>% filter(!is.na(DatasetStartTime), !is.na(DatasetDuration))
+
+#write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+
+# When joining demo/stats to graded answers, can join stats_demo as is, but want to make sure stats_datasets_tall joins by both ID and Dataset
+
+stats_demo <- full_join(stats,demo)
+
+write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
+
+
+```
+
+
+## Process the order columns
+
+```{r}
+
+# Extract dataset order questions to new table, including RespondentID!
+
+dataset_order <- dplyr::select(raw_responses, "Demo-ResponseID", starts_with("OrderDatasets"), -`OrderDatasetsWithinBlock-Training`)
+
+# Transpose 5 order questions from wide to tall into two columns - column labels and values
+
+dataset_order <- dataset_order %>% gather("Condition","Order",-1)
+
+# Remove NAs?
+
+dataset_order <- dataset_order %>% filter(!is.na(Order))
+
+
+# Split column labels to get block in its own column
+
+dataset_order$Condition <- sub("OrderDatasetsWithinBlock-","",dataset_order$Condition)
+
+# Split Values to get the ordered datasets in separate columns
+
+dataset_order <- dataset_order %>% separate(Order, c("1","2","3"), sep="[|]")
+
+#dataset_order <- dataset_order %>% separate(Order, c("1"), sep="[|]")
+
+# Transpose dataset columns into one column for dataset number and another for dataset order
+
+dataset_order <- dataset_order %>% gather("DatasetOrder","BlockID",-c(1:2), convert=TRUE)
+
+dataset_order <- dataset_order %>% filter(!is.na(BlockID))
+
+# Rename datasets using prepared dictionary
+
+dataset_order <- left_join(dataset_order, block_ids, by=c("BlockID", "Condition"))
+
+dataset_order <- dataset_order %>% select(-BlockID)
+
+```
+
+
+```{r}
+# Join dataset order to stats_dataset_tall
+
+stats_datasets_tall <- left_join(stats_datasets_tall, dataset_order, by=c("Demo-ResponseID","Dataset"))
+
+stats_datasets_tall$DatasetOrder[stats_datasets_tall$Dataset==0] <- 0
+
+write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+
+# Join dataset order to exp response data
+
+exp_responses_with_order <- left_join(exp_responses_split, dataset_order, by=c("Demo-ResponseID","Condition","Dataset"))
+
+exp_responses_with_order$DatasetOrder <- ifelse(exp_responses_with_order$QType == "Training", 0, exp_responses_with_order$DatasetOrder)
+
+```
+
+```{r}
+
+# Extract question order questions to new table, including RespondentID!
+
+question_order <- dplyr::select(raw_responses, "Demo-ResponseID", starts_with("OrderQuestions"))
+
+# Transpose 12 order questions from wide to tall into two columns - column labels and values
+
+question_order <- question_order %>% gather("Column","Order",-1)
+
+# Remove NAs?
+
+question_order <- question_order %>% filter(!is.na(Order))
+
+# Split column labels to get block and dataset in their own columns
+
+question_order$Column <- sub("OrderQuestionsWithinDataset-","",question_order$Column)
+
+question_order <- question_order %>% separate(Column,c("Condition","Dataset"),sep="[-]", convert=TRUE)
+
+# Split values to get the ordered questions in separate columns
+
+question_order <- question_order %>% separate(Order, c("1","2","3","4","5","6","7","8","9"), sep="[|]")
+
+# Transpose question columns into one column for question name and another for question order
+
+question_order <- question_order %>% gather("TaskOrder","Task",-c(1:3), convert=TRUE)
+
+question_order$Task <- sub("—","-",question_order$Task)
+
+question_order <- question_order %>% 
+  separate(Task,c("ConditionCopy","DatasetCopy","Task"),sep="[-]") %>%
+  select(-ConditionCopy,-DatasetCopy)
+
+# Change LargeClust to LargeClust1
+
+question_order$Task <- sub("LargeClust","LargeClust1",question_order$Task)
+
+# Join question order to exp response data
+
+exp_responses_with_order <- left_join(exp_responses_with_order, question_order, by=c("Demo-ResponseID","Condition","Dataset","Task"))
+
+```
+
+
+```{r}
+
+new_training_rows <- exp_responses_with_order %>% filter(QType == "Training") %>% select(-TaskOrder) %>% left_join(training_task_order)
+
+exp_responses_with_order <- exp_responses_with_order %>% filter(QType != "Training") %>% bind_rows(new_training_rows)
+
+```
+
+```{r}
+
+# for people in Col, Phr, and Size condition, change the Condition in the Training tasks to match their group; it's confusing when trying to compare their experimental tasks to their training tasks
+
+exp_responses_with_order <- select(raw_responses, `Demo-ResponseID`, `Stats-Group`) %>% right_join(exp_responses_with_order) %>% mutate(Condition = ifelse(`Stats-Group` == "color","Col",ifelse(`Stats-Group` == "phrasing", "Phr", ifelse(`Stats-Group` == "size", "Siz",Condition)))) %>% select(-`Stats-Group`)
+
+```
+
+```{r}
+# Save file out?
+
+write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
+
+```
+
+## Join response data to answer data
+
+```{r}
+
+# Note: these answers should be the same regardless of condition, as should clusters.  Anything related to clicking (degree and betweenness) will depend on condition.
+
+joined_num_ans <- inner_join(exp_responses_with_order, num_ans_lookup, by=c("Dataset","Task"))
+
+joined_num_ans$Response <- type.convert(joined_num_ans$Response)
+
+joined_num_ans <- joined_num_ans %>% select(-Coord)
+
+# Need to match up x and y from click data
+
+exp_responses_degree <- filter(exp_responses_with_order, Task == "ClickHighDeg")
+
+exp_responses_degree$Task <- "Click"
+  
+exp_responses_degree <- exp_responses_degree %>% unite("Task", c("Task","Coord"))
+
+exp_responses_degree$Response <- type.convert(exp_responses_degree$Response)
+
+exp_responses_degree <- separate(exp_responses_degree, Task, c("Task","Attempt"), sep=7, convert=TRUE)
+
+exp_responses_degree_wide <- spread(exp_responses_degree, Task, Response)
+
+joined_degree <- left_join(exp_responses_degree_wide, node_lookup[node_lookup$Task == "ClickHighDeg",], by=c("Condition", "Dataset"))
+
+#joined_degree$Attempt <- 1
+
+#exp_responses_bc <- filter(exp_responses_split, Task %in% c("BC_X1","BC_Y1","BC_X2","BC_Y2","BC_X3","BC_Y3","BC_X4","BC_Y4","BC_X5","BC_Y5"))
+
+exp_responses_bc <- filter(exp_responses_with_order, Task == "BC")
+
+exp_responses_bc$Task <- "Click"
+
+exp_responses_bc <- exp_responses_bc %>% unite("Task", c("Task","Coord"))
+
+exp_responses_bc$Response <- type.convert(exp_responses_bc$Response)
+
+exp_responses_bc <- separate(exp_responses_bc, Task, c("Task","Attempt"), sep=7, convert=TRUE)
+
+exp_responses_bc_wide <- spread(exp_responses_bc, Task, Response)
+
+#joined_bc <- inner_join(exp_responses_bc_wide, bc_lookup, by=c("Condition","Dataset"))
+
+joined_bc <- left_join(exp_responses_bc_wide, node_lookup[node_lookup$Task == "BC",], by=c("Condition","Dataset"))
+
+joined_nodes <- bind_rows(joined_degree, joined_bc)
+
+
+```
+
+
+## Grade the questions
+
+```{r}
+
+#graded_clusters <- dplyr::mutate(joined_clusters,
+#                                 AvgCorrectValue = (MinCorrectValue + MaxCorrectValue)/2,
+#                                 Difference = abs(AvgCorrectValue - Response),
+#                                 Percentage = Difference/AvgCorrectValue)
+
+#graded_degree <- dplyr::mutate(joined_degree, Distance = sqrt((ClickHighDeg_X1-NodeXAdjusted)^2 + (ClickHighDeg_Y1-NodeYAdjusted)^2))
+
+#graded_bc <- dplyr::mutate(joined_bc, Distance = sqrt((BC_X-NodeXAdjusted)^2 + (BC_Y-NodeYAdjusted)^2))
+
+graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 + (Click_Y-NodeYAdjusted)^2))
+
+#graded_degree_top <- group_by(graded_degree, `Demo-ResponseID`, Condition, Dataset) %>% top_n(-1, Distance)
+
+#graded_bc_top <- group_by(graded_bc, `Demo-ResponseID`, Condition, Dataset, Attempt) %>% top_n(-1, Distance)
+
+graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% top_n(-1, Distance)
+
+#graded_nodes_top <- left_join(graded_nodes_top, stats_demo)
+
+#graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
+
+
+graded_num_ans <- dplyr::mutate(joined_num_ans, 
+                                Difference = abs(CorrectAnswer - Response), 
+                                Percentage = abs(CorrectAnswer - Response)/CorrectAnswer)
+
+clust_conf <- filter(exp_responses_split, Task == "ClustConf") %>% select(-Coord)
+
+graded_num_ans <- left_join(graded_num_ans, clust_conf, by = c("Demo-ResponseID", "QType", "Condition", "Dataset")) %>% select(-Task.y)
+
+names(graded_num_ans)[names(graded_num_ans) == 'Response.y'] <- 'ClustConf'
+
+names(graded_num_ans)[names(graded_num_ans) == 'Task.x'] <- 'Task'
+
+names(graded_num_ans)[names(graded_num_ans) == 'Response.x'] <- 'Response'
+
+graded_num_ans[graded_num_ans$Task != "NumClust",12] <- NA
+
+#graded_num_ans <- left_join(graded_num_ans, stats_demo)
+
+#graded_num_ans <- left_join(graded_num_ans, stats_datasets_tall)
+
+
+```
+
+## Write analysis files
+
+```{r}
+
+write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
+
+#write_csv(graded_degree_top, file.path(analysisDataDir,"GradedDegree.csv")s)
+
+#write_csv(graded_bc_top, file.path(analysisDataDir,"GradedBC.csv"))
+
+write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
+
+```
+
+

@@ -1,0 +1,456 @@
+---
+title: "Analyzing Combined NetVisLit Data"
+author: "Angela Zoss"
+date: "July 19, 2017"
+output: github_document
+---
+
+Notes:
+
+These command files should contain commands that open up your analysis data files, and then use those data to generate the output upon which your results are based.
+
+Every command that generates any of your results should be preceded by a comment that states which result the command generates.  A few Hypothetical examples illustrate what these comments might look like:
+
+* The following command generates the first column of Table 6.
+
+The command files for your analysis phase should not contain any commands that generate new variables or process your data in any way.  All the procedures required to prepare your data for analysis should be executed by the command files you wrote for the processing phase.
+
+It is often convenient to write all the commands for the analysis phase in a single command file. However, if the nature of your project or the structure of your data are such that you think it would make sense to divide the code that generates the results into two or more command files, you should feel free to do so.  No matter how you organize your analysis command files, your Read Me file will include an explanation of how to use them to reproduce your results.
+
+Save the command files you write for the analysis phase in the Command Files folder.
+
+
+## Load packages
+
+```{r}
+
+require(tidyverse)
+
+```
+
+## Environmental Variables
+
+```{r}
+
+originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+generatedDataDir <- file.path(originalDataDir, "Generated data")
+
+figureDir <- "../../Documents/"
+
+```
+
+## Loading analysis data files
+
+```{r}
+
+#all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
+
+node_lookup <- node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
+
+graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
+
+graded_nodes <- read_csv(file.path(analysisDataDir, "GradedNodes.csv"))
+
+stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.csv"))
+
+stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
+
+responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
+
+#responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
+
+```
+
+## Slight processing for analysis
+
+```{r}
+
+graded_num_ans$ClustConf <- factor(graded_num_ans$ClustConf, levels = c("Very doubtful (0-25%)","Somewhat doubtful (26-50%)","Somewhat confident (51-75%)","Very confident (76-100%)"), ordered = TRUE)
+
+```
+
+## Summarize Stats and Demo data
+
+```{r}
+
+ggplot(stats_demo) +
+#  geom_histogram(aes(`Stats-Q_TotalDuration`)) +
+  geom_dotplot(aes(x = (`Stats-Q_TotalDuration` / 60)), binwidth = 3) +
+  scale_x_continuous(limits = c(0,70), name = "Total Duration in Minutes (bins = 3 minutes each)") +
+  facet_grid(filename~.)
+  
+
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+#  geom_histogram(aes(`Stats-Q_TotalDuration`)) +
+  geom_dotplot(aes(x = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60)), binwidth = 1) +
+  scale_x_continuous(limits = c(0,25), name = "Average duration in minutes per dataset (bins = 1 minute each)") +
+  facet_grid(filename~.)
+
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_boxplot(aes(x = filename, y = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60)))
+
+```
+
+```{r}
+
+ggplot(stats_datasets_tall) +
+  geom_boxplot(aes(x = factor(DatasetOrder), y = (DatasetDuration / 60))) + 
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+stats_datasets_tall %>% filter(filename=="PilotStudents") %>% filter(DatasetOrder < 3) %>% group_by(`Demo-ResponseID`) %>% summarise(totalDuration=sum(DatasetDuration)/60) %>% ggplot() + geom_boxplot(aes(y=totalDuration,x=1))
+
+#TODO: calculate actual median time expected for 2 datasets - should be around 11.5 or 12!
+
+```
+
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Stats-Group`)) +
+  facet_grid(filename~.)
+
+# Note: only 2 people went all the way through Frucht
+
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Stats-BrowserName`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Stats-OperatingSystem`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Stats-ScreenResolution`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_dotplot(aes(`Demo-age`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-gender`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-lang`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+table(stats_demo$`Demo-lang_TEXT`, stats_demo$filename)
+
+```
+
+```{r}
+
+# TO DO : need to factor Demo-educ
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-educ`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-acfield`)) +
+  facet_grid(filename~.)
+
+# TO DO : process -99 and NA(?) values in stats and demo columns (file 3-ProcessingCombinedData)
+
+```
+
+```{r}
+
+table(stats_demo$`Demo-acfieldother`, stats_demo$filename)
+
+```
+
+```{r}
+
+stats_demo$`Demo-dailytech_Tablet` <- type.convert(sub(-99, 0, stats_demo$`Demo-dailytech_Tablet`))
+
+ggplot(stats_demo) +
+  geom_density(aes(`Demo-dailytech_Computer`), color = "blue") +
+  geom_density(aes(`Demo-dailytech_Tablet`), color = "red") +
+  geom_density(aes(`Demo-dailytech_SmartPhone`), color = "green") +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+ggplot(stats_demo) +
+  geom_dotplot(aes(`Demo-weeklygaming`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+freq4 <- c("None", "A little", "Some", "A lot")
+
+stats_demo$`Demo-expdataanal` <- factor(stats_demo$`Demo-expdataanal`, 
+                                        levels = freq4, 
+                                        ordered = TRUE)
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-expdataanal`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`, 
+                                        levels = freq4, 
+                                        ordered = TRUE)
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-expdatavis`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+stats_demo$`Demo-expreadnetvis` <- factor(stats_demo$`Demo-expreadnetvis`, 
+                                        levels = freq4, 
+                                        ordered = TRUE)
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-expreadnetvis`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+stats_demo$`Demo-expcreatenetvis` <- factor(stats_demo$`Demo-expcreatenetvis`, 
+                                        levels = freq4, 
+                                        ordered = TRUE)
+
+ggplot(stats_demo) +
+  geom_bar(aes(`Demo-expcreatenetvis`)) +
+  facet_grid(filename~.)
+
+```
+
+```{r}
+
+IDs <- stats_datasets_tall %>% group_by(`Demo-ResponseID`) %>% summarise(TotalDuration = sum(DatasetDuration)) %>% arrange(TotalDuration) %>% select(`Demo-ResponseID`) %>% unlist()
+
+stats_datasets_tall$`Demo-ResponseID` <- factor(stats_datasets_tall$`Demo-ResponseID`, 
+                                                levels = IDs) 
+
+ggplot(stats_datasets_tall) +
+  geom_col(aes(x = `Demo-ResponseID`, 
+               y = `DatasetDuration`)) +
+  facet_grid(filename~Dataset, scales="free_y", space="free_y") +
+  coord_flip()
+
+```
+
+```{r}
+
+ggplot(stats_datasets_tall) +
+  geom_boxplot(aes(x = factor(Dataset), y = `DatasetDuration`)) +
+  facet_grid(.~filename)
+
+```
+
+## Figures
+
+```{r}
+
+graded_num_ans <- left_join(graded_num_ans, stats_demo)
+graded_num_ans <- left_join(graded_num_ans, stats_datasets_tall)
+
+graded_nodes <- left_join(graded_nodes, stats_demo)
+graded_nodes <- left_join(graded_nodes, stats_datasets_tall)
+
+```
+
+```{r}
+
+# TO DO : change Percentage to the real calculation
+
+ggplot(graded_num_ans) +
+  geom_density(aes(Percentage)) + 
+  scale_x_log10() +
+  facet_grid(.~filename)
+
+```
+
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_boxplot(aes(factor(Dataset), Percentage)) +
+  scale_y_log10() +
+  facet_grid(.~filename)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_boxplot(aes(Task, Percentage)) +
+  scale_y_log10() +
+  facet_grid(.~filename)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_point(aes(DatasetDuration, Percentage)) +
+  scale_y_log10() + 
+  facet_grid(Dataset~Task) +
+  facet_grid(.~filename)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_boxplot(aes(factor(Dataset), Percentage)) +
+  scale_y_log10() +
+  facet_grid(Task~filename)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_boxplot(aes(Task, Percentage)) +
+  scale_y_log10() +
+  facet_grid(Dataset~filename)
+
+```
+
+```{r}
+
+# TO DO : factor Condition so all of the graphical conditions are together and all the layout conditions are together
+
+ggplot(graded_num_ans) +
+  geom_boxplot(aes(Condition, Percentage)) +
+  facet_grid(Task~Dataset)
+
+```
+
+```{r clust_conf_bar}
+
+ggplot(graded_num_ans %>% filter(!is.na(ClustConf))) +
+  geom_bar(aes(x=ClustConf)) + 
+  facet_grid(Dataset~.)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust")) +
+  geom_boxplot(aes(ClustConf, Percentage)) +
+  scale_y_log10() +
+  coord_flip() +
+  facet_grid(Dataset~Condition)
+
+```
+
+### Compare results to some of the demographics?
+
+
+```{r, fig.width=12, fig.height=12}
+
+ggplot() + 
+  geom_point(data = node_lookup,
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = graded_nodes %>% filter(Task == "BC"), 
+             aes(x=Click_X,y=Click_Y), colour="red") + 
+  facet_grid(Dataset~Condition) +
+  theme_bw()
+
+
+
+```
+
+```{r, fig.width=12, fig.height=12}
+
+ggplot() + 
+  geom_point(data = node_lookup,
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = graded_nodes %>% filter(Task == "ClickHighDeg"), 
+             aes(x=Click_X,y=Click_Y), colour="red") + 
+  facet_grid(Dataset~Condition) +
+  theme_bw()
+
+
+```
+
+
+```{r}
+
+ggplot(graded_nodes %>% filter(Task == "BC")) +
+  geom_point(aes(x=factor(Dataset), y=Percentage)) +
+  facet_grid(filename~Condition)
+  
+```
+
+```{r}
+
+ggplot(graded_nodes %>% filter(Task == "ClickHighDeg")) +
+  geom_point(aes(x=factor(Dataset), y=Percentage)) +
+  facet_grid(filename~Condition)
+  
+```
+
+```{r}
+
+
+
+```

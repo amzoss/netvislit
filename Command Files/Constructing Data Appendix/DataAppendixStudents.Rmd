@@ -1,0 +1,25 @@
+---
+title: "Data Appendix for Analysis of Student Pilot Data"
+author: "Angela Zoss"
+date: "June 23, 2017"
+output: github_document
+---
+
+Note: the output from this command file should really go in the Documents folder.
+
+For every variable in every analysis data file:
+
+* The name of the variable and a complete definition (including as appropriate, for example, coding and/or units of measurement, the wording of a survey question the variable is based on, or adjustments made for inflation or PPP).
+* The name(s) of the original data file from which the variable was extracted, or from which the variables used to construct it were extracted, and the names of the variables extracted from the original data files.
+* The number of observations with valid values for the variable, and the number of observations with missing values.
+
+For quantitative variables:
+
+* Basic summary statistics, including the mean, standard deviation, minimum, 25th percentile, median, 75th percentile, and maximum.
+* A histogram.
+
+For categorical variables:
+
+* A frequency table.
+* A bar chart illustrating the frequency distribution.
+
