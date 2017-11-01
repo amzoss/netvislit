@@ -1,0 +1,16 @@
+base
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
+officer
+rvg
+devEMF
+Matrix
+lme4
+bindrcpp
+car
+foreign

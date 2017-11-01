@@ -504,7 +504,7 @@ ggplot(graded_nodes %>% filter(Task == "ClickHighDeg")) +
   
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 stats_datasets_tall %>% filter(NetVisExperience=="Low", !is.na(Dataset)) %>% group_by(`Stats-Group`,Dataset) %>% summarise(count=n_distinct(`Demo-ResponseID`)) %>% spread(Dataset,count) %>% View()
 
