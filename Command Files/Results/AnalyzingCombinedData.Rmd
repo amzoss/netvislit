@@ -25,6 +25,10 @@ Save the command files you write for the analysis phase in the Command Files fol
 ```{r}
 
 require(tidyverse)
+library(officer)
+library(rvg)
+library(devEMF)
+library(lme4)
 
 ```
 
@@ -47,7 +51,7 @@ figureDir <- "../../Documents/"
 
 #all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
 
-node_lookup <- node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
+node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
 
 graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
 
@@ -58,6 +62,8 @@ stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.
 stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
 
 responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
+
+num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.csv"))
 
 #responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
 
@@ -76,11 +82,20 @@ graded_num_ans$ClustConf <- factor(graded_num_ans$ClustConf, levels = c("Very do
 ```{r}
 
 ggplot(stats_demo) +
-#  geom_histogram(aes(`Stats-Q_TotalDuration`)) +
-  geom_dotplot(aes(x = (`Stats-Q_TotalDuration` / 60)), binwidth = 3) +
-  scale_x_continuous(limits = c(0,70), name = "Total Duration in Minutes (bins = 3 minutes each)") +
-  facet_grid(filename~.)
+  geom_density(aes(`Stats-Q_TotalDuration` / 60, color=filename)) +
+#  geom_histogram(aes(`Stats-Q_TotalDuration` / 60)) +
+#  geom_dotplot(aes(x = (`Stats-Q_TotalDuration` / 60)), binwidth = 3) +
+  scale_x_continuous(limits = c(0,70), name = "Total Duration in Minutes") +
+  #facet_grid(filename~.)
+  facet_grid(NetVisExperience~.)
   
+
+
+```
+```{r}
+
+ggplot(stats_demo) +
+  geom_bin2d(aes(x = factor(`Stats-dataset_count`), y=filename))
 
 
 ```
@@ -99,15 +114,19 @@ ggplot(stats_demo) +
 ```{r}
 
 ggplot(stats_demo) +
-  geom_boxplot(aes(x = filename, y = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60)))
+  geom_boxplot(aes(x = NetVisExperience, y = (`Stats-Q_TotalDuration` / `Stats-dataset_count` / 60), color=filename)) +
+  labs(y="Avg. Duration per dataset in minutes\n(filtered to exclude averages over 50 min.)") +
+  scale_y_continuous(limits = c(0,50))
 
 ```
 
 ```{r}
 
 ggplot(stats_datasets_tall) +
-  geom_boxplot(aes(x = factor(DatasetOrder), y = (DatasetDuration / 60))) + 
-  facet_grid(filename~.)
+  geom_boxplot(aes(x = NetVisExperience, y = (DatasetDuration / 60), color=factor(DatasetOrder))) + 
+  scale_y_continuous(limits=c(0,125)) #+
+  #facet_grid(NetVisExperience~.)
+
 
 ```
 
@@ -134,7 +153,7 @@ median(stats_demo$`Stats-Q_TotalDuration`/60)
 
 ggplot(stats_demo) +
   geom_bar(aes(`Stats-Group`)) +
-  facet_grid(filename~.)
+  facet_grid(NetVisExperience~.)
 
 # Note: only 2 people went all the way through Frucht
 
@@ -225,6 +244,8 @@ table(stats_demo$`Demo-acfieldother`, stats_demo$filename)
 
 stats_demo$`Demo-dailytech_Tablet` <- type.convert(sub(-99, 0, stats_demo$`Demo-dailytech_Tablet`))
 
+#TO DO: change all -99s to NA?
+
 ggplot(stats_demo) +
   geom_density(aes(`Demo-dailytech_Computer`), color = "blue") +
   geom_density(aes(`Demo-dailytech_Tablet`), color = "red") +
@@ -292,7 +313,7 @@ ggplot(stats_demo) +
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 IDs <- stats_datasets_tall %>% group_by(`Demo-ResponseID`) %>% summarise(TotalDuration = sum(DatasetDuration)) %>% arrange(TotalDuration) %>% select(`Demo-ResponseID`) %>% unlist()
 
@@ -332,7 +353,7 @@ graded_nodes <- left_join(graded_nodes, stats_datasets_tall)
 # TO DO : change Percentage to the real calculation
 
 ggplot(graded_num_ans) +
-  geom_density(aes(Percentage)) + 
+  geom_density(aes(LogError)) + 
   scale_x_log10() +
   facet_grid(.~filename)
 
@@ -342,7 +363,7 @@ ggplot(graded_num_ans) +
 ```{r}
 
 ggplot(graded_num_ans) +
-  geom_boxplot(aes(factor(Dataset), Percentage)) +
+  geom_boxplot(aes(factor(Dataset), LogError)) +
   scale_y_log10() +
   facet_grid(.~filename)
 
@@ -351,7 +372,7 @@ ggplot(graded_num_ans) +
 ```{r}
 
 ggplot(graded_num_ans) +
-  geom_boxplot(aes(Task, Percentage)) +
+  geom_boxplot(aes(Task, LogError)) +
   scale_y_log10() +
   facet_grid(.~filename)
 
@@ -360,8 +381,8 @@ ggplot(graded_num_ans) +
 ```{r}
 
 ggplot(graded_num_ans) +
-  geom_point(aes(DatasetDuration, Percentage)) +
-  scale_y_log10() + 
+  geom_point(aes(DatasetDuration, LogError)) +
+  #scale_y_log10() + 
   facet_grid(Dataset~Task) +
   facet_grid(.~filename)
 
@@ -370,7 +391,7 @@ ggplot(graded_num_ans) +
 ```{r}
 
 ggplot(graded_num_ans) +
-  geom_boxplot(aes(factor(Dataset), Percentage)) +
+  geom_boxplot(aes(factor(Dataset), LogError)) +
   scale_y_log10() +
   facet_grid(Task~filename)
 
@@ -379,7 +400,7 @@ ggplot(graded_num_ans) +
 ```{r}
 
 ggplot(graded_num_ans) +
-  geom_boxplot(aes(Task, Percentage)) +
+  geom_boxplot(aes(Task, LogError)) +
   scale_y_log10() +
   facet_grid(Dataset~filename)
 
@@ -390,7 +411,7 @@ ggplot(graded_num_ans) +
 # TO DO : factor Condition so all of the graphical conditions are together and all the layout conditions are together
 
 ggplot(graded_num_ans) +
-  geom_boxplot(aes(Condition, Percentage)) +
+  geom_boxplot(aes(Condition, LogError)) +
   facet_grid(Task~Dataset)
 
 ```
@@ -406,10 +427,29 @@ ggplot(graded_num_ans %>% filter(!is.na(ClustConf))) +
 ```{r}
 
 ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust")) +
-  geom_boxplot(aes(ClustConf, Percentage)) +
+  geom_boxplot(aes(ClustConf, LogError)) +
   scale_y_log10() +
   coord_flip() +
   facet_grid(Dataset~Condition)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust")) +
+  geom_boxplot(aes(ClustConf, LogError)) +
+  scale_y_log10() +
+  #coord_flip() +
+  facet_grid(.~Condition)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust")) +
+  geom_boxplot(aes(Condition, LogError)) 
+
+# To DO
 
 ```
 
@@ -426,6 +466,10 @@ ggplot() +
   facet_grid(Dataset~Condition) +
   theme_bw()
 
+# TO DO: errors in some of the circle conditions?  Clicking in places that aren't around the edges?
+# Maybe need to change processing so that distances over a certain amount don't count as a click at all?
+
+# TO DO: remove dataset 6 from raw network data, since I never used it in surveys?
 
 
 ```
@@ -462,6 +506,426 @@ ggplot(graded_nodes %>% filter(Task == "ClickHighDeg")) +
 
 ```{r}
 
+stats_datasets_tall %>% filter(NetVisExperience=="Low", !is.na(Dataset)) %>% group_by(`Stats-Group`,Dataset) %>% summarise(count=n_distinct(`Demo-ResponseID`)) %>% spread(Dataset,count) %>% View()
+
+stats_datasets_tall %>% filter(NetVisExperience=="High", !is.na(Dataset)) %>% group_by(`Stats-Group`,Dataset) %>% summarise(count=n_distinct(`Demo-ResponseID`)) %>% spread(Dataset,count) %>% View()
+
+
+stats_demo %>% group_by(NetVisExperience, `Stats-Group`) %>% summarise(count=n_distinct(`Demo-ResponseID`)) %>% spread(`Stats-Group`,count) %>% View()
+
+```
+
+## Research Questions
+
+### Are some tasks harder?
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Task=="AvgDeg",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  #geom_boxplot(aes(factor(Dataset),Response), width=.1, alpha=.3) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="AvgDeg",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Average Degree",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumNodes",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumNodes",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Nodes",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumLinks",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumLinks",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Links",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumHighDegree",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumHighDegree",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Degree of Highest Degree Node",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumClust",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumClust",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Clusters",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="LargeClust1",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="LargeClust1",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_continuous(limits=c(0,100)) +
+  labs(title="% Nodes in Largest Cluster",x="Dataset") +
+  guides(fill="none")
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Task=="AvgDeg",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="Average Degree",x="Dataset") +
+  guides(fill="none")
+
+
+ggplot(graded_num_ans %>% filter(Task=="NumNodes",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="Number of Nodes",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumLinks",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="Number of Links",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumHighDegree",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="Degree of Highest Degree Node",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="NumClust",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="Number of Clusters",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graded_num_ans %>% filter(Task=="LargeClust1",Dataset!=0)) +
+  geom_violin(aes(factor(Dataset),LogError, fill=factor(Dataset))) + 
+  labs(title="% Nodes in Largest Cluster",x="Dataset") +
+  guides(fill="none")
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Phr","Col","Siz"))) +
+  geom_density(aes(LogError,color=factor(Condition,levels=c("Ctrl","Phr","Col","Siz")))) +
+  labs(title="Error by Graphic Condition",x="Condition") +
+  scale_color_discrete(name="Condition")
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Phr","Col","Siz"))) +
+  geom_boxplot(aes(y=LogError,x=factor(Condition,levels=c("Ctrl","Phr","Col","Siz")),color=factor(Condition,levels=c("Ctrl","Phr","Col","Siz")))) +
+  labs(title="Error by Graphic Condition",x="Condition") +
+  scale_color_discrete(name="Condition")
 
 
 ```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord"))) +
+  geom_density(aes(LogError,color=factor(Condition,levels=c("Ctrl","Cir","Fru","Ord")))) +
+  labs(title="Error by Layout Condition",x="Condition") +
+  scale_color_discrete(name="Condition")
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord"))) +
+  geom_boxplot(aes(y=LogError,x=factor(Condition,levels=c("Ctrl","Cir","Fru","Ord")),color=factor(Condition,levels=c("Ctrl","Cir","Fru","Ord")))) +
+  labs(title="Error by Layout Condition",x="Condition") +
+  scale_color_discrete(name="Condition")
+
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord"))) +
+  geom_density(aes(LogError,color=NetVisExperience)) +
+  labs(title="Error by Expertise",x="Expertise") +
+  scale_color_discrete(name="Expertise")
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord"))) +
+  geom_boxplot(aes(y=LogError,x=NetVisExperience,color=NetVisExperience)) +
+  labs(title="Error by Expertise",x="Expertise") +
+  scale_color_discrete(name="Expertise")
+
+
+```
+
+```{r}
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord")) %>% filter(Dataset!=0)) +
+  geom_violin(aes(Task,LogError, fill=Task)) + 
+  labs(title="Tasks by Layout Condition") +
+  guides(fill="none") +
+  facet_wrap(~Condition)
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord")) %>% filter(Dataset!=0)) +
+  geom_boxplot(aes(factor(Condition, levels=c("Ctrl","Cir","Fru","Ord")),LogError, fill=Condition)) + 
+  labs(title="Tasks by Layout Condition",x="Condition") +
+  guides(fill="none") +
+  facet_wrap(~Task)
+
+ggplot(graded_num_ans %>% filter(Condition %in% c("Ctrl","Cir","Fru","Ord")) %>% filter(Dataset!=0)) +
+  geom_density(aes(LogError, color=factor(Condition, levels=c("Ctrl","Cir","Fru","Ord")))) + 
+  labs(title="Tasks by Layout Condition",x="Condition") +
+  scale_color_discrete(name="Condition") +
+  facet_wrap(~Task)
+
+```
+
+```{r}
+
+ggplot(graded_num_ans) +
+  geom_density(aes(LogError))
+
+```
+
+### Does dataset influence accuracy?
+
+```{r, cache=TRUE}
+
+# https://stats.idre.ucla.edu/other/mult-pkg/whatstat/
+
+# Dataset (IV) is ordinal, and categories are *not* independent (individuals do complete multiple datasets)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do one-way repeated measures ANOVA?
+
+require(car)
+require(foreign)
+
+#kirk <- within(read.dta("~/Desktop/rb4.dta"), 
+#    {
+#        s <- as.factor(s)
+#        a <- as.factor(a)
+#    })
+
+#model <- lm(y ~ a + s, data = kirk)
+#analysis <- Anova(model, idata = kirk, idesign = ~s)
+#print(analysis)
+
+# Okay, here I'm assuming the syntax is lm(DV ~ IV + ParticipantIdentifier)
+
+# LogError is not normally, so taking another log(??), 
+# but there are 0 values in LogError so need to add a scalar; not sure what scalar to add, picked .1
+# TO DO: adjust LogError so there are no 0s???
+
+model <- lm(log(LogError+.1) ~ factor(Dataset) + factor(`Demo-ResponseID`), data=graded_num_ans)
+
+# Wow!  Model is 138.3Mb
+
+analysis <- Anova(model, idata = graded_num_ans, idesign = ~factor(`Demo-ResponseID`))
+
+print(analysis)
+
+# looks like Dataset is significant at p < .001???
+
+# If LogError is ordinal or interval, can do Friedman test?
+
+#friedman.test(formula, data, subset, na.action, ...)
+#friedman.test(LogError ~ Dataset | `Demo-ResponseID`, data=graded_num_ans)
+
+# doesn't work; error is "not an unreplicated complete block design"
+
+```
+
+### Does graphic design/phrasing influence accuracy?
+
+```{r}
+
+# Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do one-way ANOVA?
+
+# not sure if the command below is right; if so, not significant
+
+graphic.design <- filter(graded_num_ans, Condition %in% c("Ctrl","Phr","Col","Siz"))
+
+summary(aov(log(LogError+.1) ~ factor(Condition),data=graphic.design))
+
+# If LogError is ordinal or interval, can do Kruskal Wallis?
+
+kruskal.test(LogError ~ factor(Condition), data=graphic.design)
+
+# not significant
+
+```
+
+### Does layout algorithm influence accuracy?
+
+```{r}
+
+# Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do one-way ANOVA?
+
+# not sure if the command below is right; if so, not significant
+
+layout.alg <- filter(graded_num_ans, Condition %in% c("Ctrl","Cir","Fru","Ord"))
+
+summary(aov(log(LogError+.1) ~ factor(Condition),data=layout.alg))
+
+# If LogError is ordinal or interval, can do Kruskal Wallis?
+
+kruskal.test(LogError ~ factor(Condition), data=layout.alg)
+
+# p-value lower but still not significant
+
+```
+
+### Does expertise influence accuracy?
+
+```{r}
+
+# NetVisExperience (IV) is ordinal, 2 groups, and levels are independent (individuals have one level of experience)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do 2 independent sample t-test?
+
+t.test(log(LogError+.1) ~ factor(NetVisExperience), data=graded_num_ans)
+
+# looks significant
+
+# If LogError is ordinal or interval, can do Wilcoxon-Mann Whitney test?
+
+wilcox.test(LogError ~ factor(NetVisExperience), data=graded_num_ans)
+
+# looks significant
+
+# p-value lower but still not significant
+
+```
+
+
+### Does gender influence accuracy?
+
+```{r}
+
+# Demo-gender (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do one-way ANOVA?
+
+# not sure if the command below is right; if so, not significant
+
+summary(aov(log(LogError+.1) ~ factor(`Demo-gender`),data=graded_num_ans))
+
+# If LogError is ordinal or interval, can do Kruskal Wallis?
+
+kruskal.test(LogError ~ factor(`Demo-gender`), data=graded_num_ans)
+
+# not significant
+
+```
+
+### Does self-report previous experience with network visualization influence accuracy?
+
+```{r}
+
+# Demo-expreadnetvis (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do one-way ANOVA?
+
+summary(aov(log(LogError+.1) ~ factor(`Demo-expreadnetvis`),data=graded_num_ans)) # not significant
+summary(aov(log(LogError+.1) ~ factor(`Demo-expcreatenetvis`),data=graded_num_ans)) # not significant
+
+# If LogError is ordinal or interval, can do Kruskal Wallis?
+
+kruskal.test(LogError ~ factor(`Demo-expreadnetvis`), data=graded_num_ans) # not significant
+kruskal.test(LogError ~ factor(`Demo-expcreatenetvis`), data=graded_num_ans) # significant? p < .01
+
+
+
+```
+
+### Does dataset duration influence accuracy?
+
+```{r}
+
+# DatasetDuration (IV) is interval
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do correlation?  (Q: do both need to be normal?)
+
+cor.test(~DatasetDuration+LogError,data=graded_num_ans) # barely significant (p ~ .01)
+
+cor.test(~DatasetDuration+log(LogError+.1),data=graded_num_ans) # significant
+
+cor.test(~log(DatasetDuration)+log(LogError+.1),data=graded_num_ans) # significant
+
+# If LogError is interval and normal, can do simple linear regression?
+
+lm(log(LogError+.1)~log(DatasetDuration),data=graded_num_ans) 
+# don't know how well the model fits...
+
+# If LogError is ordinal or interval, can do non-parametric correlation
+
+cor.test(~DatasetDuration+LogError,data=graded_num_ans, method="spearman")  #significant?
+
+
+```
+
+### Do task and layout algorithm interact to influence accuracy?
+
+```{r, cache=TRUE}
+
+# Task (IV1) is nominal, categories are dependent (individuals complete multiple tasks)
+# Condition (IV2) is nominal, categories are independent (individuals complete a single condition)
+# LogError (DV) is interval, can be made normal with another log transformation???
+
+# If LogError is interval and normal, can do mixed ANOVA?
+
+# http://www.cookbook-r.com/Statistical_analysis/ANOVA/#mixed-design-anova
+
+layout.alg <- filter(graded_num_ans, Condition %in% c("Ctrl","Cir","Fru","Ord")) %>% mutate(LogLog = log(LogError+.1), Condition = factor(Condition, levels=c("Ctrl","Cir","Fru","Ord")), Task = factor(Task), `Demo-ResponseID` = factor(`Demo-ResponseID`))
+
+
+aov_task_condition <- aov(LogLog ~ Condition*Task + Error(`Demo-ResponseID`/Task), data=layout.alg)
+
+# Model is quite large, 300Mb
+
+summary(aov_task_condition) # Task is significant?  Not sure how to interpret
+
+
+
+```
+
+### Mixed Models
+
+```{r}
+
+# https://iucat.iu.edu/catalog/14518998
+
+```
+
+
+## Output
+
+
+```{r, eval=FALSE}
+
+# add charts to Word Doc
+
+# ggplot example
+gg <- ggplot(mtcars, aes(x = mpg , y = wt, colour = qsec)) + geom_point() + theme_minimal()
+
+# produce an emf file containing the ggplot (won't be editable in Word, but will be vector)
+filename <- tempfile(fileext = ".emf")
+emf(file = filename, width = 6, height = 7)
+print(gg)
+dev.off()
+
+read_docx() %>% 
+  body_add_img(src = filename, width = 6, height = 7) %>% 
+  print(target = "~/Desktop/demo_emf.docx") %>% 
+  invisible()
+
+# add charts to PowerPoint (should be editable, though they won't be a chart per se)
+
+read_pptx() %>% 
+  add_slide(layout = "Title and Content", master = "Office Theme") %>% 
+  ph_with_vg(code = print(gg), type = "body") %>% 
+  print(target = "~/Desktop/demo_rvg.pptx") %>% 
+  invisible()
+
+
+```
+

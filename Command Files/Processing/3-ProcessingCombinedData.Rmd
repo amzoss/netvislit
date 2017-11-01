@@ -44,6 +44,8 @@ path_to_responses <- file.path(path_to_qualtrics,"responses")
 
 # Make sure none of the files are open, or Excel will have a temp file in the same directory that messes this up
 
+# names and rawdata files need the same basename to be matched up together
+
 new_names <- dir(path = path_to_responses, pattern = "*.xlsx", full.names = TRUE) %>% 
   set_names(., sub("-new-names.xlsx","",basename(.))) %>%
   map(read_excel) %>% lapply(function(x){select(x, NewName)})
@@ -72,6 +74,8 @@ all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
 
 block_ids <- read_tsv(file.path(path_to_qualtrics, "blockIDs.csv"))
 
+population_experience <- read_csv(file.path(path_to_qualtrics,"population_experience.csv"))
+
 training_task_order <- read_csv(file.path(path_to_qualtrics, "training_task_order.csv"))
 
 
@@ -90,7 +94,11 @@ raw_responses <- raw_responses_full %>% select(-contains("R0"),-contains("R1"))
 
 # remove responses where the "Finished" flag is false
 
-raw_responses <- raw_responses %>% filter(`Extra-Finished`==1)
+# TO DO: don't do this?  for faculty, may want to keep more data than this
+# TO DO: figure out how to remove people not taking it seriously; look for error patterns?  
+# short times? unreasonable clicks?
+
+#raw_responses <- raw_responses %>% filter(`Extra-Finished`==1)
 
 ```
 
@@ -158,21 +166,13 @@ demo <- dplyr::select(raw_responses, "Demo-ResponseID", starts_with("Demo"))
 
 stats <- dplyr::select(raw_responses, "filename", "Demo-ResponseID", starts_with("Stats"), -contains("training"), -contains("dataset-"))
 
-stats_datasets <- dplyr::select(raw_responses, "filename", "Demo-ResponseID", starts_with("Stats-training"), starts_with("Stats-dataset-"))
-
-stats_datasets_tall <- stats_datasets %>% gather("ColName","Value",-c(1,2)) %>% separate(ColName, c("Group","Subgroup","Dataset","Measurement"), sep="[-]", convert=TRUE) %>% select(-Group, -Subgroup) %>% filter(!(Measurement %in% c("order","yn"))) %>% spread(Measurement, Value)
-
-names(stats_datasets_tall)[names(stats_datasets_tall) == "start"] <- "DatasetStartTime"
-
-names(stats_datasets_tall)[names(stats_datasets_tall) == "duration"] <- "DatasetDuration"
-
-stats_datasets_tall <- stats_datasets_tall %>% filter(!is.na(DatasetStartTime), !is.na(DatasetDuration))
-
-#write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+stats$`Stats-CompensationCondition` <- sub(" ","",stats$`Stats-CompensationCondition`)
 
 # When joining demo/stats to graded answers, can join stats_demo as is, but want to make sure stats_datasets_tall joins by both ID and Dataset
 
 stats_demo <- full_join(stats,demo)
+
+stats_demo <- left_join(stats_demo, population_experience)
 
 write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
 
@@ -223,14 +223,39 @@ dataset_order <- dataset_order %>% select(-BlockID)
 
 
 ```{r}
+
+stats_datasets <- dplyr::select(raw_responses, "filename", "Demo-ResponseID", starts_with("Stats-training"), starts_with("Stats-dataset-"))
+
+stats_datasets_tall <- stats_datasets %>% gather("ColName","Value",-c(1,2)) %>% separate(ColName, c("Group","Subgroup","Dataset","Measurement"), sep="[-]", convert=TRUE) %>% select(-Group, -Subgroup) %>% filter(!(Measurement %in% c("order","yn"))) %>% spread(Measurement, Value)
+
+names(stats_datasets_tall)[names(stats_datasets_tall) == "start"] <- "DatasetStartTime"
+
+names(stats_datasets_tall)[names(stats_datasets_tall) == "duration"] <- "DatasetDuration"
+
+stats_datasets_tall <- stats_datasets_tall %>% filter(!is.na(DatasetStartTime), !is.na(DatasetDuration))
+
+#write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+```
+
+```{r}
+
 # Join dataset order to stats_dataset_tall
 
-stats_datasets_tall <- left_join(stats_datasets_tall, dataset_order, by=c("Demo-ResponseID","Dataset"))
+conditions <- stats_demo %>% select(`Demo-ResponseID`,`Stats-Group`)
+
+stats_datasets_tall <- left_join(stats_datasets_tall, conditions)
+
+stats_datasets_tall <- left_join(stats_datasets_tall, dataset_order, by=c("Demo-ResponseID","Dataset")) %>% select(-Condition)
 
 stats_datasets_tall$DatasetOrder[stats_datasets_tall$Dataset==0] <- 0
 
+stats_datasets_tall <- full_join(stats_datasets_tall, population_experience)
+
 write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
 
+```
+
+```{r}
 # Join dataset order to exp response data
 
 exp_responses_with_order <- left_join(exp_responses_split, dataset_order, by=c("Demo-ResponseID","Condition","Dataset"))
@@ -376,11 +401,21 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 
 #graded_bc <- dplyr::mutate(joined_bc, Distance = sqrt((BC_X-NodeXAdjusted)^2 + (BC_Y-NodeYAdjusted)^2))
 
+# find distance between click responses and all node positions
+
 graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 + (Click_Y-NodeYAdjusted)^2))
 
 #graded_degree_top <- group_by(graded_degree, `Demo-ResponseID`, Condition, Dataset) %>% top_n(-1, Distance)
 
 #graded_bc_top <- group_by(graded_bc, `Demo-ResponseID`, Condition, Dataset, Attempt) %>% top_n(-1, Distance)
+
+# pick the closest node (node where distance is smallest)
+
+# TO DO: keep some measure of whether other nodes were close? distribution?
+# TO DO: pick best of nearest 5 nodes, rather than keeping the top 1?  Would need to calculate
+# accuracy before making final selection
+# TO DO: calculate LogError on click data, too?  decide on best node, calculate its BC value
+# (or rank?) and compute log error between that and the value for the best answer?
 
 graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% top_n(-1, Distance)
 
@@ -389,9 +424,16 @@ graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset
 #graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
 
 
+# Calculate LogError, a la Heer & Bostock 2010
+# Note: Heer & Bostock add 1/8 to the calculation, but that means that perfectly correct answers
+# become -3.  Seems strange.  Changing to add 1, so perfectly correct answers have LogError of 0.
+
+
 graded_num_ans <- dplyr::mutate(joined_num_ans, 
-                                Difference = abs(CorrectAnswer - Response), 
-                                Percentage = abs(CorrectAnswer - Response)/CorrectAnswer)
+                                RawDifference = Response - CorrectAnswer, 
+                                AbsDifference = abs(Response - CorrectAnswer), 
+                                Percentage = abs(CorrectAnswer - Response)/CorrectAnswer,
+                                LogError = log2(abs(Response - CorrectAnswer) + 1))
 
 clust_conf <- filter(exp_responses_split, Task == "ClustConf") %>% select(-Coord)
 
@@ -403,7 +445,7 @@ names(graded_num_ans)[names(graded_num_ans) == 'Task.x'] <- 'Task'
 
 names(graded_num_ans)[names(graded_num_ans) == 'Response.x'] <- 'Response'
 
-graded_num_ans[graded_num_ans$Task != "NumClust",12] <- NA
+graded_num_ans[graded_num_ans$Task != "NumClust","ClustConf"] <- NA
 
 #graded_num_ans <- left_join(graded_num_ans, stats_demo)
 

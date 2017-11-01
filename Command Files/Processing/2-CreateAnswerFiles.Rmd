@@ -125,6 +125,10 @@ siz_nodes$Condition <- "Siz"
 node_lookup <- bind_rows(node_lookup, phr_nodes, col_nodes, siz_nodes)
 
 
+# Add a flag saying whether node has rank of 1, or is the "correct" node
+
+node_lookup$correct <- ifelse(node_lookup$NodeRank == 1,TRUE,FALSE)
+
 ```
 
 
