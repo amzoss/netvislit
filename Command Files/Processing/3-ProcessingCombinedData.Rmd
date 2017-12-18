@@ -88,15 +88,10 @@ training_task_order <- read_csv(file.path(path_to_qualtrics, "training_task_orde
 # Remove bizarre R0 version of the ClickHighDeg question; 
 # I must have defined a region of interest, but have no need for it
 
-#raw_responses_full <- raw_responses_full %>% select(-contains("R0"),-contains("R1"))
-
 raw_responses <- raw_responses_full %>% select(-contains("R0"),-contains("R1"))
 
 # remove responses where the "Finished" flag is false
-
-# TO DO: don't do this?  for faculty, may want to keep more data than this
-# TO DO: figure out how to remove people not taking it seriously; look for error patterns?  
-# short times? unreasonable clicks?
+# (for now, not doing this.  For faculty, may want to data that is technically unfinished.)
 
 #raw_responses <- raw_responses %>% filter(`Extra-Finished`==1)
 
@@ -139,20 +134,18 @@ exp_responses_split <- exp_responses_split[!is.na(exp_responses_split$Response),
 
 ```{r}
 
-# Omit anyone?
-
-# 
-#omit_IDs <- raw_responses_full %>% filter(`Stats-dataset_count` != 3) %>% select(`Demo-ResponseID`)
+# Omit based on number of tasks completed
+# Note: leaving this out for now, but might bring it back later
 
 # testing for how many experimental tasks they *did* answer, because someone who answers none won't even show up in this query; picking 5 tasks as a somewhat arbitrary cutoff (it's at least half)
 
-keep_IDs <- exp_responses_split %>% filter(QType == "Exp") %>% group_by(`Demo-ResponseID`) %>% summarise(num_tasks = n_distinct(Task)) %>% filter(num_tasks >= 5) %>% select(`Demo-ResponseID`)
+# TO DO: test if the click data automatically shows up, even if they didn't really click anything
 
-#answers_per_dataset <- exp_responses_split %>% group_by(`Demo-ResponseID`,Dataset) %>% summarise(num_tasks = n_distinct(Task)) %>% mutate(include = num_tasks>4) 
+#keep_IDs <- exp_responses_split %>% filter(QType == "Exp") %>% group_by(`Demo-ResponseID`) %>% summarise(num_tasks = n_distinct(Task)) %>% filter(num_tasks >= 5) %>% select(`Demo-ResponseID`)
 
-raw_responses <- raw_responses %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
+#raw_responses <- raw_responses %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
 
-exp_responses_split <- exp_responses_split %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
+#exp_responses_split <- exp_responses_split %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
 
 ```
 
@@ -319,14 +312,18 @@ exp_responses_with_order <- exp_responses_with_order %>% filter(QType != "Traini
 
 ```{r}
 
-# for people in Col, Phr, and Size condition, change the Condition in the Training tasks to match their group; it's confusing when trying to compare their experimental tasks to their training tasks
+# for people in Col, Phr, and Size condition, change the Condition in the Training tasks 
+# to match their group
+# (these groups saw the same training as the Ctrl condition, so their training rows are labeled Ctrl 
+# instead of the correct layout conditions, which is confusing when trying to compare their
+# experimental tasks to their training tasks)
 
 exp_responses_with_order <- select(raw_responses, `Demo-ResponseID`, `Stats-Group`) %>% right_join(exp_responses_with_order) %>% mutate(Condition = ifelse(`Stats-Group` == "color","Col",ifelse(`Stats-Group` == "phrasing", "Phr", ifelse(`Stats-Group` == "size", "Siz",Condition)))) %>% select(-`Stats-Group`)
 
 ```
 
 ```{r}
-# Save file out?
+# Save file out
 
 write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
 
@@ -336,7 +333,8 @@ write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponses
 
 ```{r}
 
-# Note: these answers should be the same regardless of condition, as should clusters.  Anything related to clicking (degree and betweenness) will depend on condition.
+# Note: numerical answers should be the same regardless of condition, as should clusters.  
+# Anything related to clicking (degree and betweenness) will depend on condition.
 
 joined_num_ans <- inner_join(exp_responses_with_order, num_ans_lookup, by=c("Dataset","Task"))
 
@@ -360,10 +358,6 @@ exp_responses_degree_wide <- spread(exp_responses_degree, Task, Response)
 
 joined_degree <- left_join(exp_responses_degree_wide, node_lookup[node_lookup$Task == "ClickHighDeg",], by=c("Condition", "Dataset"))
 
-#joined_degree$Attempt <- 1
-
-#exp_responses_bc <- filter(exp_responses_split, Task %in% c("BC_X1","BC_Y1","BC_X2","BC_Y2","BC_X3","BC_Y3","BC_X4","BC_Y4","BC_X5","BC_Y5"))
-
 exp_responses_bc <- filter(exp_responses_with_order, Task == "BC")
 
 exp_responses_bc$Task <- "Click"
@@ -375,8 +369,6 @@ exp_responses_bc$Response <- type.convert(exp_responses_bc$Response)
 exp_responses_bc <- separate(exp_responses_bc, Task, c("Task","Attempt"), sep=7, convert=TRUE)
 
 exp_responses_bc_wide <- spread(exp_responses_bc, Task, Response)
-
-#joined_bc <- inner_join(exp_responses_bc_wide, bc_lookup, by=c("Condition","Dataset"))
 
 joined_bc <- left_join(exp_responses_bc_wide, node_lookup[node_lookup$Task == "BC",], by=c("Condition","Dataset"))
 
@@ -390,24 +382,9 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 
 ```{r}
 
-# TO DO: change percentage to correct calculation
-
-#graded_clusters <- dplyr::mutate(joined_clusters,
-#                                 AvgCorrectValue = (MinCorrectValue + MaxCorrectValue)/2,
-#                                 Difference = abs(AvgCorrectValue - Response),
-#                                 Percentage = Difference/AvgCorrectValue)
-
-#graded_degree <- dplyr::mutate(joined_degree, Distance = sqrt((ClickHighDeg_X1-NodeXAdjusted)^2 + (ClickHighDeg_Y1-NodeYAdjusted)^2))
-
-#graded_bc <- dplyr::mutate(joined_bc, Distance = sqrt((BC_X-NodeXAdjusted)^2 + (BC_Y-NodeYAdjusted)^2))
-
 # find distance between click responses and all node positions
 
 graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 + (Click_Y-NodeYAdjusted)^2))
-
-#graded_degree_top <- group_by(graded_degree, `Demo-ResponseID`, Condition, Dataset) %>% top_n(-1, Distance)
-
-#graded_bc_top <- group_by(graded_bc, `Demo-ResponseID`, Condition, Dataset, Attempt) %>% top_n(-1, Distance)
 
 # pick the closest node (node where distance is smallest)
 
@@ -419,21 +396,24 @@ graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 +
 
 graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% top_n(-1, Distance)
 
-#graded_nodes_top <- left_join(graded_nodes_top, stats_demo)
-
-#graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
-
-
 # Calculate LogError, a la Heer & Bostock 2010
 # Note: Heer & Bostock add 1/8 to the calculation, but that means that perfectly correct answers
 # become -3.  Seems strange.  Changing to add 1, so perfectly correct answers have LogError of 0.
 
+# RawDifference will be negative if response was an underestimate
 
 graded_num_ans <- dplyr::mutate(joined_num_ans, 
                                 RawDifference = Response - CorrectAnswer, 
                                 AbsDifference = abs(Response - CorrectAnswer), 
-                                Percentage = abs(CorrectAnswer - Response)/CorrectAnswer,
+                                Percentage = abs(Response - CorrectAnswer)/CorrectAnswer,
                                 LogError = log2(abs(Response - CorrectAnswer) + 1))
+
+```
+
+
+```{r}
+
+# add cluster confidence rating as a new column, but only fill it in for the "NumClust" task
 
 clust_conf <- filter(exp_responses_split, Task == "ClustConf") %>% select(-Coord)
 
@@ -447,10 +427,19 @@ names(graded_num_ans)[names(graded_num_ans) == 'Response.x'] <- 'Response'
 
 graded_num_ans[graded_num_ans$Task != "NumClust","ClustConf"] <- NA
 
-#graded_num_ans <- left_join(graded_num_ans, stats_demo)
 
-#graded_num_ans <- left_join(graded_num_ans, stats_datasets_tall)
+```
 
+
+```{r}
+
+# Omit participants based on response patterns 
+
+# TO DO: figure out how to remove people not taking it seriously; look for error patterns?  
+# short times? unreasonable clicks?
+
+# Look for answers way outside normal or correct response pattern 
+# (e.g., >3 s.d.? orders of magnitude different from correct answer?)
 
 ```
 
@@ -459,10 +448,6 @@ graded_num_ans[graded_num_ans$Task != "NumClust","ClustConf"] <- NA
 ```{r}
 
 write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
-
-#write_csv(graded_degree_top, file.path(analysisDataDir,"GradedDegree.csv")s)
-
-#write_csv(graded_bc_top, file.path(analysisDataDir,"GradedBC.csv"))
 
 write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
 
