@@ -28,6 +28,7 @@ require(tidyverse)
 library(officer)
 library(rvg)
 library(devEMF)
+library(nlme)
 library(lme4)
 
 ```
@@ -892,10 +893,95 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 
 ```{r}
 
-# https://iucat.iu.edu/catalog/14518998
+# https://iucat.iu.edu/catalog/14518998, chapter 5
+
+# Repeated measures, tasks and datasets (crossed)
+
+# R by default treats the lowest category (alphabetically or numerically) of a
+# categorical fixed factor as the reference category in a model
+
+# We don't really have reference categories for the repeated measures factors, 
+# though, so I guess it doesn't matter?  Maybe want to exclude training dataset
+
+exp_only <- graded_num_ans %>% filter(QType == "Exp")
+
+exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
+
+exp_only$Dataset <- factor(exp_only$Dataset)
+
+model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
+
+summary(model.lme)
+
+anova(model.lme)
+
+
+# can't get this to finish (see p. 220)
+#model.lme.2 <- update(model.lme, random = ~ Task | DemoResponseID)
+
+#summary(model.lme.2)
+
+#anova(model.lme.2)
+
+# p. 220
+
+# We test Hypothesis 5.1 to decide if we need the random treatment effects, using a likelihood
+# ratio test. This would typically not be done with such a small sample of animals
+# (given the asymptotic nature of likelihood ratio tests), but we perform this test for illustrative
+# purposes. The test statistic is calculated by subtracting the –2 REML log-likelihood
+# value for Model 5.2 (the reference model) from that for Model 5.1 (the value of the test
+# statistic is 275.3−249.2 = 26.1). The –2 REML log-likelihood values can be obtained from
+# the output provided by the summary() function for each model. The test statistic has a null
+# distribution that is a mixture of χ21 and χ22 distributions with equal weights of 0.5, so the
+# anova() function cannot be used for the p-value. Instead, we calculate a p-value for the test
+# statistic as follows:
+
+# 0.5*(1 - pchisq(26.1,1)) + 0.5*(1 - pchisq(26.1,2))
+
+
+# throws an error: "nlminb problem, convergence error code = 1 message = iteration limit reached without convergence"
+
+#model.lme.3 <- lme(LogError ~ Task*Dataset, 
+#                 random = ~ Task | DemoResponseID, 
+#                 weights = varIdent(form = ~ 1 | Task),
+#                 data=exp_only)
 
 ```
 
+```{r}
+#model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
+
+model.fit.lmer <- lmer(LogError ~ Task*Dataset + (1|DemoResponseID), data = exp_only, REML = T)
+
+summary(model.fit.lmer)
+
+anova(model.fit.lmer)
+
+# In general, we recommend use of the lmerTest package in R
+# for users interested in testing hypotheses about parameters estimated using the lmer()
+# function. In this chapter, we illustrate likelihood ratio tests using selected functions
+# available in the lme4 package. See Chapter 3 for an example of using the lmerTest
+# package, in the case of a random intercept model.
+
+ranef(model.fit.lmer)
+
+```
+
+```{r}
+model.fit.lmer.2 <- lmer(LogError ~ Task*Dataset + (Task|DemoResponseID), data = exp_only, REML = T)
+
+summary(model.fit.lmer.2)
+
+# pick up at p. 222
+
+
+```
+
+```{r}
+
+write_csv(exp_only, file.path("~/Desktop","ExperimentalResponsesOnly.csv"))
+
+```
 
 ## Output
 
