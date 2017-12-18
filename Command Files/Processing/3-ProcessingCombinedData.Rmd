@@ -334,13 +334,19 @@ write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponses
 ```{r}
 
 # Note: numerical answers should be the same regardless of condition, as should clusters.  
-# Anything related to clicking (degree and betweenness) will depend on condition.
 
 joined_num_ans <- inner_join(exp_responses_with_order, num_ans_lookup, by=c("Dataset","Task"))
 
 joined_num_ans$Response <- type.convert(joined_num_ans$Response)
 
 joined_num_ans <- joined_num_ans %>% select(-Coord)
+
+```
+
+```{r}
+
+# For anything related to clicking (degree and betweenness), 
+# correct answer will also depend on condition.
 
 # Need to match up x and y from click data
 
@@ -382,19 +388,7 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 
 ```{r}
 
-# find distance between click responses and all node positions
-
-graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 + (Click_Y-NodeYAdjusted)^2))
-
-# pick the closest node (node where distance is smallest)
-
-# TO DO: keep some measure of whether other nodes were close? distribution?
-# TO DO: pick best of nearest 5 nodes, rather than keeping the top 1?  Would need to calculate
-# accuracy before making final selection
-# TO DO: calculate LogError on click data, too?  decide on best node, calculate its BC value
-# (or rank?) and compute log error between that and the value for the best answer?
-
-graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% top_n(-1, Distance)
+# grade the numerical answers
 
 # Calculate LogError, a la Heer & Bostock 2010
 # Note: Heer & Bostock add 1/8 to the calculation, but that means that perfectly correct answers
@@ -407,6 +401,38 @@ graded_num_ans <- dplyr::mutate(joined_num_ans,
                                 AbsDifference = abs(Response - CorrectAnswer), 
                                 Percentage = abs(Response - CorrectAnswer)/CorrectAnswer,
                                 LogError = log2(abs(Response - CorrectAnswer) + 1))
+
+```
+
+
+```{r}
+
+# grade the click answers
+
+# find distance between click responses and all node positions
+
+graded_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 + (Click_Y-NodeYAdjusted)^2))
+
+# pick the closest node (node where distance is smallest)
+
+#graded_nodes_top <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% top_n(-1, Distance)
+
+# pick best of nearest 5 nodes, rather than keeping the top 1
+# take top 5 closest nodes, as long as they're within 25 pixesl,
+# reduce to highest rank, then pick the closest in case of tie
+
+#graded_nodes_best_of_top_5 <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% filter(Distance <= 25) %>% top_n(-5, Distance) %>% top_n(-1, NodeRank) %>% top_n(-1, Distance)
+
+# pick best of the nodes within a 25-pixel-radius buffer
+
+graded_nodes_best_of_25_buffer <- group_by(graded_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% filter(Distance <= 25) %>% top_n(-1, NodeRank) %>% top_n(-1, Distance)
+
+
+graded_nodes_top <- dplyr::mutate(graded_nodes_best_of_25_buffer, 
+                                RawDifference = NodeValue - MaxValue, 
+                                AbsDifference = abs(NodeValue - MaxValue), 
+                                Percentage = abs(NodeValue - MaxValue)/MaxValue,
+                                LogError = log2(abs(NodeValue - MaxValue) + 1))
 
 ```
 
@@ -450,6 +476,7 @@ graded_num_ans[graded_num_ans$Task != "NumClust","ClustConf"] <- NA
 write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
 
 write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
+
 
 ```
 

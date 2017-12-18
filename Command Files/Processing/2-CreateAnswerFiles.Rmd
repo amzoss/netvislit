@@ -84,11 +84,6 @@ node_degree_lookup <- node_degree_lookup %>%
   group_by(Condition, Dataset) %>% 
   mutate(NodeRank = dense_rank(desc(NodeValue)))
 
-# When creating node_lookup, don't just calculate node rank. Also calculate percentage error between node value and max value, like with normal numerical answers; e.g., (MaxValue - NodeValue)/MaxValue
-
-node_degree_lookup <- node_degree_lookup %>%
-  mutate(Percentage = abs(MaxValue - NodeValue)/MaxValue)
-
 node_bc_lookup <- node_bc_lookup %>% 
   group_by(Condition, Dataset) %>% 
   summarize(MaxValue = max(NodeValue)) %>% 
@@ -97,10 +92,6 @@ node_bc_lookup <- node_bc_lookup %>%
 node_bc_lookup <- node_bc_lookup %>%
   group_by(Condition, Dataset) %>% 
   mutate(NodeRank = dense_rank(desc(NodeValue)))
-
-node_bc_lookup <- node_bc_lookup %>%
-  mutate(Percentage = abs(MaxValue - NodeValue)/MaxValue)
-
 
 node_lookup <- bind_rows(node_degree_lookup, node_bc_lookup)
 ```
