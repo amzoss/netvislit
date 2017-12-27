@@ -71,6 +71,8 @@ num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.
 
 exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
 
+all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
+
 ```
 
 ## Slight processing for analysis
@@ -918,6 +920,8 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 # though, so I guess it doesn't matter?  Maybe want to exclude training dataset
 
 exp_only$Dataset <- factor(exp_only$Dataset)
+
+exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
 
 model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
 

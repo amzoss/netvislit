@@ -132,21 +132,6 @@ exp_responses_split <- exp_responses_split[!is.na(exp_responses_split$Response),
 
 ```
 
-```{r}
-
-# Omit based on number of tasks completed
-# Note: leaving this out for now, but might bring it back later
-
-# testing for how many experimental tasks they *did* answer, because someone who answers none won't even show up in this query; picking 5 tasks as a somewhat arbitrary cutoff (it's at least half)
-
-#keep_IDs <- exp_responses_split %>% filter(QType == "Exp") %>% group_by(`Demo-ResponseID`) %>% summarise(num_tasks = n_distinct(Task)) %>% filter(num_tasks >= 5) %>% select(`Demo-ResponseID`)
-
-#raw_responses <- raw_responses %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
-
-#exp_responses_split <- exp_responses_split %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
-
-```
-
 ## Process the demographic/stats columns
 
 ```{r}
@@ -171,7 +156,7 @@ stats_demo <- left_join(stats_demo, population_experience)
 stats_demo <- stats_demo %>% mutate_if(is.integer,(funs(ifelse(.==-99,NA,.))))
 stats_demo <- stats_demo %>% mutate_if(is.character,(funs(ifelse(.=="-99","Skipped",.))))
 
-write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
+
 
 
 ```
@@ -248,7 +233,7 @@ stats_datasets_tall$DatasetOrder[stats_datasets_tall$Dataset==0] <- 0
 
 stats_datasets_tall <- full_join(stats_datasets_tall, population_experience)
 
-write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+
 
 ```
 
@@ -326,12 +311,6 @@ exp_responses_with_order <- select(raw_responses, `Demo-ResponseID`, `Stats-Grou
 
 ```
 
-```{r}
-# Save file out
-
-write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
-
-```
 
 ## Join response data to answer data
 
@@ -457,7 +436,7 @@ BC_summary <- graded_nodes_top %>% filter(Task == "BC",Dataset>0) %>%
             MinNodeRank=min(NodeRank), AvgNodeRank=mean(NodeRank),
             numAttempts=n())
 
-write_csv(BC_summary, file.path(analysisDataDir,"BCSummary.csv"))
+
 
 ```
 
@@ -481,56 +460,6 @@ graded_num_ans[graded_num_ans$Task != "NumClust","ClustConf"] <- NA
 
 ```
 
-## Omit participants based on response patterns 
-
-```{r}
-
-# remove people who finished but had short times and high error; assume these are MTurkers
-
-total_duration <- stats_demo %>% select(`Demo-ResponseID`,`Stats-Q_TotalDuration`)
-
-avg_error <- graded_num_ans %>% group_by(`Demo-ResponseID`) %>% summarise(num=n(),avgError=mean(LogError),sd=sd(LogError))
-
-avg_error_time <- full_join(avg_error, total_duration) %>% mutate(red_flag = if_else(num>=20 & ntile(`Stats-Q_TotalDuration`,5) < 2 & ntile(avgError,5) > 4,TRUE,FALSE))
-
-table(avg_error_time$red_flag)
-
-```
-
-```{r}
-
-# should I omit anyone from ResearchMatch? the student or faculty pools?
-
-```
-
-```{r}
-
-red_flag_users <- avg_error_time %>% filter(red_flag == TRUE) %>% select(`Demo-ResponseID`)
-
-graded_num_ans <- graded_num_ans %>% filter(!(`Demo-ResponseID` %in% red_flag_users$`Demo-ResponseID`))
-
-graded_nodes_top <- graded_nodes_top %>% filter(!(`Demo-ResponseID` %in% red_flag_users$`Demo-ResponseID`))
-
-# another red flag would be clicking at random; currently, the click data finds the best node
-# within a 25-pixel radius, so clicking in a blank area of the graph will already get filtered
-# out
-
-# this doesn't currently test for regular clicks in areas that are obviously terrible, but
-# hopefully people who would do that are caught with the other methods
-
-```
-
-## Write analysis files
-
-```{r}
-
-write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
-
-write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
-
-
-```
-
 ```{r}
 
 # Creating simpler data frames for analysis
@@ -542,8 +471,6 @@ graded_nodes_top <- left_join(graded_nodes_top, stats_demo)
 graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
 
 exp_only <- graded_num_ans %>% filter(QType == "Exp")
-
-exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
 
 num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
 
@@ -567,17 +494,98 @@ layout_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"))
 
 ```
 
+## Omit participants based on response patterns 
+
 ```{r}
 
-#write_csv(exp_only, file.path("~/Desktop","ExperimentalResponsesOnly.csv"))
+# remove people who finished but had short times and high error; assume these are MTurkers
 
-#write_csv(all_exp, file.path("~/Desktop","AllExperimental.csv"))
+total_duration <- stats_demo %>% select(`Demo-ResponseID`,`Stats-Q_TotalDuration`)
+
+avg_error <- graded_num_ans %>% group_by(`Demo-ResponseID`) %>% summarise(num=n(),avgError=mean(LogError),sd=sd(LogError))
+
+avg_error_time <- full_join(avg_error, total_duration) %>% mutate(red_flag = if_else(num>=20 & ntile(`Stats-Q_TotalDuration`,5) < 2 & ntile(avgError,5) > 4,TRUE,FALSE))
+
+table(avg_error_time$red_flag)
+
+red_flag_users <- avg_error_time %>% filter(red_flag == TRUE) %>% select(`Demo-ResponseID`)
+
+# another red flag would be clicking at random; currently, the click data finds the best node
+# within a 25-pixel radius, so clicking in a blank area of the graph will already get filtered
+# out
+
+# this doesn't currently test for regular clicks in areas that are obviously terrible, but
+# hopefully people who would do that are caught with the other methods
+
+```
+
+
+```{r}
+
+# Omit based on number of tasks completed
+# choosing 8 as minimum because that is a full dataset
+
+drop_out_users <- all_exp %>% mutate(DataTask=paste0(Dataset,Task)) %>% group_by(`Demo-ResponseID`) %>% summarise(NumData=n_distinct(Dataset),NumTasks=n_distinct(DataTask)) %>% filter(NumTasks<8) %>% select(`Demo-ResponseID`)
+
+
+all_omit_users <- bind_rows(red_flag_users, drop_out_users) %>% distinct()
+
+```
+
+```{r}
+
+stats_demo <- stats_demo %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+stats_datasets_tall <- stats_datasets_tall %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+exp_responses_with_order <- exp_responses_with_order %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+graded_num_ans <- graded_num_ans %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+graded_nodes_top <- graded_nodes_top %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+BC_summary <- BC_summary %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+exp_only <- exp_only %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+all_exp <- all_exp %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+graphics <- graphics %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+layout_all <- layout_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+layout_fac_1_7_9 <- layout_fac_1_7_9 %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+layout_mturk_all <- layout_mturk_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+```
+
+## Write analysis files
+
+```{r}
+
+write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
+
+write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+
+write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
+
+write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
+
+write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
+
+write_csv(BC_summary, file.path(analysisDataDir,"BCSummary.csv"))
+
 write_csv(exp_only, file.path(analysisDataDir,"ExpOnly.csv"))
+
 write_csv(all_exp, file.path(analysisDataDir,"AllExperimental.csv"))
 
 write_csv(graphics, file.path(analysisDataDir,"Graphics.csv"))
+
 write_csv(layout_all, file.path(analysisDataDir,"LayoutAll.csv"))
+
 write_csv(layout_fac_1_7_9, file.path(analysisDataDir,"LayoutFac.csv"))
+
 write_csv(layout_mturk_all, file.path(analysisDataDir,"LayoutTurk.csv"))
 
 ```
