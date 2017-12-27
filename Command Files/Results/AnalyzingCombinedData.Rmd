@@ -69,6 +69,8 @@ num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.
 
 #responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
 
+exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
+
 ```
 
 ## Slight processing for analysis
@@ -83,11 +85,6 @@ graded_num_ans$Condition <- factor(graded_num_ans$Condition,
 graded_nodes$Condition <- factor(graded_nodes$Condition,
                                    levels=c("Ctrl","Phr","Siz","Col","Fru","Ord","Cir"))
 
-# Replace all -99s with NA 
-# (important for numerical columns, but maybe for character columns should do "Skipped")
-# TO DO: Should probably do this in the processing script
-
-stats_demo <- stats_demo %>% mutate_all(funs(ifelse(.=="-99",NA,.)))
 
 stats_demo$`Stats-Group` <- factor(stats_demo$`Stats-Group`,
                                    levels=c("control", "phrasing", "size", "color", 
@@ -476,14 +473,14 @@ ggplot(graded_num_ans %>% filter(!is.na(ClustConf)) %>% filter(Task == "NumClust
 ```{r, fig.width=12, fig.height=12}
 
 ggplot() + 
-  geom_point(data = node_lookup,
+  geom_point(data = node_lookup %>% filter(!(Dataset==6)),
              aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
   geom_point(data = graded_nodes %>% filter(Task == "BC"), 
              aes(x=Click_X,y=Click_Y), colour="red") + 
   facet_grid(Dataset~Condition) +
   theme_bw()
 
-# TO DO: Factor node_lookcup$Condition
+# TO DO: Factor node_lookup$Condition
 
 # TO DO: remove dataset 6 from raw network data, since I never used it in surveys?
 
@@ -906,6 +903,8 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 
 ### Mixed Models
 
+
+
 ```{r}
 
 # https://iucat.iu.edu/catalog/14518998, chapter 5
@@ -918,31 +917,8 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 # We don't really have reference categories for the repeated measures factors, 
 # though, so I guess it doesn't matter?  Maybe want to exclude training dataset
 
-exp_only <- graded_num_ans %>% filter(QType == "Exp")
-
-exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
-
 exp_only$Dataset <- factor(exp_only$Dataset)
 
-num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-CompensationCondition`, `Demo-age`, `Demo-educ`, NetVisExperience)
-
-nodes_lim <- graded_nodes %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, RawDifference, AbsDifference, Percentage, LogError, filename, `Stats-Q_TotalDuration`, `Stats-CompensationCondition`, `Demo-age`, `Demo-educ`, NetVisExperience)
-
-nodes_lim <- nodes_lim %>% rename(Response = NodeValue, CorrectAnswer = MaxValue)
-
-all_exp <- bind_rows(num_ans_lim, nodes_lim)
-
-```
-
-```{r}
-
-write_csv(exp_only, file.path("~/Desktop","ExperimentalResponsesOnly.csv"))
-
-write_csv(all_exp, file.path("~/Desktop","AllExperimental.csv"))
-
-```
-
-```{r}
 model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
 
 summary(model.lme)
@@ -1009,7 +985,7 @@ summary(model.fit.lmer.2)
 
 ```
 
-```{r}
+```{r eval=FALSE}
 
 # Clustered Longitudinal Data (Chapter 7)
 
@@ -1026,7 +1002,7 @@ clust.model.fit <- lme(LogError ~ Task + TaskOrder +
                          Dataset + DatasetOrder +
                          Task:TaskOrder + 
                          Task:Dataset + Task:DatasetOrder,
-                       random = list(Condition = ~Task, DemoResponseID` = ~1),
+                       random = list(Condition = ~Task, `DemoResponseID` = ~1),
                        data = exp_only,
                        method = "REML")
 

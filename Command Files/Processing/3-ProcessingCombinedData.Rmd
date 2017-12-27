@@ -139,8 +139,6 @@ exp_responses_split <- exp_responses_split[!is.na(exp_responses_split$Response),
 
 # testing for how many experimental tasks they *did* answer, because someone who answers none won't even show up in this query; picking 5 tasks as a somewhat arbitrary cutoff (it's at least half)
 
-# TO DO: test if the click data automatically shows up, even if they didn't really click anything
-
 #keep_IDs <- exp_responses_split %>% filter(QType == "Exp") %>% group_by(`Demo-ResponseID`) %>% summarise(num_tasks = n_distinct(Task)) %>% filter(num_tasks >= 5) %>% select(`Demo-ResponseID`)
 
 #raw_responses <- raw_responses %>% filter(`Demo-ResponseID` %in% keep_IDs$`Demo-ResponseID`)
@@ -166,6 +164,12 @@ stats$`Stats-CompensationCondition` <- sub(" ","",stats$`Stats-CompensationCondi
 stats_demo <- full_join(stats,demo)
 
 stats_demo <- left_join(stats_demo, population_experience)
+
+# Replace all -99s with NA 
+# (important for numerical columns, but maybe for character columns should do "Skipped")
+
+stats_demo <- stats_demo %>% mutate_if(is.integer,(funs(ifelse(.==-99,NA,.))))
+stats_demo <- stats_demo %>% mutate_if(is.character,(funs(ifelse(.=="-99","Skipped",.))))
 
 write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
 
@@ -400,8 +404,10 @@ graded_num_ans <- dplyr::mutate(joined_num_ans,
                                 RawDifference = Response - CorrectAnswer, 
                                 AbsDifference = abs(Response - CorrectAnswer), 
                                 Percentage = abs(Response - CorrectAnswer)/CorrectAnswer,
-                                LogError = log2(abs(Response - CorrectAnswer) + 1))
+                                LogError = log10(abs(Response - CorrectAnswer) + 1))
 
+#ggplot(graded_num_ans) + geom_boxplot(aes(y=log2(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
+#ggplot(graded_num_ans) + geom_boxplot(aes(y=log10(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
 ```
 
 
@@ -432,7 +438,26 @@ graded_nodes_top <- dplyr::mutate(graded_nodes_best_of_25_buffer,
                                 RawDifference = NodeValue - MaxValue, 
                                 AbsDifference = abs(NodeValue - MaxValue), 
                                 Percentage = abs(NodeValue - MaxValue)/MaxValue,
-                                LogError = log2(abs(NodeValue - MaxValue) + 1))
+                                LogError = log10(abs(NodeValue - MaxValue) + 1))
+
+#ggplot(graded_nodes_top) + geom_boxplot(aes(y=log2(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
+
+#ggplot(graded_nodes_top %>% filter(Task == "BC")) + geom_histogram(aes(log2(AbsDifference+1))) + facet_grid(Dataset~Attempt)
+
+#ggplot(graded_nodes_top %>% filter(Task == "BC",Dataset>0)) + geom_line(aes(x=Attempt,y=log2(AbsDifference+1))) + facet_wrap(~Dataset)
+
+
+```
+
+```{r}
+
+BC_summary <- graded_nodes_top %>% filter(Task == "BC",Dataset>0) %>%
+  group_by(`Demo-ResponseID`,Task,Dataset,DatasetOrder) %>%
+  summarise(MinLogError=min(LogError), AvgLogErrer=mean(LogError), 
+            MinNodeRank=min(NodeRank), AvgNodeRank=mean(NodeRank),
+            numAttempts=n())
+
+write_csv(BC_summary, file.path(analysisDataDir,"BCSummary.csv"))
 
 ```
 
@@ -506,4 +531,53 @@ write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
 
 ```
 
+```{r}
 
+# Creating simpler data frames for analysis
+
+graded_num_ans <- left_join(graded_num_ans, stats_demo)
+graded_num_ans <- left_join(graded_num_ans, stats_datasets_tall)
+
+graded_nodes_top <- left_join(graded_nodes_top, stats_demo)
+graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
+
+exp_only <- graded_num_ans %>% filter(QType == "Exp")
+
+exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
+
+num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
+
+nodes_lim <- graded_nodes_top %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, RawDifference, AbsDifference, Percentage, LogError, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
+
+nodes_lim <- nodes_lim %>% rename(Response = NodeValue, CorrectAnswer = MaxValue)
+
+all_exp <- bind_rows(num_ans_lim, nodes_lim)
+
+all_exp <- all_exp %>% separate(`Stats-ScreenResolution`, c("StatsScreenWidth","StatsScreenHeight"), sep="x", convert=TRUE) %>% mutate(StatsNumPixels = StatsScreenWidth * StatsScreenHeight)
+
+all_exp <- all_exp %>% arrange(`Demo-ResponseID`,DatasetOrder,TaskOrder,Attempt) %>% rowid_to_column("QuestionOrder")
+
+graphics <- all_exp %>% filter(Condition %in% c("Ctrl","Phr","Siz","Col"), filename %in% c("MTurkFinal","MTurkPilot3")) 
+  
+layout_fac_1_7_9 <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), Dataset %in% c(1, 7, 9)) 
+layout_mturk_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), filename %in% c("MTurkFinal","MTurkPilot3"))
+
+layout_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"))
+
+
+```
+
+```{r}
+
+#write_csv(exp_only, file.path("~/Desktop","ExperimentalResponsesOnly.csv"))
+
+#write_csv(all_exp, file.path("~/Desktop","AllExperimental.csv"))
+write_csv(exp_only, file.path(analysisDataDir,"ExpOnly.csv"))
+write_csv(all_exp, file.path(analysisDataDir,"AllExperimental.csv"))
+
+write_csv(graphics, file.path(analysisDataDir,"Graphics.csv"))
+write_csv(layout_all, file.path(analysisDataDir,"LayoutAll.csv"))
+write_csv(layout_fac_1_7_9, file.path(analysisDataDir,"LayoutFac.csv"))
+write_csv(layout_mturk_all, file.path(analysisDataDir,"LayoutTurk.csv"))
+
+```
