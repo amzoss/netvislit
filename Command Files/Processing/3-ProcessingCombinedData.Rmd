@@ -532,6 +532,7 @@ all_omit_users <- bind_rows(red_flag_users, drop_out_users) %>% distinct()
 
 ```
 
+
 ```{r}
 
 stats_demo <- stats_demo %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
@@ -557,6 +558,15 @@ layout_all <- layout_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Dem
 layout_fac_1_7_9 <- layout_fac_1_7_9 %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
 layout_mturk_all <- layout_mturk_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+
+```
+
+```{r}
+# summarize final number of users
+
+num_users <- all_exp %>% group_by(NetVisExperience,`Demo-ResponseID`,Condition,Dataset) %>% summarise()
+
+table(num_users$Dataset, num_users$Condition, num_users$NetVisExperience)
 
 ```
 
