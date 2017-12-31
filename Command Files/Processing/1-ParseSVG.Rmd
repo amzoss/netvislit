@@ -11,6 +11,7 @@ require(xml2)
 
 ```
 
+
 ```{r}
 
 originalDataDir <- "../../Original Data"
@@ -41,6 +42,120 @@ all_edges <- all_edges %>% select(-class)
 all_edges <- all_edges %>% mutate(filename_copy = filename) %>% unite("source",c("filename_copy","x1","y1"))
 
 all_edges <- all_edges %>% mutate(filename_copy = filename) %>% unite("target",c("filename_copy","x2","y2"))
+
+```
+
+```{r}
+
+# alternate SVGs
+
+path_to_alt_svg <- file.path(originalDataDir,"Raw data/node positions/alt")
+
+alt_filenames <- dir(path = path_to_alt_svg, pattern = "*.svg") %>% sapply(function(x){sub(".svg","",x)})
+
+alt_svg_files <- dir(path = path_to_alt_svg, pattern = "*.svg", full.names = TRUE) %>% map(read_xml) %>% lapply(function(x){xml_children(x)[2] %>% xml_child() %>% xml_children()})
+
+alt_edges <- lapply(alt_svg_files, function(x) {
+  attributes <- xml_attrs(x)
+  names <- x %>% xml_name()
+  return(attributes[names == "path"] %>% map_df(~as.list(.)))
+})
+
+
+all_edges_alt <- alt_edges %>% reduce(rbind)
+
+rep_filenames_alt <- rep(alt_filenames, map(alt_edges, nrow))
+
+all_edges_alt$filename <- rep_filenames_alt
+
+all_edges_alt <- all_edges_alt %>% 
+  mutate(d=sub("M","",d)) %>% 
+  separate(d, c("point1","point2"), sep="[[:alpha:]]", remove=FALSE, convert=TRUE) %>% 
+  mutate(mod=substr(d,nchar(point1)+1,nchar(point1)+1)) %>% 
+  separate(point1,c("x1","y1"),sep=",", convert=TRUE) %>% 
+  separate(point2,c("tempX","tempY"),sep=",", convert=TRUE) 
+
+all_edges_alt <- all_edges_alt %>% 
+  mutate(
+    ind=ifelse(mod == "l" & is.na(tempY), as.numeric(gregexpr("-",substring(tempX,2))), NA),
+    x2=case_when(
+      mod == "H" ~ as.numeric(tempX),
+      mod == "h" ~ x1+as.numeric(tempX),
+      mod == "V" ~ x1,
+      mod == "v" ~ x1,
+      mod == "L" ~ as.numeric(tempX),
+      mod == "l" & !(is.na(tempY)) ~ x1+as.numeric(tempX),
+      mod == "l"& is.na(tempY) ~ x1+as.numeric(substr(tempX,1,ind))
+    ),
+    y2=case_when(
+      mod == "H" ~ y1,
+      mod == "h" ~ y1,
+      mod == "V" ~ as.numeric(tempX),
+      mod == "v" ~ y1+as.numeric(tempX),
+      mod == "L" ~ as.numeric(tempY),
+      mod == "l" & !(is.na(tempY)) ~ y1+as.numeric(tempY),
+      mod == "l"& is.na(tempY) ~ y1+as.numeric(substring(tempX,ind+1))
+    ))
+    
+
+#all_edges_alt3 <- all_edges_alt2 %>% filter(mod == "H") %>% mutate(x2=as.numeric(tempX), y2=y1)
+#all_edges_alt4 <- all_edges_alt2 %>% filter(mod == "h") %>% mutate(x2 = x1+as.numeric(tempX), y2 = y1)
+#all_edges_alt5 <- all_edges_alt2 %>% filter(mod == "V") %>% mutate(x2=x1, y2=as.numeric(tempX))
+#all_edges_alt6 <- all_edges_alt2 %>% filter(mod == "v") %>% mutate(x2 = x1, y2 = y1+as.numeric(tempX))
+#all_edges_alt7 <- all_edges_alt2 %>% filter(mod == "L") %>% mutate(x2=as.numeric(tempX), y2=as.numeric(tempY))
+#all_edges_alt8 <- all_edges_alt2 %>% filter(mod == "l",!(is.na(tempY))) %>% mutate(x2=x1+as.numeric(tempX), y2=y1+as.numeric(tempY))
+#all_edges_alt9 <- all_edges_alt2 %>% filter(mod == "l", is.na(tempY)) %>% rowwise() %>% 
+#  mutate(ind=as.numeric(gregexpr("-",substring(tempX,2))),
+#         x2=x1+as.numeric(substr(tempX,1,ind)),
+#         y2=y1+as.numeric(substring(tempX,ind+1))) %>%
+#  select(-ind)
+
+#all_edges_alt10 <- bind_rows(all_edges_alt3, all_edges_alt4, all_edges_alt5, all_edges_alt6, all_edges_alt7, all_edges_alt8, all_edges_alt9)
+
+all_edges_alt <- all_edges_alt %>% select(filename, x1, y1, x2, y2)
+
+all_edges_alt <- all_edges_alt %>% mutate(filename_copy = filename) %>% unite("source",c("filename_copy","x1","y1"))
+
+all_edges_alt <- all_edges_alt %>% mutate(filename_copy = filename) %>% unite("target",c("filename_copy","x2","y2"))
+
+```
+```{r}
+
+# alternate SVGs #2
+
+path_to_alt_svg2 <- file.path(originalDataDir,"Raw data/node positions/alt2")
+
+alt_filenames2 <- dir(path = path_to_alt_svg2, pattern = "*.svg") %>% sapply(function(x){sub(".svg","",x)})
+
+alt_svg_files2 <- dir(path = path_to_alt_svg2, pattern = "*.svg", full.names = TRUE) %>% map(read_xml) %>% lapply(function(x){xml_children(x)[1] %>% xml_children()})
+
+alt_edges2 <- lapply(alt_svg_files2, function(x) {
+  attributes <- xml_attrs(x)
+  names <- x %>% xml_name()
+  return(attributes[names == "path"] %>% map_df(~as.list(.)))
+})
+
+
+all_edges_alt2 <- alt_edges2 %>% reduce(rbind)
+
+rep_filenames_alt2 <- rep(alt_filenames2, map(alt_edges2, nrow))
+
+all_edges_alt2$filename <- rep_filenames_alt2
+
+all_edges_alt2 <- all_edges_alt2 %>%
+  separate(d,c("M","x1","y1","L","x2","y2"),sep="[ ,]", remove=FALSE, convert=TRUE)
+
+all_edges_alt2 <- all_edges_alt2 %>% select(filename, x1, y1, x2, y2)
+
+all_edges_alt2 <- all_edges_alt2 %>% mutate(filename_copy = filename) %>% unite("source",c("filename_copy","x1","y1"))
+
+all_edges_alt2 <- all_edges_alt2 %>% mutate(filename_copy = filename) %>% unite("target",c("filename_copy","x2","y2"))
+
+```
+
+```{r}
+
+all_edges <- bind_rows(all_edges, all_edges_alt, all_edges_alt2)
 
 ```
 
@@ -251,18 +366,6 @@ join2$TargetXOriginal <- (join2$target_x - XMLMinX) / (XMLMaxX - XMLMinX) * (Ord
 
 join2$TargetYOriginal <- 350 - ((join2$target_y - XMLMinY) / (XMLMaxY - XMLMinY) * (Ord9MaxY-Ord9MinY) + Ord9MinY)
 
-
-
-#join2$SourceXAdjusted <- (join2$source_x * (Ord9MaxX-Ord9MinX)) + Ord9MinX
-
-#join2$SourceYAdjusted <- (join2$source_y * (Ord9MaxY-Ord9MinY)) + Ord9MinY
-
-#join2$TargetXAdjusted <- (join2$target_x * (Ord9MaxX-Ord9MinX)) + Ord9MinX
-
-#join2$TargetYAdjusted <- (join2$target_y * (Ord9MaxY-Ord9MinY)) + Ord9MinY
-
-
-
 join2$filename <- "Ord_9"
 
 join2$source <- paste(join2$filename, join2$SourceXOriginal, join2$SourceYOriginal, sep="_")
@@ -277,13 +380,15 @@ all_edges <- all_edges %>% filter(filename!="Ord_9") %>% bind_rows(Ord_9_edges)
 
 ```{r}
 
-Cir_9_edges <- processGEXF("Cir_9.gexf", directory=path_to_svg, 13.7, 336.4, 13.6, 336.4, 350)
+#Cir_9_edges <- processGEXF("Cir_9.gexf", directory=path_to_svg, 13.7, 336.4, 13.6, 336.4, 350)
 Ord_9_edges <- processGEXF("Ord_9.gexf", directory=path_to_svg, 14.5, 335.6, 13.6, 336.4, 336.404)
 
-all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(Cir_9_edges)
+#all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(Cir_9_edges)
 all_edges <- all_edges %>% filter(filename!="Ord_9") %>% bind_rows(Ord_9_edges)
 
 ```
+
+## Fix slight node position problems
 
 ```{r}
 
@@ -352,11 +457,310 @@ all_edges <- all_edges %>% filter(filename!="Fru_9") %>% bind_rows(Fru_9_real_ed
 
 ```{r}
 
+# Do something here to fix the Cir 6 nodes, which can't be read properly from the line elements in the svg because of arrowheads on the lines
+
+# will use "path" elements in the svg, which work well to locate the nodes but make it harder to match up the edges than using GEXF from Gephi
+
+# - create node position dictionary, using "path" element in svg
+
+Cir_6_xml <- read_xml(file.path(path_to_alt_svg2, "Cir_6.svg"))
+
+Cir_6_elements <- xml_children(Cir_6_xml)[3]
+
+Cir_6_attrs <- xml_children(Cir_6_elements) %>% xml_attrs() 
+
+Cir_6_names <- xml_children(Cir_6_elements) %>% xml_name()
+
+Cir_6_paths <- Cir_6_attrs[Cir_6_names == "circle"] %>% map_df(~as.list(.))
+
+Cir_6_paths <- Cir_6_paths %>% mutate(RealX=as.numeric(cx),RealY=as.numeric(cy)) %>% select(RealX,RealY)
+
+Cir_6_paths <- Cir_6_paths %>% mutate(RealID=paste("Cir_6", RealX, RealY, sep="_"), filename="Cir_6")
+#Cir_6_paths <- Cir_6_paths %>% mutate(RealX=RealX-1.9)
+
+
+
+# - join every edge endpoint with every possible node
+
+Cir_6_edges <- all_edges %>% filter(filename=="Cir_6")
+Cir_6_edges$EdgeID <- seq.int(nrow(Cir_6_edges))
+Cir_6_edges_wide <- Cir_6_edges %>% gather("end","FuzzyID",1:2)
+
+Cir_6_edges_wide <- Cir_6_edges_wide %>% separate(FuzzyID, c("Condition","Dataset","FuzzyX","FuzzyY"),sep="[_]",convert=TRUE,remove=FALSE) %>% select(-Condition, -Dataset)
+
+Cir_6_joined <- full_join(Cir_6_edges_wide,Cir_6_paths)
+
+
+# - calculate distance of each node (source and target) to the node position dictionary
+
+Cir_6_joined <- dplyr::mutate(Cir_6_joined, Distance = sqrt((RealX-FuzzyX)^2 + (RealY-FuzzyY)^2))
+
+# - find smallest distance for each node
+
+Cir_6_joined_top <- Cir_6_joined %>% group_by(EdgeID, FuzzyID) %>% top_n(-1, Distance)
+
+# - replace bad location with good location
+
+Cir_6_joined_tall <- Cir_6_joined_top %>% spread(end, RealID, convert=TRUE)
+
+Cir_6_real_edges <- full_join(Cir_6_joined_tall[!is.na(Cir_6_joined_tall$source),],Cir_6_joined_tall[!is.na(Cir_6_joined_tall$target),], by="EdgeID") %>% ungroup()
+
+Cir_6_real_edges <- Cir_6_real_edges %>% select(source.x, target.y, filename.x)
+
+names(Cir_6_real_edges) <- c("source","target","filename")
+
+# - reincorporate into all_edges
+
+all_edges <- all_edges %>% filter(filename!="Cir_6") %>% bind_rows(Cir_6_real_edges)
+
+```
+
+```{r}
+
+# Same for Cir_9
+
+Cir_9_xml <- read_xml(file.path(path_to_alt_svg, "Cir_9.svg"))
+
+Cir_9_elements <- xml_children(Cir_9_xml)[2]
+
+Cir_9_attrs <- xml_children(Cir_9_elements) %>% xml_attrs() 
+
+Cir_9_names <- xml_children(Cir_9_elements) %>% xml_name()
+
+Cir_9_paths <- Cir_9_attrs[Cir_9_names == "path"] %>% map_df(~as.list(.))
+#Cir_9_circs <- Cir_9_attrs[Cir_9_names == "circle"] %>% map_df(~as.list(.))
+#Cir_9_ells <- Cir_9_attrs[Cir_9_names == "ellipse"] %>% map_df(~as.list(.))
+
+Cir_9_paths$d <- sub("M","",Cir_9_paths$d)
+Cir_9_paths$d <- sub("c",",",Cir_9_paths$d)
+Cir_9_paths <- Cir_9_paths %>% separate(d,c("RealX","RealY"),sep="[,]",extra="drop", convert=TRUE)
+
+Cir_9_paths <- Cir_9_paths %>% mutate(RealID=paste("Cir_9", RealX, RealY, sep="_"))
+Cir_9_paths <- Cir_9_paths %>% mutate(RealY=RealY+1.9)
+Cir_9_paths$filename <- "Cir_9"
+
+#Cir_9_circs <- Cir_9_circs %>% mutate(RealX=as.numeric(cx),RealY=as.numeric(cy)) %>% select(RealX,RealY)
+#Cir_9_circs <- Cir_6_circs %>% mutate(RealID=paste("Cir_9", RealX, RealY, sep="_"), filename="Cir_9")
+
+#Cir_9_ells <- Cir_9_ells %>% mutate(RealX=as.numeric(cx),RealY=as.numeric(cy)) %>% select(RealX,RealY)
+#Cir_9_ells <- Cir_9_ells %>% mutate(RealID=paste("Cir_9", RealX, RealY, sep="_"), filename="Cir_9")
+
+# - join every edge endpoint with every possible node
+
+Cir_9_edges <- all_edges %>% filter(filename=="Cir_9")
+Cir_9_edges$EdgeID <- seq.int(nrow(Cir_9_edges))
+Cir_9_edges_wide <- Cir_9_edges %>% gather("end","FuzzyID",1:2)
+
+Cir_9_edges_wide <- Cir_9_edges_wide %>% separate(FuzzyID, c("Condition","Dataset","FuzzyX","FuzzyY"),sep="[_]",convert=TRUE,remove=FALSE) %>% select(-Condition, -Dataset)
+
+
+ggplot() +
+  geom_line(data=Cir_9_edges_wide, aes(FuzzyX, FuzzyY, group=EdgeID),color="grey80") +
+  geom_point(data=Cir_9_paths, aes(RealX,RealY),alpha=0.1) +
+  scale_y_reverse()
+
+
+
+
+Cir_9_joined <- full_join(Cir_9_edges_wide,Cir_9_paths)
+
+
+# - calculate distance of each node (source and target) to the node position dictionary
+
+Cir_9_joined <- dplyr::mutate(Cir_9_joined, Distance = sqrt((RealX-FuzzyX)^2 + (RealY-FuzzyY)^2))
+
+# - find smallest distance for each node
+
+Cir_9_joined_top <- Cir_9_joined %>% group_by(EdgeID, FuzzyID) %>% top_n(-1, Distance)
+
+# - replace bad location with good location
+
+Cir_9_joined_tall <- Cir_9_joined_top %>% spread(end, RealID, convert=TRUE)
+
+Cir_9_real_edges <- full_join(Cir_9_joined_tall[!is.na(Cir_9_joined_tall$source),],Cir_9_joined_tall[!is.na(Cir_9_joined_tall$target),], by="EdgeID") %>% ungroup()
+
+Cir_9_real_edges <- Cir_9_real_edges %>% select(source.x, target.y, filename.x)
+
+names(Cir_9_real_edges) <- c("source","target","filename")
+
+# - reincorporate into all_edges
+
+all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(Cir_9_real_edges)
+
+```
+
+```{r}
+
+# For some reason, positions of Cir_3 nodes don't quite match up
+
+#Cir_3_edges <- all_edges %>% filter(filename=="Cir_3") %>% rowid_to_column("EdgeID") %>% gather("end","FuzzyID",2:3) %>% separate(FuzzyID,c("Condition","Dataset","FuzzyX","FuzzyY"),sep="[_]",remove=FALSE,convert=TRUE) %>% select(-Condition, -Dataset)
+
+
+
+Cir_3_xml <- read_xml(file.path(path_to_alt_svg, "Cir_3.svg"))
+
+Cir_3_elements <- xml_children(Cir_3_xml)[2]
+
+Cir_3_attrs <- xml_children(Cir_3_elements) %>% xml_attrs() 
+
+Cir_3_names <- xml_children(Cir_3_elements) %>% xml_name()
+
+Cir_3_paths <- Cir_3_attrs[Cir_3_names == "path"] %>% map_df(~as.list(.))
+
+Cir_3_paths$d <- sub("M","",Cir_3_paths$d)
+Cir_3_paths$d <- sub("c",",",Cir_3_paths$d)
+Cir_3_paths <- Cir_3_paths %>% separate(d,c("RealX","RealY"),sep="[,]",extra="drop", convert=TRUE)
+
+# TO DO: should really check the subtraction of 1.9 from all the X values; can look at the extreme
+# left/right/top/bottom nodes in Illustrator, check against the value from the SVG, and figure
+# out how to adjust
+
+Cir_3_paths <- Cir_3_paths %>% mutate(RealID=paste("Cir_3", RealX, RealY, sep="_"))
+Cir_3_paths <- Cir_3_paths %>% mutate(RealX=RealX-1.9)
+Cir_3_paths$filename <- "Cir_3"
+
+
+# - join every edge endpoint with every possible node
+
+Cir_3_edges <- all_edges %>% filter(filename=="Cir_3")
+Cir_3_edges$EdgeID <- seq.int(nrow(Cir_3_edges))
+Cir_3_edges_wide <- Cir_3_edges %>% gather("end","FuzzyID",1:2)
+
+Cir_3_edges_wide <- Cir_3_edges_wide %>% separate(FuzzyID, c("Condition","Dataset","FuzzyX","FuzzyY"),sep="[_]",convert=TRUE,remove=FALSE) %>% select(-Condition, -Dataset)
+
+Cir_3_joined <- full_join(Cir_3_edges_wide,Cir_3_paths)
+
+
+# - calculate distance of each node (source and target) to the node position dictionary
+
+Cir_3_joined <- dplyr::mutate(Cir_3_joined, Distance = sqrt((RealX-FuzzyX)^2 + (RealY-FuzzyY)^2))
+
+# - find smallest distance for each node
+
+Cir_3_joined_top <- Cir_3_joined %>% group_by(EdgeID, FuzzyID) %>% top_n(-1, Distance)
+
+# - replace bad location with good location
+
+Cir_3_joined_tall <- Cir_3_joined_top %>% spread(end, RealID, convert=TRUE)
+
+Cir_3_real_edges <- full_join(Cir_3_joined_tall[!is.na(Cir_3_joined_tall$source),],Cir_3_joined_tall[!is.na(Cir_3_joined_tall$target),], by="EdgeID") %>% ungroup()
+
+Cir_3_real_edges <- Cir_3_real_edges %>% select(source.x, target.y, filename.x)
+
+names(Cir_3_real_edges) <- c("source","target","filename")
+
+# - reincorporate into all_edges
+
+all_edges <- all_edges %>% filter(filename!="Cir_3") %>% bind_rows(Cir_3_real_edges)
+
+```
+
+## Rescale nodes from certain graphs
+
+```{r}
+
+rescale_graph <- function(net_edges, finalMinX, finalMaxX, finalMinY, finalMaxY, transposeMax){
+  
+  # final X and Y values should be for the small visualizations, 350 x 350
+  
+  #test on Cir_5
+  
+  #net_edges <- all_edges %>% filter(filename=="Cir_5")
+  #finalMinX <- 15.529
+  #finalMaxX <- 335.559
+  #finalMinY <- 14.297
+  #finalMaxY <- 334.317
+  #transposeMax <- 350 # not sure why this isn't always 350...
+  
+  join2 <- net_edges %>% 
+    separate(source, c("Condition","Dataset","source_x","source_y"),
+             sep="[_]",
+             remove=FALSE,
+             convert=TRUE) %>%
+    select(-Condition,-Dataset) %>% rename(SourceID=source) %>%
+    separate(target, c("Condition","Dataset","target_x","target_y"),
+             sep="[_]",
+             remove=FALSE,
+             convert=TRUE) %>%
+    select(-Condition,-Dataset) %>% rename(TargetID=target)
+  
+  XMLMinY <- min(c(join2$target_y,join2$source_y))
+  
+  XMLMaxY <- max(c(join2$target_y,join2$source_y))
+  
+  XMLMinX <- min(c(join2$target_x,join2$source_x))
+  
+  XMLMaxX <- max(c(join2$target_x,join2$source_x))
+  
+  join2$SourceXOriginal <- rescale_point(join2$source_x, XMLMinX, XMLMaxX, finalMinX, finalMaxX)
+  
+  #join2$SourceYOriginal <- 350 - rescale_point(join2$source_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+
+  join2$TargetXOriginal <- rescale_point(join2$target_x, XMLMinX, XMLMaxX, finalMinX, finalMaxX)
+  
+  #join2$TargetYOriginal <- 350 - rescale_point(join2$target_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+
+  if(transposeMax > 0) {
+    join2$SourceYOriginal <- transposeMax - 
+      rescale_point(join2$source_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+    join2$TargetYOriginal <- transposeMax - 
+      rescale_point(join2$target_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  } else {
+    join2$SourceYOriginal <- rescale_point(join2$source_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+    join2$TargetYOriginal <- rescale_point(join2$target_y, XMLMinY, XMLMaxY, finalMinY, finalMaxY)
+  }
+  
+
+  #join2$filename <- "Cir_9"
+  
+  join2$source <- paste(join2$filename, join2$SourceXOriginal, join2$SourceYOriginal, sep="_")
+  join2$target <- paste(join2$filename, join2$TargetXOriginal, join2$TargetYOriginal, sep="_")
+  
+  final_edges <- join2 %>% select(source, target, filename)
+  
+  return(final_edges)
+}
+
+
+```
+
+```{r}
+
+# need to go into vector files for final visualizations and find the center points for the most extreme nodes in # X and Y directions; also need a transpose factor to flip the Y direction - should be 350?
+
+#new_edges_Cir_5 <- rescale_graph(all_edges %>% filter(filename=="Cir_5"), 15.529, 335.559, 14.297, 334.317, 350)
+new_edges_Cir_5 <- rescale_graph(all_edges %>% filter(filename=="Cir_5"), 15.529, 335.559, 14.297, 334.317, 0)
+all_edges <- all_edges %>% filter(filename!="Cir_5") %>% bind_rows(new_edges_Cir_5)
+
+#new_edges_Cir_6 <- rescale_graph(all_edges %>% filter(filename=="Cir_6"), 14.43, 335.529, 14.434, 335.524, 350)
+new_edges_Cir_6 <- rescale_graph(all_edges %>% filter(filename=="Cir_6"), 14.43, 335.529, 14.434, 335.524, 0)
+all_edges <- all_edges %>% filter(filename!="Cir_6") %>% bind_rows(new_edges_Cir_6)
+
+#new_edges_Cir_7 <- rescale_graph(all_edges %>% filter(filename=="Cir_7"), 14.061, 335.939, 14.072, 335.929, 350)
+new_edges_Cir_7 <- rescale_graph(all_edges %>% filter(filename=="Cir_7"), 14.061, 335.939, 14.072, 335.929, 0)
+all_edges <- all_edges %>% filter(filename!="Cir_7") %>% bind_rows(new_edges_Cir_7)
+
+#new_edges_Cir_8 <- rescale_graph(all_edges %>% filter(filename=="Cir_8"), 13.815, 336.185, 13.817, 336.183, 350)
+new_edges_Cir_8 <- rescale_graph(all_edges %>% filter(filename=="Cir_8"), 13.815, 336.185, 13.817, 336.183, 0)
+all_edges <- all_edges %>% filter(filename!="Cir_8") %>% bind_rows(new_edges_Cir_8)
+
+#new_edges_Cir_9 <- rescale_graph(all_edges %>% filter(filename=="Cir_9"), 13.615, 336.385, 13.616, 336.384, 350)
+new_edges_Cir_9 <- rescale_graph(all_edges %>% filter(filename=="Cir_9"), 13.615, 336.385, 13.616, 336.384, 0)
+all_edges <- all_edges %>% filter(filename!="Cir_9") %>% bind_rows(new_edges_Cir_9)
+
+
+```
+
+```{r}
+
 all_edges_wide <- all_edges %>% select(-filename) %>% gather("end","NodeID",1:2)
 
 all_nodes <- all_edges_wide %>% group_by(NodeID) %>% distinct(NodeID)
 
 all_nodes <- all_nodes %>% separate(NodeID, c("Condition","Dataset","NodeXOriginal","NodeYOriginal"),remove=FALSE,sep="[_]", convert = TRUE)
+
+# TO DO: put transform before generating the nodes table, so the edges are also in the correct coordinate space?
+# Or, if want to graph edges with nodes, can use NodeXOriginal/NodeYOriginal
 
 all_nodes <- all_nodes %>% mutate(NodeXAdjusted = NodeXOriginal * 150 / 72, 
                                   NodeYAdjusted = NodeYOriginal * 150 / 72)
@@ -364,6 +768,9 @@ all_nodes <- all_nodes %>% mutate(NodeXAdjusted = NodeXOriginal * 150 / 72,
 table(all_edges$filename)
 
 table(all_nodes$Condition, all_nodes$Dataset)
+
+# Unfortunately, the condition called "Cir_5" actually received the same dataset as Cir_6, just with
+# a slightly different layout. That's why nodes and edges are same in table.
 
 write_csv(all_edges, file.path(generatedDataDir,"all_edges.csv"))
 

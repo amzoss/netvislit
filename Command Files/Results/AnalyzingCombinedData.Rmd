@@ -53,6 +53,8 @@ figureDir <- "../../Documents/"
 
 #all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
 
+all_edges <- read_csv(file.path(generatedDataDir, "all_edges.csv"))
+
 node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
 
 graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
@@ -72,6 +74,10 @@ num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.
 exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
 
 all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
+
+graphics <- read_csv(file.path(analysisDataDir, "Graphics.csv"))
+
+layoutfac <- read_csv(file.path(analysisDataDir, "LayoutFac.csv"))
 
 ```
 
@@ -118,6 +124,13 @@ stats_demo$`Demo-expreadnetvis` <- factor(stats_demo$`Demo-expreadnetvis`,
 stats_demo$`Demo-expcreatenetvis` <- factor(stats_demo$`Demo-expcreatenetvis`, 
                                         levels = freq4, 
                                         ordered = TRUE)
+
+graphics$ClustConf <- factor(graphics$ClustConf,
+                             levels = c("Very confident (76-100%)", 
+                                        "Somewhat confident (51-75%)", 
+                                        "Somewhat doubtful (26-50%)", 
+                                        "Very doubtful (0-25%)"),
+                             ordered = TRUE)
 
 
 
@@ -581,6 +594,7 @@ ggplot(graded_num_ans %>% filter(Task=="LargeClust1",Dataset!=0,Response>0)) +
 
 ```
 
+
 ```{r}
 
 ggplot(graded_num_ans %>% filter(Task=="AvgDeg",Dataset!=0)) +
@@ -690,9 +704,306 @@ ggplot(graded_num_ans) +
 
 ```
 
+### dive in after JMP
+
+```{r}
+
+graphics %>% filter(Dataset %in% c(5,7), Task=="LargeClust1") %>% ggplot() + geom_boxplot(aes(x=factor(Dataset),y=LogError))
+
+graphics %>% filter(Dataset %in% c(5,7), Task=="LargeClust1") %>% ggplot() + geom_boxplot(aes(x=factor(Dataset),y=Response))
+
+median(graphics$Response[graphics$Dataset==7 & graphics$Task=="LargeClust1"])
+```
+
+```{r}
+
+#ggplot(graphics %>% filter(Response>0)) +
+ggplot(graphics) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(!(Dataset==6)), 
+             aes(y=CorrectAnswer,x=factor(Dataset)))+
+  #scale_y_continuous(limits=c(0,100)) +
+  #labs(title="% Nodes in Largest Cluster",x="Dataset") +
+  guides(fill="none") +
+  facet_grid(Task~., scales="free_y")
+
+ggplot(graphics) +
+  geom_density(aes(x=Response)) + 
+   #scale_y_continuous(limits=c(0,100)) +
+  #labs(title="% Nodes in Largest Cluster",x="Dataset") +
+  scale_x_log10() +
+  facet_wrap(~Task, scales="free_x")
+
+```
+
+```{r}
+
+# removing zeroes because of log transform on y-axis; better way? 
+
+ggplot(graphics %>% filter(Task=="AvgDeg",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  #geom_boxplot(aes(factor(Dataset),Response), width=.1, alpha=.3) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="AvgDeg",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Average Degree",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="BC",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=node_lookup %>% filter(Task=="BC",correct==TRUE,!(Dataset %in% c(0,6))),aes(y=NodeValue,x=factor(Dataset)))+
+#  scale_y_log10(limits=c(.1,10000)) +
+  scale_y_log10() +
+  labs(title="Node with Highest Betweenness Centrality",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="ClickHighDeg",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=node_lookup %>% filter(Task=="ClickHighDeg",correct==TRUE,!(Dataset %in% c(0,6))),aes(y=NodeValue,x=factor(Dataset)))+
+  geom_text(data=node_lookup %>% filter(Task=="ClickHighDeg",correct==TRUE,!(Dataset %in% c(0,6))),aes(y=NodeValue+5,x=factor(Dataset),label=NodeValue))+
+  #scale_y_log10(limits=c(.1,10000)) +
+  #scale_y_log10() +
+  labs(title="Node with Highest Degree",x="Dataset") +
+  guides(fill="none")
+
+high_deg_votes <- graded_nodes %>% filter(Task=="ClickHighDeg",Dataset!=0,NetVisExperience=="Low",Condition%in% c("Ctrl","Phr","Siz","Col")) %>% group_by(Dataset,NodeID) %>% summarise(votes=n(),distance=mean(Distance),rank=mean(NodeRank),NodeX=mean(NodeXAdjusted),NodeY=mean(NodeYAdjusted))
+
+ggplot(high_deg_votes) +
+  geom_col(aes(rank,votes)) +
+  #coord_flip() +
+  labs(title="Rank of Selected Node for Highest Degree Task by Dataset",
+       x="Rank of selected node", y="Number of times selected") +
+  facet_wrap(~Dataset, scales="free_x")
+
+
+high_bc_votes <- graded_nodes %>% filter(Task=="BC",Dataset!=0,NetVisExperience=="Low",Condition%in% c("Ctrl","Phr","Siz","Col")) %>% group_by(Dataset,NodeID) %>% summarise(votes=n(),distance=mean(Distance),rank=mean(NodeRank),NodeX=mean(NodeXAdjusted),NodeY=mean(NodeYAdjusted))
+
+ggplot(high_bc_votes) +
+  geom_col(aes(rank,votes)) +
+  #coord_flip() +
+  labs(title="Rank of Selected Node for Betweenness Centrality Task by Dataset",
+       x="Rank of selected node", y="Number of times selected") +
+  facet_wrap(~Dataset, scales="free_x")
+
+ggplot(graphics %>% filter(Task=="NumNodes",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumNodes",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Nodes",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="NumLinks",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumLinks",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Links",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="NumHighDegree",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumHighDegree",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  geom_text(data=num_ans_lookup %>% filter(Task=="NumHighDegree",!(Dataset %in% c(0,6))),aes(y=0.8*CorrectAnswer,x=factor(Dataset),label=CorrectAnswer))+
+#  scale_y_log10(limits=c(.1,10000)) +
+  scale_y_log10() +
+  labs(title="Degree of Highest Degree Node",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="NumClust",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="NumClust",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_log10(limits=c(.1,10000)) +
+  labs(title="Number of Clusters",x="Dataset") +
+  guides(fill="none")
+
+ggplot(graphics %>% filter(Task=="LargeClust1",Dataset!=0,Response>0)) +
+  geom_violin(aes(factor(Dataset),Response, fill=factor(Dataset))) + 
+  geom_point(data=num_ans_lookup %>% filter(Task=="LargeClust1",!(Dataset %in% c(0,6))),aes(y=CorrectAnswer,x=factor(Dataset)))+
+  scale_y_continuous(limits=c(0,100)) +
+  labs(title="% Nodes in Largest Cluster",x="Dataset") +
+  guides(fill="none")
+
+```
+
+```{r}
+
+ggplot() + 
+  geom_point(data = node_lookup %>% filter(Dataset==7,Task=="BC",Condition=="Ctrl"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = high_bc_votes %>% filter(Dataset==7,rank==33), 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  #facet_grid(Dataset~Condition) +
+  scale_y_reverse() +
+  theme_bw()
+
+ggplot() + 
+  geom_point(data = node_lookup %>% filter(Dataset==3,Task=="BC",Condition=="Ctrl"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = high_bc_votes %>% filter(Dataset==3,rank==14), 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  #facet_grid(Dataset~Condition) +
+  scale_y_reverse() +
+  theme_bw()
+
+```
+
+```{r}
+
+ggplot(graphics %>% filter(Task=="NumClust")) +
+  geom_density(aes(Response)) +
+  #coord_flip() +
+  labs(title="Number of Clusters") +
+  scale_x_log10() +
+  facet_wrap(~Dataset, scales="free_x")
+
+ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf))) +
+  geom_density(aes(Response,color=ClustConf)) +
+  #coord_flip() +
+  labs(title="Number of Clusters by Confidence") +
+  scale_x_log10() +
+  scale_color_grey(name="Cluster Confidence",start=0.2,end=0.7) +
+  #facet_wrap(~Dataset, scales="free_x") +
+  facet_wrap(~Dataset) +
+  theme_bw()
+
+ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf))) +
+  geom_boxplot(aes(x=ClustConf, y=Response, color=ClustConf)) +
+  #coord_flip() +
+  labs(title="Number of Clusters by Confidence") +
+  scale_y_log10() +
+  scale_x_discrete(limits = rev(levels(graphics$ClustConf))) +
+  scale_color_grey(name="Cluster Confidence",start=0.2,end=0.7) +
+  facet_wrap(~Dataset) +
+  coord_flip() +
+  theme_bw()
+
+ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf))) +
+  geom_boxplot(aes(x=ClustConf, y=Response, color=ClustConf)) +
+  #coord_flip() +
+  labs(title="Number of Clusters by Confidence") +
+  scale_y_log10() +
+  scale_x_discrete(limits = rev(levels(graphics$ClustConf))) +
+  scale_color_grey(name="Cluster Confidence",start=0.2,end=0.7) +
+  geom_hline(aes(yintercept=CorrectAnswer,group=Dataset),colour="red") +
+  facet_wrap(~Dataset) +
+  coord_flip() +
+  guides(color="none") +
+  theme_bw()
+
+ggplot(graphics %>% 
+         filter(Task=="NumClust", !is.na(ClustConf)) %>% 
+         group_by(Dataset,ClustConf) %>% 
+         summarise(var=var(Response), sd=sd(Response), avgLogError=mean(LogError))) +
+  geom_col(aes(ClustConf,sd)) +
+  scale_x_discrete(limits = rev(levels(graphics$ClustConf))) +
+  coord_flip() +
+  facet_wrap(~Dataset) +
+  labs(title="Standard Deviation of the Response by Cluster Confidence",y="Standard deviation of the response",x="Cluster Confidence")
+
+ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf)) %>% left_join(num_ans_lookup %>% filter(Task=="NumNodes") %>% rename(NumNodes=CorrectAnswer) %>% select(Dataset,NumNodes))) +
+  geom_point(aes(x=Response, y=NumNodes)) +
+  #coord_flip() +
+  labs(title="Estimated Number of Clusters by Number of Nodes in Network") +
+  facet_grid(.~ClustConf, scales="free")
+
+ggplot(graphics %>% 
+         filter(Task=="NumClust", !is.na(ClustConf)) %>% 
+         group_by(Dataset,ClustConf) %>% 
+         summarise(var=var(Response), sd=sd(Response), avgLogError=mean(LogError))) +
+  geom_point(aes(sd, avgLogError, color=ClustConf)) +
+  facet_wrap(~Dataset)
+
+```
+
+```{r}
+
+ggplot(graphics %>% filter(Dataset!=0)) +
+  geom_boxplot(aes(factor(Dataset), LogError, fill=factor(Dataset))) + 
+  labs(title="Tasks by Dataset Condition",x="Dataset") +
+  guides(fill="none") +
+  facet_wrap(~Task)
+
+ggplot(graphics %>% filter(Dataset!=0)) +
+  geom_boxplot(aes(factor(Dataset), Response, fill=factor(Dataset))) + 
+  labs(title="Tasks by Dataset Condition",x="Dataset") +
+  guides(fill="none") +
+  scale_y_log10() +
+  facet_wrap(~Task, scales="free")
+
+
+```
+
+```{r}
+
+#over- or underestimating?
+
+ggplot(graphics) +
+  geom_histogram(aes(RawDifference,fill=RawDifference>0))+
+  scale_y_continuous(limits=c(0,1))+
+  facet_wrap(~Task, scales="free")
+
+```
+
+```{r}
+
+layoutfac %>% filter(Dataset %in% c(1,7), Task=="LargeClust1") %>% ggplot() + geom_boxplot(aes(x=factor(Dataset),y=LogError))
+
+layoutfac %>% filter(Dataset %in% c(1,7), Task=="LargeClust1") %>% ggplot() + geom_boxplot(aes(x=factor(Dataset),y=Response))
+
+median(layoutfac$Response[layoutfac$Dataset==7 & layoutfac$Task=="LargeClust1"])
+median(layoutfac$Response[layoutfac$Dataset==1 & layoutfac$Task=="LargeClust1"])
+sd(layoutfac$Response[layoutfac$Dataset==7 & layoutfac$Task=="LargeClust1"])
+sd(layoutfac$Response[layoutfac$Dataset==1 & layoutfac$Task=="LargeClust1"])
+median(layoutfac$LogError[layoutfac$Dataset==7 & layoutfac$Task=="LargeClust1"])
+median(layoutfac$LogError[layoutfac$Dataset==1 & layoutfac$Task=="LargeClust1"])
+
+```
+
+```{r}
+
+ggplot(node_lookup %>% filter(Dataset %in% c(1,7,9), Task=="ClickHighDeg", Condition=="Ctrl")) +
+  geom_histogram(aes(NodeValue)) +
+  facet_grid(.~Dataset, scales="free")
+
+high_deg_votes_lay <- graded_nodes %>% filter(Task=="ClickHighDeg",Dataset %in% c(1,7,9),Condition %in% c("Cir","Ctrl","Fru","Ord")) %>% group_by(Dataset,Condition,NodeID) %>% summarise(votes=n(),distance=mean(Distance),rank=mean(NodeRank),NodeX=mean(NodeXAdjusted),NodeY=mean(NodeYAdjusted),NodeValue=mean(NodeValue))
+
+ggplot() + 
+  geom_point(data = node_lookup %>% filter(Condition %in% c("Cir","Ctrl","Fru","Ord"), Dataset %in% c(1,7,9),Task=="ClickHighDeg"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted,size=NodeValue),colour="gray50") +
+  geom_point(data = high_deg_votes_lay, 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  facet_grid(Dataset~Condition) +
+  scale_y_reverse() +
+  theme_bw()
+
+ggplot() + 
+  geom_point(data = high_deg_votes_lay, 
+             aes(x=NodeValue,y=votes)) + 
+  facet_grid(Dataset~Condition) +
+  theme_bw()
+
+edges_vis <- all_edges %>% 
+  rowid_to_column("EdgeID") %>% 
+  gather("end","NodeID",2:3) %>%
+  separate(NodeID,c("Condition","Dataset","NodeXOriginal","NodeYOriginal"), 
+           sep="[_]", remove=FALSE, convert=TRUE) %>%
+  mutate(NodeXAdjusted = NodeXOriginal * 150 / 72, NodeYAdjusted = NodeYOriginal * 150 / 72)
+  
+ggplot() + 
+  geom_line(data=edges_vis %>% filter(Condition %in% c("Cir","Ctrl","Fru","Ord"), Dataset %in% c(1,7,9)), 
+            aes(x=NodeXAdjusted,y=NodeYAdjusted,group=EdgeID)) +
+  geom_point(data = node_lookup %>% filter(Condition %in% c("Cir","Ctrl","Fru","Ord"), Dataset %in% c(1,7,9),Task=="ClickHighDeg"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted,size=NodeValue),colour="gray50") +
+  geom_point(data = high_deg_votes_lay, 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  facet_grid(Dataset~Condition) +
+  scale_y_reverse() +
+  theme_bw()
+
+```
+
+
 ### Does dataset influence accuracy?
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # https://stats.idre.ucla.edu/other/mult-pkg/whatstat/
 
@@ -741,7 +1052,7 @@ print(analysis)
 
 ### Does graphic design/phrasing influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -764,7 +1075,7 @@ kruskal.test(LogError ~ factor(Condition), data=graphic.design)
 
 ### Does layout algorithm influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -787,7 +1098,7 @@ kruskal.test(LogError ~ factor(Condition), data=layout.alg)
 
 ### Does expertise influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # NetVisExperience (IV) is ordinal, 2 groups, and levels are independent (individuals have one level of experience)
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -811,7 +1122,7 @@ wilcox.test(LogError ~ factor(NetVisExperience), data=graded_num_ans)
 
 ### Does gender influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # Demo-gender (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -832,7 +1143,7 @@ kruskal.test(LogError ~ factor(`Demo-gender`), data=graded_num_ans)
 
 ### Does self-report previous experience with network visualization influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # Demo-expreadnetvis (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -853,7 +1164,7 @@ kruskal.test(LogError ~ factor(`Demo-expcreatenetvis`), data=graded_num_ans) # s
 
 ### Does dataset duration influence accuracy?
 
-```{r}
+```{r, eval=FALSE}
 
 # DatasetDuration (IV) is interval
 # LogError (DV) is interval, can be made normal with another log transformation???
@@ -880,7 +1191,7 @@ cor.test(~DatasetDuration+LogError,data=graded_num_ans, method="spearman")  #sig
 
 ### Do task and layout algorithm interact to influence accuracy?
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Task (IV1) is nominal, categories are dependent (individuals complete multiple tasks)
 # Condition (IV2) is nominal, categories are independent (individuals complete a single condition)
@@ -905,9 +1216,7 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 
 ### Mixed Models
 
-
-
-```{r}
+```{r, eval=FALSE}
 
 # https://iucat.iu.edu/catalog/14518998, chapter 5
 
@@ -962,7 +1271,7 @@ anova(model.lme)
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
 
 model.fit.lmer <- lmer(LogError ~ Task*Dataset + (1|DemoResponseID), data = exp_only, REML = T)
@@ -981,7 +1290,7 @@ ranef(model.fit.lmer)
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 model.fit.lmer.2 <- lmer(LogError ~ Task*Dataset + (Task|DemoResponseID), data = exp_only, REML = T)
 
 summary(model.fit.lmer.2)
@@ -989,7 +1298,7 @@ summary(model.fit.lmer.2)
 
 ```
 
-```{r eval=FALSE}
+```{r, eval=FALSE}
 
 # Clustered Longitudinal Data (Chapter 7)
 

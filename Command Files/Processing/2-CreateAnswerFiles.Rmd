@@ -143,8 +143,12 @@ numerical_answer_lookup <- node_degree_lookup %>% group_by(Dataset) %>% summaris
 ```{r}
 
 # graph level attributes: number of nodes, number of links
+#Circular layout throws an error, so using Ctrl
+# Error in FUN(X[[i]], ...) : 
+#  At fast_community.c:639 : fast-greedy community finding works only on graphs without multiple edges, Invalid value
 
-graphs_one_layout <- graphs[c(1:8)]
+#graphs_one_layout <- graphs[c(1:8)]
+graphs_one_layout <- graphs[c(9:16)]
 
 num_nodes <- lapply(graphs_one_layout, vcount) %>% unlist()
 
