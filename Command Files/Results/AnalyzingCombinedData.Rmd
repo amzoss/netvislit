@@ -31,6 +31,7 @@ library(devEMF)
 library(nlme)
 library(lme4)
 library(car)
+library(lmerTest)
 
 ```
 
@@ -1000,227 +1001,76 @@ ggplot() +
 
 ```
 
+```{r}
 
-### Does dataset influence accuracy?
+ggplot() + 
+  geom_line(data=edges_vis %>% filter(Condition=="Fru", Dataset==9), 
+            aes(x=NodeXAdjusted,y=NodeYAdjusted,group=EdgeID),color="gray80") +
+  geom_point(data = node_lookup %>% filter(Dataset==9,Task=="ClickHighDeg",Condition=="Fru"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = high_deg_votes_lay %>% filter(Dataset==9,Condition=="Fru"), 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  #facet_grid(Dataset~Condition) +
+  scale_y_reverse() +
+  theme_classic()
 
-```{r, cache=TRUE, eval=FALSE}
-
-# https://stats.idre.ucla.edu/other/mult-pkg/whatstat/
-
-# Dataset (IV) is ordinal, and categories are *not* independent (individuals do complete multiple datasets)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do one-way repeated measures ANOVA?
-
-require(car)
-require(foreign)
-
-#kirk <- within(read.dta("~/Desktop/rb4.dta"), 
-#    {
-#        s <- as.factor(s)
-#        a <- as.factor(a)
-#    })
-
-#model <- lm(y ~ a + s, data = kirk)
-#analysis <- Anova(model, idata = kirk, idesign = ~s)
-#print(analysis)
-
-# Okay, here I'm assuming the syntax is lm(DV ~ IV + ParticipantIdentifier)
-
-# LogError is not normally, so taking another log(??), 
-# but there are 0 values in LogError so need to add a scalar; not sure what scalar to add, picked .1
-# TO DO: adjust LogError so there are no 0s???
-
-model <- lm(log(LogError+.1) ~ factor(Dataset) + factor(`Demo-ResponseID`), data=graded_num_ans)
-
-# Wow!  Model is 138.3Mb
-
-analysis <- Anova(model, idata = graded_num_ans, idesign = ~factor(`Demo-ResponseID`))
-
-print(analysis)
-
-# looks like Dataset is significant at p < .001???
-
-# If LogError is ordinal or interval, can do Friedman test?
-
-#friedman.test(formula, data, subset, na.action, ...)
-#friedman.test(LogError ~ Dataset | `Demo-ResponseID`, data=graded_num_ans)
-
-# doesn't work; error is "not an unreplicated complete block design"
-
-```
-
-### Does graphic design/phrasing influence accuracy?
-
-```{r, eval=FALSE}
-
-# Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do one-way ANOVA?
-
-# not sure if the command below is right; if so, not significant
-
-graphic.design <- filter(graded_num_ans, Condition %in% c("Ctrl","Phr","Col","Siz"))
-
-summary(aov(log(LogError+.1) ~ factor(Condition),data=graphic.design))
-
-# If LogError is ordinal or interval, can do Kruskal Wallis?
-
-kruskal.test(LogError ~ factor(Condition), data=graphic.design)
-
-# not significant
-
-```
-
-### Does layout algorithm influence accuracy?
-
-```{r, eval=FALSE}
-
-# Condition (IV) is nominal, and categories are independent (individuals do not complete multiple conditions)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do one-way ANOVA?
-
-# not sure if the command below is right; if so, not significant
-
-layout.alg <- filter(graded_num_ans, Condition %in% c("Ctrl","Cir","Fru","Ord"))
-
-summary(aov(log(LogError+.1) ~ factor(Condition),data=layout.alg))
-
-# If LogError is ordinal or interval, can do Kruskal Wallis?
-
-kruskal.test(LogError ~ factor(Condition), data=layout.alg)
-
-# p-value lower but still not significant
-
-```
-
-### Does expertise influence accuracy?
-
-```{r, eval=FALSE}
-
-# NetVisExperience (IV) is ordinal, 2 groups, and levels are independent (individuals have one level of experience)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do 2 independent sample t-test?
-
-t.test(log(LogError+.1) ~ factor(NetVisExperience), data=graded_num_ans)
-
-# looks significant
-
-# If LogError is ordinal or interval, can do Wilcoxon-Mann Whitney test?
-
-wilcox.test(LogError ~ factor(NetVisExperience), data=graded_num_ans)
-
-# looks significant
-
-# p-value lower but still not significant
+ggplot() + 
+  geom_line(data=edges_vis %>% filter(Condition=="Fru", Dataset %in% c(7,9)), 
+            aes(x=NodeXAdjusted,y=NodeYAdjusted,group=EdgeID),color="gray80") +
+  geom_point(data = node_lookup %>% filter(Dataset %in% c(7,9),Task=="ClickHighDeg",Condition=="Fru"),
+             aes(x=NodeXAdjusted,y=NodeYAdjusted),colour="gray50") +
+  geom_point(data = high_deg_votes_lay %>% filter(Dataset %in% c(7,9),Condition=="Fru"), 
+             aes(x=NodeX,y=NodeY,size=votes), colour="red", alpha=.5) + 
+  facet_grid(.~Dataset) +
+  scale_y_reverse() +
+  theme_classic()
 
 ```
 
 
-### Does gender influence accuracy?
+## Mixed Models
 
-```{r, eval=FALSE}
+TO DO: try all covariates again, and add continuous network properties
 
-# Demo-gender (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
-# LogError (DV) is interval, can be made normal with another log transformation???
+### Graphics subset, linear mixed model (nlme)
 
-# If LogError is interval and normal, can do one-way ANOVA?
+```{r}
 
-# not sure if the command below is right; if so, not significant
+graphics_lme <- graphics
 
-summary(aov(log(LogError+.1) ~ factor(`Demo-gender`),data=graded_num_ans))
+graphics_lme$Dataset <- factor(graphics_lme$Dataset, ordered = TRUE)
 
-# If LogError is ordinal or interval, can do Kruskal Wallis?
+graphics_lme <- rename(graphics_lme, DemoResponseID = `Demo-ResponseID`)
 
-kruskal.test(LogError ~ factor(`Demo-gender`), data=graded_num_ans)
+#Make control the reference group
+#TO DO: decide on reference group for task??
 
-# not significant
+graphics_lme <- graphics_lme %>% mutate(Condition1 = factor(
+  case_when(
+  Condition == "Ctrl" ~ 0,
+  Condition == "Phr" ~ 1,
+  Condition == "Col" ~ 2,
+  Condition == "Siz" ~ 3)
+  )
+)
 
-```
+graphics_lme$Condition <- factor(graphics_lme$Condition)
 
-### Does self-report previous experience with network visualization influence accuracy?
-
-```{r, eval=FALSE}
-
-# Demo-expreadnetvis (IV) is nominal, more than 2 groups, and levels are independent (individuals have one gender)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do one-way ANOVA?
-
-summary(aov(log(LogError+.1) ~ factor(`Demo-expreadnetvis`),data=graded_num_ans)) # not significant
-summary(aov(log(LogError+.1) ~ factor(`Demo-expcreatenetvis`),data=graded_num_ans)) # not significant
-
-# If LogError is ordinal or interval, can do Kruskal Wallis?
-
-kruskal.test(LogError ~ factor(`Demo-expreadnetvis`), data=graded_num_ans) # not significant
-kruskal.test(LogError ~ factor(`Demo-expcreatenetvis`), data=graded_num_ans) # significant? p < .01
-
+graphics_lme$Condition <- relevel(graphics_lme$Condition, ref = "Ctrl")
 
 
 ```
 
-### Does dataset duration influence accuracy?
+```{r, cache=TRUE}
 
-```{r, eval=FALSE}
+# https://iucat.iu.edu/catalog/14518998, chapters 3 and 5
+# data at http://www-personal.umich.edu/~bwest/almmussp.html
 
-# DatasetDuration (IV) is interval
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do correlation?  (Q: do both need to be normal?)
-
-cor.test(~DatasetDuration+LogError,data=graded_num_ans) # barely significant (p ~ .01)
-
-cor.test(~DatasetDuration+log(LogError+.1),data=graded_num_ans) # significant
-
-cor.test(~log(DatasetDuration)+log(LogError+.1),data=graded_num_ans) # significant
-
-# If LogError is interval and normal, can do simple linear regression?
-
-lm(log(LogError+.1)~log(DatasetDuration),data=graded_num_ans) 
-# don't know how well the model fits...
-
-# If LogError is ordinal or interval, can do non-parametric correlation
-
-cor.test(~DatasetDuration+LogError,data=graded_num_ans, method="spearman")  #significant?
-
-
-```
-
-### Do task and layout algorithm interact to influence accuracy?
-
-```{r, cache=TRUE, eval=FALSE}
-
-# Task (IV1) is nominal, categories are dependent (individuals complete multiple tasks)
-# Condition (IV2) is nominal, categories are independent (individuals complete a single condition)
-# LogError (DV) is interval, can be made normal with another log transformation???
-
-# If LogError is interval and normal, can do mixed ANOVA?
-
-# http://www.cookbook-r.com/Statistical_analysis/ANOVA/#mixed-design-anova
-
-layout.alg <- filter(graded_num_ans, Condition %in% c("Ctrl","Cir","Fru","Ord")) %>% mutate(LogLog = log(LogError+.1), Condition = factor(Condition, levels=c("Ctrl","Cir","Fru","Ord")), Task = factor(Task), `Demo-ResponseID` = factor(`Demo-ResponseID`))
-
-
-aov_task_condition <- aov(LogLog ~ Condition*Task + Error(`Demo-ResponseID`/Task), data=layout.alg)
-
-# Model is quite large, 300Mb
-
-summary(aov_task_condition) # Task is significant?  Not sure how to interpret
-
-
-
-```
-
-### Mixed Models
-
-```{r, eval=FALSE}
-
-# https://iucat.iu.edu/catalog/14518998, chapter 5
+# testing models, no nesting/grouping
 
 # Repeated measures, tasks and datasets (crossed)
+
+# starting with older package (nlme), with function lme()
 
 # R by default treats the lowest category (alphabetically or numerically) of a
 # categorical fixed factor as the reference category in a model
@@ -1228,73 +1078,259 @@ summary(aov_task_condition) # Task is significant?  Not sure how to interpret
 # We don't really have reference categories for the repeated measures factors, 
 # though, so I guess it doesn't matter?  Maybe want to exclude training dataset
 
-exp_only$Dataset <- factor(exp_only$Dataset)
+# Note about syntax; can use either ":" or "*" for interaction, but using "*" automatically adds
+# the main effects of each factor into the model, too, instead of just the interaction
 
-exp_only <- rename(exp_only, DemoResponseID = `Demo-ResponseID`)
-
-model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
+model.lme <- lme(LogError ~ Task + Dataset + Task:Dataset, random = ~ 1 | DemoResponseID, method="REML", data=graphics_lme)
 
 summary(model.lme)
 
 anova(model.lme)
 
+random.effects(model.lme)
 
-# can't get this to finish (see p. 220)
-#model.lme.2 <- update(model.lme, random = ~ Task | DemoResponseID)
+# do we really need random effects?  test model without random effects using gls
 
-#summary(model.lme.2)
+#model.gls <- gls(LogError ~ Task + Dataset + Task:Dataset, data = graphics_lme)
 
-#anova(model.lme.2)
+#anova(model.lme, model.gls)
 
-# p. 220
+# result of anova is significant, indicating that there is a significant difference when
+# you remove random effects, so should leave them in
 
-# We test Hypothesis 5.1 to decide if we need the random treatment effects, using a likelihood
-# ratio test. This would typically not be done with such a small sample of animals
-# (given the asymptotic nature of likelihood ratio tests), but we perform this test for illustrative
-# purposes. The test statistic is calculated by subtracting the –2 REML log-likelihood
-# value for Model 5.2 (the reference model) from that for Model 5.1 (the value of the test
-# statistic is 275.3−249.2 = 26.1). The –2 REML log-likelihood values can be obtained from
-# the output provided by the summary() function for each model. The test statistic has a null
-# distribution that is a mixture of χ21 and χ22 distributions with equal weights of 0.5, so the
-# anova() function cannot be used for the p-value. Instead, we calculate a p-value for the test
-# statistic as follows:
+```
 
-# 0.5*(1 - pchisq(26.1,1)) + 0.5*(1 - pchisq(26.1,2))
+```{r, cache=TRUE}
+
+# model with nesting; takes *forever* but does finish
+# can nest when I recode Condition as 0, 1, 2, 3 (Condition1), 
+# but if I just list Ctrl as the ref (Condition), won't converge
+
+model.lme.update.nest <- update(model.lme, random = ~ Condition1 | DemoResponseID)
+
+summary(model.lme.update.nest)
+
+anova(model.lme.update.nest)
+
+# might want to check whether nesting makes a difference, but can't run anova because 
+# "the test statistic has a null distribution that is a mixture of X12 and X22 distributions
+# with equal weights of 0.5, so the anova() function cannot be used for the p-value." (p.220)
+
+# Check summary of each model for -2 REML log-likelihood values 
+
+# "logLik" value for unnested: -14415.3
+# "logLik" value for nested: -14441
+# -2 REML logLik is just -2 * the logLik value
+
+# test statistics = unnested - nested
+test.stat <- abs((-2*-14415.3) - (-2*-14441)) # ~51.4
+
+# note: when test.stat was negative, p-value was not significant, but highly significant when
+# positive
+p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
+
+# p-value is < 0.001, so nesting is significantly different
 
 
-# throws an error: "nlminb problem, convergence error code = 1 message = iteration limit reached without convergence"
+```
 
-#model.lme.3 <- lme(LogError ~ Task*Dataset, 
-#                 random = ~ Task | DemoResponseID, 
-#                 weights = varIdent(form = ~ 1 | Task),
-#                 data=exp_only)
+```{r, cache=TRUE}
+
+# adding weights to have a separate residual variance for each treatment group
+# TO DO: are these the only weights I need to consider???
+
+model.lme.nest.weight <- lme(LogError ~ Task + Dataset + Task:Dataset, 
+                 random = ~ Condition1 | DemoResponseID, 
+                 method="REML", 
+                 data=graphics_lme,
+                 weights = varIdent(form = ~1 | Condition1))
+
+summary(model.lme.nest.weight)
+
+# Parameter estimates are:
+#         0         3         1         2 
+# 1.0000000 1.0062359 1.1006189 0.9861303 
+
+anova(model.lme.update.nest, model.lme.nest.weight)
+
+# result is significant, which suggests that we should retain the second model with the weights,
+# otherwise known as the "heterogeneous variances model" (p. 94)
+
+
+```
+
+```{r}
+
+graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
+graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
+
+model.lme.weight.pooled <- lme(LogError ~ Task + Dataset + Task:Dataset, 
+                 random = ~ Condition1 | DemoResponseID, 
+                 method="REML", 
+                 data=graphics_lme,
+                 weights = varIdent(form = ~1 | Ctrl_dummy))
+
+#anova(model.lme, model.lme.weight.pooled)
+anova(model.lme.nest.weight, model.lme.weight.pooled)
+
+# test is significant, so should keep the weights pooled? or not? p. 95 not clear, since in example difference is not significant but pooled model is retained anyway
+
+anova(model.lme.update.nest, model.lme.weight.pooled)
+
+# wow, okay. so, model with no weights not significantly different from model with pooled weights??
+
+summary(model.lme.weight.pooled)
+anova(model.lme.weight.pooled)
+
+```
+
+```{r}
+
+# TO DO: need to conduct Type I F-test (section 5.7)? to try to remove nonsignficant fixed effects?
+# note p. 223 explains that large F-statistics can indicate significance, even when you don't compute
+# p-values
+
+# another way to test if each additional item is significant:
+# create two models, one with and one without the fixed effect
+# use ML estimation (REML = F for lmer()) for each
+# use anova() to compare the models (see 4.4.3.2)
+
+# On p. 238, talks about needing to be careful about interpretation because an interaction is
+# also significant; can investigate "estimated marginal means" of the combinations of levels in the
+# interaction (needs to be pairwise for the interaction?)
+
+# On p. 133, "Post-hoc comparisons can also be computed in R with 
+# some additional programming (Faraway, 2005)"
+
+# From Faraway, 2015, p. 20:
+# https://search.library.duke.edu/search?id=DUKE008022150
+
+# "We can extract the regression quantities we need from the model object. Commonly used are residuals(),
+# fitted(), df.residual() which gives the degrees of freedon, deviance() which gives the RSS and
+# coef() which gives the ^Beta."
+
+modsum <- summary(model.lme.weight.pooled)
+names(modsum)
+modsum$logLik * -2
+
+lmsum$sigma # 0.711... what is sigma, exactly?
+
+```
+
+```{r}
+
+
+
+```
+
+TO DO: try to reproduce the output from JMP; least squares mean plots and student's t tables
+
+```{r}
+
+# Residuals plot
+plot(model.lme.weight.pooled)
+
+# Residuals vs. Task, boxplot
+plot(model.lme.weight.pooled, Task ~ resid(.))
+
+# Predicted vs. Task
+plot(model.lme.weight.pooled, Task ~ fitted(.))
+
+
+# Predicted vs. Actual LogError
+plot(model.lme.weight.pooled, LogError ~ fitted(.), abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Task, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Dataset, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ranef(.))
+
+
+```
+
+### Graphics subset, linear mixed model (lme4)
+
+```{r, cache=TRUE}
+
+model.fit.lmer <- lmer(LogError ~ Dataset + Task + Task:Dataset + (1|DemoResponseID), data = graphics_lme, REML = T)
+
+lmsum <- summary(model.fit.lmer)
+lmsum
+#names(lmsum)
 
 ```
 
 ```{r, eval=FALSE}
-#model.lme <- lme(LogError ~ Task*Dataset, random = ~1 | DemoResponseID, method="REML", data=exp_only)
 
-model.fit.lmer <- lmer(LogError ~ Task*Dataset + (1|DemoResponseID), data = exp_only, REML = T)
+# Try adding condition as a nesting variable for random participant effects; ultimately not necessary
 
-summary(model.fit.lmer)
+#model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition1|DemoResponseID), data = graphics_lme, REML = T)
+
+# error: 
+# unable to evaluate scaled gradientModel failed to converge: degenerate  Hessian with 1 negative eigenvalues 
+
+model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition|DemoResponseID), data = graphics_lme, REML = T)
+
+# warning 
+# Model is nearly unidentifiable: large eigenvalue ratio - Rescale variables?
+
+nestsum <- summary(model.fit.lmer.nest)
+nestsum
+
+# want to compare unnested and nested; not supposed to do anova, so should
+# create test statistic by subtracting -2 REML log-likelihood values from
+# each model
+
+# "logLik" value for unnested: -14441.77
+# "logLik" value for nested: -14440.5
+# -2 REML logLik is just -2 * the logLik value
+
+# test statistics = unnested - nested
+test.stat <- (-2*as.numeric(lmsum$logLik)) - (-2*as.numeric(nestsum$logLik)) # ~2.53
+
+
+p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
+
+# p-value ~ 0.1969, so nesting is not significantly different
+
+```
+
+
+
+```{r}
+
+rand(model.fit.lmer)
+
+# result shows that random effects of participant are *not* significant (p=0.1)
 
 anova(model.fit.lmer)
 
-# In general, we recommend use of the lmerTest package in R
-# for users interested in testing hypotheses about parameters estimated using the lmer()
-# function. In this chapter, we illustrate likelihood ratio tests using selected functions
-# available in the lme4 package. See Chapter 3 for an example of using the lmerTest
-# package, in the case of a random intercept model.
+# Task, Dataset, and Task:Dataset significant, < 0.001
 
-ranef(model.fit.lmer)
+#ranef(model.fit.lmer)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
 
 ```
 
-```{r, eval=FALSE}
-model.fit.lmer.2 <- lmer(LogError ~ Task*Dataset + (Task|DemoResponseID), data = exp_only, REML = T)
+```{r}
 
-summary(model.fit.lmer.2)
+# From Faraway (2015), p. 156 - use step() to start with a complex model and 
+# systematically remove each effects
 
+full.lmer.model <- lmer(LogError ~ Dataset + Task + Task:Dataset + Condition1 + 
+                           QuestionOrder + filename + (1|DemoResponseID), 
+                         data = graphics_lme, REML = T)
+
+step(full.lmer.model)
+
+# not sure this is useful
 
 ```
 
@@ -1315,7 +1351,7 @@ clust.model.fit <- lme(LogError ~ Task + TaskOrder +
                          Dataset + DatasetOrder +
                          Task:TaskOrder + 
                          Task:Dataset + Task:DatasetOrder,
-                       random = list(Condition = ~Task, `DemoResponseID` = ~1),
+                       random = list(`DemoResponseID` = ~Condition),
                        data = exp_only,
                        method = "REML")
 
@@ -1327,6 +1363,137 @@ random.effects(clust.model.fit)
 
 ```
 
+
+
+```{r}
+
+plot(model.fit.lmer)
+
+plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(model.fit.lmer, resid(.) ~ fitted(.) | Task, abline = 0)
+
+plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.) | Task, abline = 0)
+
+plot(model.fit.lmer, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+model.fit.lmer.f <- fortify(model.fit.lmer)
+
+ggplot(model.fit.lmer.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(model.fit.lmer.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+
+```
+
+```{r, eval=FALSE}
+
+# profile not working yet - takes too long?
+
+library(lattice)
+
+#prof <-  profile(model.fit.lmer, optimizer="Nelder_Mead", which="beta_")
+
+#prof.CI <- confint(prof)
+
+CI2 <- confint(model.fit.lmer, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+```{r}
+
+lsm.task <- lsmeansLT(model.fit.lmer, test.effs = "Task")
+
+plot(lsm.task)
+
+lsm.task.df <- as_data_frame(lsm.task$lsmeans.table)
+
+lsm.task.df
+
+lsm.task.df$Task <- factor(lsm.task.df$Task, levels=lsm.task.df %>% arrange(desc(Estimate)) %>% select(Task) %>% unlist())
+
+lsm.task.df %>% arrange(desc(Estimate))
+
+
+ggplot(lsm.task.df) +
+  geom_point(aes(x=Task,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Task,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
+  coord_flip()
+
+# TO DO: add a color scale so TRUE/FALSE values are always same color across all plots
+
+
+```
+
+
+
+```{r}
+
+difflsm.task <- difflsmeans(model.fit.lmer, test.effs = "Task")
+
+plot(difflsm.task)
+
+difflsm.task.df <- as_data_frame(difflsm.task$diffs.lsmeans.table)
+
+difflsm.task.df
+
+difflsm.task.df <- difflsm.task.df %>% mutate(Pair=rownames(.)) %>% separate(Pair, c("del","Pair"), sep=5) %>% select(-del) %>% separate(Pair, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% select(-del)
+
+difflsm.task.df$Pair <- factor(difflsm.task.df$Pair, levels=difflsm.task.df %>% arrange(desc(Estimate)) %>% select(Pair) %>% unlist())
+
+difflsm.task.df %>% arrange(desc(Estimate))
+
+ggplot(difflsm.task.df) +
+  geom_point(aes(x=Pair,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_hline(aes(yintercept=0)) +
+  coord_flip()
+
+ggplot(difflsm.task.df) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(difflsm.task.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=`p-value`<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+  
+
+
+
+```
+
+
+
+#### Layout subset, linear mixed model (nlme)
+#### Layout subset, linear mixed model (lme4)
+
+### Logistic regression for over/underestimation
+### Beta regression for percentage
+### Negative binomial model for responses
 
 ## Output
 
