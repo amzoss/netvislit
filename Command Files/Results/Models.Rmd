@@ -1,0 +1,612 @@
+---
+title: "Models for Combined NetVisLit Data"
+author: "Angela Zoss"
+date: "January 17, 2018"
+output: github_document
+---
+
+Notes:
+
+These command files should contain commands that open up your analysis data files, and then use those data to generate the output upon which your results are based.
+
+Every command that generates any of your results should be preceded by a comment that states which result the command generates.  A few Hypothetical examples illustrate what these comments might look like:
+
+* The following command generates the first column of Table 6.
+
+The command files for your analysis phase should not contain any commands that generate new variables or process your data in any way.  All the procedures required to prepare your data for analysis should be executed by the command files you wrote for the processing phase.
+
+It is often convenient to write all the commands for the analysis phase in a single command file. However, if the nature of your project or the structure of your data are such that you think it would make sense to divide the code that generates the results into two or more command files, you should feel free to do so.  No matter how you organize your analysis command files, your Read Me file will include an explanation of how to use them to reproduce your results.
+
+Save the command files you write for the analysis phase in the Command Files folder.
+
+
+## Load packages
+
+```{r}
+
+require(tidyverse)
+
+# modeling
+
+library(nlme)
+library(lme4)
+#library(car)
+library(lmerTest)
+
+# output
+
+#library(officer)
+#library(rvg)
+#library(devEMF)
+
+```
+
+## Environmental Variables
+
+```{r}
+
+originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+generatedDataDir <- file.path(originalDataDir, "Generated data")
+
+figureDir <- "../../Documents/"
+
+```
+
+## Loading analysis data files
+
+```{r}
+
+#all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
+
+#all_edges <- read_csv(file.path(generatedDataDir, "all_edges.csv"))
+
+#node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
+
+#graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
+
+#graded_nodes <- read_csv(file.path(analysisDataDir, "GradedNodes.csv"))
+
+#stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.csv"))
+
+#stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
+
+#responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
+
+#num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.csv"))
+
+#responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
+
+#exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
+
+#all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
+
+graphics <- read_csv(file.path(analysisDataDir, "Graphics.csv"))
+
+layoutfac <- read_csv(file.path(analysisDataDir, "LayoutFac.csv"))
+
+```
+
+## Slight processing for analysis
+
+```{r}
+
+#graded_num_ans$ClustConf <- factor(graded_num_ans$ClustConf, levels = c("Very doubtful (0-25%)","Somewhat doubtful (26-50%)","Somewhat confident (51-75%)","Very confident (76-100%)"), ordered = TRUE)
+
+#graded_num_ans$Condition <- factor(graded_num_ans$Condition,
+#                                   levels=c("Ctrl","Phr","Siz","Col","Fru","Ord","Cir"))
+
+#graded_nodes$Condition <- factor(graded_nodes$Condition,
+#                                   levels=c("Ctrl","Phr","Siz","Col","Fru","Ord","Cir"))
+
+
+#stats_demo$`Stats-Group` <- factor(stats_demo$`Stats-Group`,
+#                                   levels=c("control", "phrasing", "size", "color", 
+#                                            "frucht", "openord", "circle"))
+
+#stats_demo$`Demo-educ` <- factor(stats_demo$`Demo-educ`, 
+#                                 levels=c("did not complete High School diploma",
+#                                          "High School diploma",
+#                                          "Bachelor’s degree",
+#                                          "Professional degree",
+#                                          "Master’s degree",
+#                                          "Doctorate degree",
+#                                          "Other"))
+
+#freq4 <- c("None", "A little", "Some", "A lot")
+
+#stats_demo$`Demo-expdataanal` <- factor(stats_demo$`Demo-expdataanal`, 
+#                                        levels = freq4, 
+#                                        ordered = TRUE)
+
+#stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`, 
+#                                        levels = freq4, 
+#                                        ordered = TRUE)
+
+#stats_demo$`Demo-expreadnetvis` <- factor(stats_demo$`Demo-expreadnetvis`, 
+#                                        levels = freq4, 
+#                                        ordered = TRUE)
+
+#stats_demo$`Demo-expcreatenetvis` <- factor(stats_demo$`Demo-expcreatenetvis`, 
+#                                        levels = freq4, 
+#                                        ordered = TRUE)
+
+graphics$ClustConf <- factor(graphics$ClustConf,
+                             levels = c("Very confident (76-100%)", 
+                                        "Somewhat confident (51-75%)", 
+                                        "Somewhat doubtful (26-50%)", 
+                                        "Very doubtful (0-25%)"),
+                             ordered = TRUE)
+
+
+
+```
+
+
+## Mixed Models
+
+TO DO: try all covariates again
+
+### Graphics subset, linear mixed model (nlme)
+
+```{r}
+
+graphics_lme <- graphics
+
+graphics_lme$Dataset <- factor(graphics_lme$Dataset, ordered = TRUE)
+
+graphics_lme <- rename(graphics_lme, DemoResponseID = `Demo-ResponseID`)
+
+#Make control the reference group
+#TO DO: decide on reference group for task??
+
+graphics_lme <- graphics_lme %>% mutate(Condition1 = factor(
+  case_when(
+  Condition == "Ctrl" ~ 0,
+  Condition == "Phr" ~ 1,
+  Condition == "Col" ~ 2,
+  Condition == "Siz" ~ 3)
+  )
+)
+
+graphics_lme$Condition <- factor(graphics_lme$Condition)
+
+graphics_lme$Condition <- relevel(graphics_lme$Condition, ref = "Ctrl")
+
+
+```
+
+```{r, cache=TRUE}
+
+# https://iucat.iu.edu/catalog/14518998, chapters 3 and 5
+# data at http://www-personal.umich.edu/~bwest/almmussp.html
+
+# testing models, no nesting/grouping
+
+# Repeated measures, tasks and datasets (crossed)
+
+# starting with older package (nlme), with function lme()
+
+# R by default treats the lowest category (alphabetically or numerically) of a
+# categorical fixed factor as the reference category in a model
+
+# We don't really have reference categories for the repeated measures factors, 
+# though, so I guess it doesn't matter?  Maybe want to exclude training dataset
+
+# Note about syntax; can use either ":" or "*" for interaction, but using "*" automatically adds
+# the main effects of each factor into the model, too, instead of just the interaction
+
+model.lme <- lme(LogError ~ Task + Dataset + Task:Dataset, random = ~ 1 | DemoResponseID, method="REML", data=graphics_lme)
+
+summary(model.lme)
+
+anova(model.lme)
+
+random.effects(model.lme)
+
+# do we really need random effects?  test model without random effects using gls
+
+#model.gls <- gls(LogError ~ Task + Dataset + Task:Dataset, data = graphics_lme)
+
+#anova(model.lme, model.gls)
+
+# result of anova is significant, indicating that there is a significant difference when
+# you remove random effects, so should leave them in
+
+```
+
+```{r, cache=TRUE}
+
+# model with nesting; takes *forever* but does finish
+# can nest when I recode Condition as 0, 1, 2, 3 (Condition1), 
+# but if I just list Ctrl as the ref (Condition), won't converge
+
+model.lme.update.nest <- update(model.lme, random = ~ Condition1 | DemoResponseID)
+
+summary(model.lme.update.nest)
+
+anova(model.lme.update.nest)
+
+# might want to check whether nesting makes a difference, but can't run anova because 
+# "the test statistic has a null distribution that is a mixture of X12 and X22 distributions
+# with equal weights of 0.5, so the anova() function cannot be used for the p-value." (p.220)
+
+# Check summary of each model for -2 REML log-likelihood values 
+
+# "logLik" value for unnested: -14415.3
+# "logLik" value for nested: -14441
+# -2 REML logLik is just -2 * the logLik value
+
+# test statistics = unnested - nested
+test.stat <- abs((-2*-14415.3) - (-2*-14441)) # ~51.4
+
+# note: when test.stat was negative, p-value was not significant, but highly significant when
+# positive
+p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
+
+# p-value is < 0.001, so nesting is significantly different
+
+
+```
+
+```{r, cache=TRUE}
+
+# adding weights to have a separate residual variance for each treatment group
+# TO DO: are these the only weights I need to consider???
+
+model.lme.nest.weight <- lme(LogError ~ Task + Dataset + Task:Dataset, 
+                 random = ~ Condition1 | DemoResponseID, 
+                 method="REML", 
+                 data=graphics_lme,
+                 weights = varIdent(form = ~1 | Condition1))
+
+summary(model.lme.nest.weight)
+
+# Parameter estimates are:
+#         0         3         1         2 
+# 1.0000000 1.0062359 1.1006189 0.9861303 
+
+anova(model.lme.update.nest, model.lme.nest.weight)
+
+# result is significant, which suggests that we should retain the second model with the weights,
+# otherwise known as the "heterogeneous variances model" (p. 94)
+
+
+```
+
+```{r}
+
+graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
+graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
+
+model.lme.weight.pooled <- lme(LogError ~ Task + Dataset + Task:Dataset, 
+                 random = ~ Condition1 | DemoResponseID, 
+                 method="REML", 
+                 data=graphics_lme,
+                 weights = varIdent(form = ~1 | Ctrl_dummy))
+
+#anova(model.lme, model.lme.weight.pooled)
+anova(model.lme.nest.weight, model.lme.weight.pooled)
+
+# test is significant, so should keep the weights pooled? or not? p. 95 not clear, since in example difference is not significant but pooled model is retained anyway
+
+anova(model.lme.update.nest, model.lme.weight.pooled)
+
+# wow, okay. so, model with no weights not significantly different from model with pooled weights??
+
+summary(model.lme.weight.pooled)
+anova(model.lme.weight.pooled)
+
+```
+
+```{r}
+
+# TO DO: need to conduct Type I F-test (section 5.7)? to try to remove nonsignficant fixed effects?
+# note p. 223 explains that large F-statistics can indicate significance, even when you don't compute
+# p-values
+
+# another way to test if each additional item is significant:
+# create two models, one with and one without the fixed effect
+# use ML estimation (REML = F for lmer()) for each
+# use anova() to compare the models (see 4.4.3.2)
+
+# On p. 238, talks about needing to be careful about interpretation because an interaction is
+# also significant; can investigate "estimated marginal means" of the combinations of levels in the
+# interaction (needs to be pairwise for the interaction?)
+
+# On p. 133, "Post-hoc comparisons can also be computed in R with 
+# some additional programming (Faraway, 2005)"
+
+# From Faraway, 2015, p. 20:
+# https://search.library.duke.edu/search?id=DUKE008022150
+
+# "We can extract the regression quantities we need from the model object. Commonly used are residuals(),
+# fitted(), df.residual() which gives the degrees of freedon, deviance() which gives the RSS and
+# coef() which gives the ^Beta."
+
+modsum <- summary(model.lme.weight.pooled)
+names(modsum)
+modsum$logLik * -2
+
+lmsum$sigma # 0.711... what is sigma, exactly?
+
+```
+
+```{r}
+
+
+
+```
+
+TO DO: try to reproduce the output from JMP; least squares mean plots and student's t tables
+
+```{r}
+
+# Residuals plot
+plot(model.lme.weight.pooled)
+
+# Residuals vs. Task, boxplot
+plot(model.lme.weight.pooled, Task ~ resid(.))
+
+# Predicted vs. Task
+plot(model.lme.weight.pooled, Task ~ fitted(.))
+
+
+# Predicted vs. Actual LogError
+plot(model.lme.weight.pooled, LogError ~ fitted(.), abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Task, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Dataset, abline = c(0,1))
+
+qqnorm(model.lme.weight.pooled, ~ranef(.))
+
+
+```
+
+### Graphics subset, linear mixed model (lme4)
+
+```{r, cache=TRUE}
+
+model.fit.lmer <- lmer(LogError ~ Dataset + Task + Task:Dataset + (1|DemoResponseID), data = graphics_lme, REML = T)
+
+lmsum <- summary(model.fit.lmer)
+lmsum
+#names(lmsum)
+
+```
+
+```{r, eval=FALSE}
+
+# Try adding condition as a nesting variable for random participant effects; ultimately not necessary
+
+#model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition1|DemoResponseID), data = graphics_lme, REML = T)
+
+# error: 
+# unable to evaluate scaled gradientModel failed to converge: degenerate  Hessian with 1 negative eigenvalues 
+
+model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition|DemoResponseID), data = graphics_lme, REML = T)
+
+# warning 
+# Model is nearly unidentifiable: large eigenvalue ratio - Rescale variables?
+
+nestsum <- summary(model.fit.lmer.nest)
+nestsum
+
+# want to compare unnested and nested; not supposed to do anova, so should
+# create test statistic by subtracting -2 REML log-likelihood values from
+# each model
+
+# "logLik" value for unnested: -14441.77
+# "logLik" value for nested: -14440.5
+# -2 REML logLik is just -2 * the logLik value
+
+# test statistics = unnested - nested
+test.stat <- (-2*as.numeric(lmsum$logLik)) - (-2*as.numeric(nestsum$logLik)) # ~2.53
+
+
+p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
+
+# p-value ~ 0.1969, so nesting is not significantly different
+
+```
+
+
+
+```{r}
+
+rand(model.fit.lmer)
+
+# result shows that random effects of participant are *not* significant (p=0.1)
+
+anova(model.fit.lmer)
+
+# Task, Dataset, and Task:Dataset significant, < 0.001
+
+#ranef(model.fit.lmer)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+
+```
+
+```{r}
+
+# From Faraway (2015), p. 156 - use step() to start with a complex model and 
+# systematically remove each effects
+
+full.lmer.model <- lmer(LogError ~ Dataset + Task + Task:Dataset + Condition1 + 
+                           QuestionOrder + filename + (1|DemoResponseID), 
+                         data = graphics_lme, REML = T)
+
+step(full.lmer.model)
+
+# not sure this is useful
+
+```
+
+```{r, eval=FALSE}
+
+# Clustered Longitudinal Data (Chapter 7)
+
+#model7.1.fit <- lme(gcf ~ time + 
+#                   base_gcf + cda + 
+#                   age + 
+#                   time:base_gcf + time:cda + 
+#                   time:age, 
+#                   random = list(patient = ~time, tooth = ~1), 
+#                   data = veneer, 
+#                   method = "REML")
+
+clust.model.fit <- lme(LogError ~ Task + TaskOrder +
+                         Dataset + DatasetOrder +
+                         Task:TaskOrder + 
+                         Task:Dataset + Task:DatasetOrder,
+                       random = list(`DemoResponseID` = ~Condition),
+                       data = exp_only,
+                       method = "REML")
+
+summary(clust.model.fit)
+
+intervals(clust.model.fit)
+
+random.effects(clust.model.fit)
+
+```
+
+
+
+```{r}
+
+plot(model.fit.lmer)
+
+plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(model.fit.lmer, resid(.) ~ fitted(.) | Task, abline = 0)
+
+plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.) | Task, abline = 0)
+
+plot(model.fit.lmer, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+model.fit.lmer.f <- fortify(model.fit.lmer)
+
+ggplot(model.fit.lmer.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(model.fit.lmer.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+
+```
+
+```{r, eval=FALSE}
+
+# profile not working yet - takes too long?
+
+library(lattice)
+
+#prof <-  profile(model.fit.lmer, optimizer="Nelder_Mead", which="beta_")
+
+#prof.CI <- confint(prof)
+
+CI2 <- confint(model.fit.lmer, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+```{r}
+
+lsm.task <- lsmeansLT(model.fit.lmer, test.effs = "Task")
+
+plot(lsm.task)
+
+lsm.task.df <- as_data_frame(lsm.task$lsmeans.table)
+
+lsm.task.df
+
+lsm.task.df$Task <- factor(lsm.task.df$Task, levels=lsm.task.df %>% arrange(desc(Estimate)) %>% select(Task) %>% unlist())
+
+lsm.task.df %>% arrange(desc(Estimate))
+
+
+ggplot(lsm.task.df) +
+  geom_point(aes(x=Task,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Task,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
+  coord_flip()
+
+# TO DO: add a color scale so TRUE/FALSE values are always same color across all plots
+
+
+```
+
+
+
+```{r}
+
+difflsm.task <- difflsmeans(model.fit.lmer, test.effs = "Task")
+
+plot(difflsm.task)
+
+difflsm.task.df <- as_data_frame(difflsm.task$diffs.lsmeans.table)
+
+difflsm.task.df
+
+difflsm.task.df <- difflsm.task.df %>% mutate(Pair=rownames(.)) %>% separate(Pair, c("del","Pair"), sep=5) %>% select(-del) %>% separate(Pair, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% select(-del)
+
+difflsm.task.df$Pair <- factor(difflsm.task.df$Pair, levels=difflsm.task.df %>% arrange(desc(Estimate)) %>% select(Pair) %>% unlist())
+
+difflsm.task.df %>% arrange(desc(Estimate))
+
+ggplot(difflsm.task.df) +
+  geom_point(aes(x=Pair,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_hline(aes(yintercept=0)) +
+  coord_flip()
+
+ggplot(difflsm.task.df) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(difflsm.task.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=`p-value`<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+  
+
+
+
+```
+
+
+
+#### Layout subset, linear mixed model (nlme)
+#### Layout subset, linear mixed model (lme4)
+
+### Logistic regression for over/underestimation
+### Beta regression for percentage
+### Negative binomial model for responses

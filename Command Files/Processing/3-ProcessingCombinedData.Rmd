@@ -484,6 +484,13 @@ all_exp <- all_exp %>% separate(`Stats-ScreenResolution`, c("StatsScreenWidth","
 
 all_exp <- all_exp %>% arrange(`Demo-ResponseID`,DatasetOrder,TaskOrder,Attempt) %>% rowid_to_column("QuestionOrder")
 
+# add in properties of networks
+
+network_props <- num_ans_lookup %>% spread(Task, CorrectAnswer)
+
+all_exp <- left_join(all_exp, network_props)
+
+
 graphics <- all_exp %>% filter(Condition %in% c("Ctrl","Phr","Siz","Col"), filename %in% c("MTurkFinal","MTurkPilot3")) 
   
 layout_fac_1_7_9 <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), Dataset %in% c(1, 7, 9)) 
