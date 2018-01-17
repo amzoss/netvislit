@@ -19,10 +19,14 @@ It is often convenient to write all the commands for the analysis phase in a sin
 
 Save the command files you write for the analysis phase in the Command Files folder.
 
+```{r setup}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
 
 ## Load packages
 
-```{r}
+```{r, message=FALSE}
 
 require(tidyverse)
 
@@ -56,31 +60,7 @@ figureDir <- "../../Documents/"
 
 ## Loading analysis data files
 
-```{r}
-
-#all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
-
-#all_edges <- read_csv(file.path(generatedDataDir, "all_edges.csv"))
-
-#node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
-
-#graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
-
-#graded_nodes <- read_csv(file.path(analysisDataDir, "GradedNodes.csv"))
-
-#stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.csv"))
-
-#stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
-
-#responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
-
-#num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.csv"))
-
-#responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
-
-#exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
-
-#all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
+```{r, message=FALSE}
 
 graphics <- read_csv(file.path(analysisDataDir, "Graphics.csv"))
 
@@ -91,46 +71,6 @@ layoutfac <- read_csv(file.path(analysisDataDir, "LayoutFac.csv"))
 ## Slight processing for analysis
 
 ```{r}
-
-#graded_num_ans$ClustConf <- factor(graded_num_ans$ClustConf, levels = c("Very doubtful (0-25%)","Somewhat doubtful (26-50%)","Somewhat confident (51-75%)","Very confident (76-100%)"), ordered = TRUE)
-
-#graded_num_ans$Condition <- factor(graded_num_ans$Condition,
-#                                   levels=c("Ctrl","Phr","Siz","Col","Fru","Ord","Cir"))
-
-#graded_nodes$Condition <- factor(graded_nodes$Condition,
-#                                   levels=c("Ctrl","Phr","Siz","Col","Fru","Ord","Cir"))
-
-
-#stats_demo$`Stats-Group` <- factor(stats_demo$`Stats-Group`,
-#                                   levels=c("control", "phrasing", "size", "color", 
-#                                            "frucht", "openord", "circle"))
-
-#stats_demo$`Demo-educ` <- factor(stats_demo$`Demo-educ`, 
-#                                 levels=c("did not complete High School diploma",
-#                                          "High School diploma",
-#                                          "Bachelor’s degree",
-#                                          "Professional degree",
-#                                          "Master’s degree",
-#                                          "Doctorate degree",
-#                                          "Other"))
-
-#freq4 <- c("None", "A little", "Some", "A lot")
-
-#stats_demo$`Demo-expdataanal` <- factor(stats_demo$`Demo-expdataanal`, 
-#                                        levels = freq4, 
-#                                        ordered = TRUE)
-
-#stats_demo$`Demo-expdatavis` <- factor(stats_demo$`Demo-expdatavis`, 
-#                                        levels = freq4, 
-#                                        ordered = TRUE)
-
-#stats_demo$`Demo-expreadnetvis` <- factor(stats_demo$`Demo-expreadnetvis`, 
-#                                        levels = freq4, 
-#                                        ordered = TRUE)
-
-#stats_demo$`Demo-expcreatenetvis` <- factor(stats_demo$`Demo-expcreatenetvis`, 
-#                                        levels = freq4, 
-#                                        ordered = TRUE)
 
 graphics$ClustConf <- factor(graphics$ClustConf,
                              levels = c("Very confident (76-100%)", 
@@ -275,7 +215,7 @@ anova(model.lme.update.nest, model.lme.nest.weight)
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 
 graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
 graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
@@ -300,7 +240,7 @@ anova(model.lme.weight.pooled)
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 
 # TO DO: need to conduct Type I F-test (section 5.7)? to try to remove nonsignficant fixed effects?
 # note p. 223 explains that large F-statistics can indicate significance, even when you don't compute
@@ -329,19 +269,12 @@ modsum <- summary(model.lme.weight.pooled)
 names(modsum)
 modsum$logLik * -2
 
-lmsum$sigma # 0.711... what is sigma, exactly?
+modsum$sigma # 0.711... what is sigma, exactly?
 
 ```
 
-```{r}
 
-
-
-```
-
-TO DO: try to reproduce the output from JMP; least squares mean plots and student's t tables
-
-```{r}
+```{r, cache=TRUE}
 
 # Residuals plot
 plot(model.lme.weight.pooled)
@@ -416,7 +349,7 @@ p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
 
 
 
-```{r}
+```{r, cache=TRUE}
 
 rand(model.fit.lmer)
 
@@ -435,7 +368,7 @@ anova(model.fit.lmer)
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 
 # From Faraway (2015), p. 156 - use step() to start with a complex model and 
 # systematically remove each effects
@@ -539,7 +472,7 @@ splom(prof)
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 
 lsm.task <- lsmeansLT(model.fit.lmer, test.effs = "Task")
 
@@ -566,7 +499,7 @@ ggplot(lsm.task.df) +
 
 
 
-```{r}
+```{r, cache=TRUE}
 
 difflsm.task <- difflsmeans(model.fit.lmer, test.effs = "Task")
 
