@@ -30,12 +30,22 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 
 require(tidyverse)
 
-# modeling
+# mixed modeling
 
 library(nlme)
 library(lme4)
 #library(car)
 library(lmerTest)
+
+# negative binomial
+
+require(foreign)
+require(MASS)
+
+# logistic
+
+library(pscl)
+library(aod)
 
 # output
 
@@ -216,6 +226,13 @@ anova(model.lme.update.nest, model.lme.nest.weight)
 ```
 
 ```{r, cache=TRUE}
+
+
+graphics_lme <- graphics_lme %>% mutate(Ctrl_dummy = 
+                                          case_when(
+  Condition == "Ctrl" ~ 1,
+  Condition != "Ctrl" ~ 2)
+  )
 
 graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
 graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
@@ -541,5 +558,130 @@ ggplot(difflsm.task.df) +
 #### Layout subset, linear mixed model (lme4)
 
 ### Logistic regression for over/underestimation
+
+```{r, cache=TRUE}
+
+# https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
+
+# https://stats.idre.ucla.edu/r/dae/logit-regression/
+
+graphics.est <- graphics_lme %>% mutate(underest = ifelse(RawDifference<0,1,0)) 
+
+graphics.est$underest <- factor(graphics.est$underest, levels=c(1,0), labels = c("underestimated","overestimated"))
+
+graphics.est$Task <- factor(graphics.est$Task)
+
+xtabs(~underest + Task, data = graphics.est)
+
+# difference between family="binomial" and family=binomial(link='logit') ?
+
+#log.model <- glm(underest ~ Task, family=binomial(link='logit'), data=graphics.est)
+
+log.model <- glm(underest ~ Task, family="binomial", data=graphics.est)
+
+summary(log.model)
+# Interpretation of Estimate: compared to reference task (AvgDegree), each task changes
+# the log odds of underestimation by the estimate shown; negative estimates reduce
+# log odds of underestimation compared to AvgDegree
+
+## CIs using profiled log-likelihood
+confint(log.model)
+
+## CIs using standard errors
+confint.default(log.model)
+
+## Wald test for effect of Task, which is terms 2:8 in the model
+wald.test(b = coef(log.model), Sigma = vcov(log.model), Terms = 2:8)
+
+## test two specific tasks against each other (NumHighDegree and NumNodes)
+l <- cbind(0,0,0,0,0,1,0,-1)
+wald.test(b = coef(log.model), Sigma = vcov(log.model), L = l)
+# p = 0.015, so only marginally significant
+
+## odds ratios only
+exp(coef(log.model))
+
+## odds ratios and 95% CI
+exp(cbind(OR = coef(log.model), confint(log.model)))
+
+# https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-how-do-i-interpret-odds-ratios-in-logistic-regression/ 
+
+## testing fit
+
+# likelihood ratio test
+with(log.model, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
+# p-value is 0, so model with predictor definitely fits better than the null model
+
+
+
+anova(log.model, test="Chisq")
+
+pR2(log.model)
+
+# don't know how to interpret; should be looking at McFadden as a sort of pseudo R^2?
+
+# https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/
+# "If comparing two models on the same data, McFadden’s would be higher for the model with the greater likelihood."
+
+```
+
 ### Beta regression for percentage
 ### Negative binomial model for responses
+
+```{r, cache=TRUE}
+
+# https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/
+
+# More details can be found in the Modern Applied Statistics with S by W.N. Venables and B.D. Ripley 
+# (the book companion of the MASS package).
+
+# For additional information on the various metrics in which the results can be presented, and the 
+# interpretation of such, please see Regression Models for Categorical Dependent Variables Using Stata, 
+# Second Edition by J. Scott Long and Jeremy Freese (2006).
+
+nbin.graph <- glm.nb(Response ~ Task, data=graphics_lme) 
+
+summary(nbin.graph)
+
+nbin.graph.2 <- update(nbin.graph, . ~ . + Dataset)
+
+summary(nbin.graph.2)
+
+anova(nbin.graph, nbin.graph.2)
+
+# negative binomial models assume the conditional means are not equal to the conditional variances
+# This inequality is captured by estimating a dispersion parameter (not shown in the output) that is held constant in a Poisson model.
+
+# compare negative binomial to poisson
+
+pois.graph <- glm(Response ~ Task + factor(Dataset), family = "poisson", data = graphics_lme)
+
+pchisq(2 * (logLik(nbin.graph.2) - logLik(pois.graph)), df = 1, lower.tail = FALSE)
+
+# result is 
+# 'log Lik.' 0 (df=14)
+# not sure if that means assumptions for negative binomial are met, but proceeding with nbin
+```
+
+
+```{r, cache=TRUE}
+
+(est <- cbind(Estimate = coef(nbin.graph.2), confint(nbin.graph.2)))
+
+exp(est)
+
+```
+
+```{r, cache=TRUE}
+
+nbin.graph.full <- glm.nb(Response ~ Task + factor(Dataset) + Condition + Task:Dataset + Task:Condition + Dataset:Condition, data = graphics_lme)
+
+summary(nbin.graph.full)
+
+nbin.graph.3 <- update(nbin.graph.full, . ~ . - Condition:Dataset)
+
+summary(nbin.graph.3)
+
+anova(nbin.graph.full, nbin.graph.3)
+
+```
