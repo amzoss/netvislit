@@ -96,9 +96,9 @@ graphics$ClustConf <- factor(graphics$ClustConf,
 
 ## Mixed Models
 
-TO DO: try all covariates again
+TO DO: try all covariates again, separate model for each task
 
-### Graphics subset, linear mixed model (nlme)
+### Graphics subset
 
 ```{r}
 
@@ -106,7 +106,7 @@ graphics_lme <- graphics
 
 graphics_lme$Dataset <- factor(graphics_lme$Dataset, ordered = TRUE)
 
-graphics_lme <- rename(graphics_lme, DemoResponseID = `Demo-ResponseID`)
+graphics_lme <- set_tidy_names(graphics_lme, syntactic=TRUE)
 
 #Make control the reference group
 #TO DO: decide on reference group for task??
@@ -126,6 +126,31 @@ graphics_lme$Condition <- relevel(graphics_lme$Condition, ref = "Ctrl")
 
 
 ```
+
+```{r}
+
+# separate datasets for each Task
+
+graphics_avgdeg <- graphics_lme %>% filter(Task == "AvgDeg")
+
+graphics_bc <- graphics_lme %>% filter(Task == "BC")
+
+graphics_clickhighdeg <- graphics_lme %>% filter(Task == "ClickHighDeg")
+
+graphics_lgclust <- graphics_lme %>% filter(Task == "LargeClust1")
+
+graphics_numclust <- graphics_lme %>% filter(Task == "NumClust")
+
+graphics_numhighdeg <- graphics_lme %>% filter(Task == "NumHighDegree")
+
+graphics_numlinks <- graphics_lme %>% filter(Task == "NumLinks")
+
+graphics_numnodes <- graphics_lme %>% filter(Task == "NumNodes")
+
+
+```
+
+### Average Degree
 
 ```{r, cache=TRUE}
 
@@ -147,32 +172,318 @@ graphics_lme$Condition <- relevel(graphics_lme$Condition, ref = "Ctrl")
 # Note about syntax; can use either ":" or "*" for interaction, but using "*" automatically adds
 # the main effects of each factor into the model, too, instead of just the interaction
 
-model.lme <- lme(LogError ~ Task + Dataset + Task:Dataset, random = ~ 1 | DemoResponseID, method="REML", data=graphics_lme)
+graph.avgdeg.lme <- lme(LogError ~ Dataset, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
 
-summary(model.lme)
+summary(graph.avgdeg.lme)
 
-anova(model.lme)
+anova(graph.avgdeg.lme)
 
-random.effects(model.lme)
+
+# Dataset is not significant for AvgDeg; try Condition
+
+graph.avgdeg.lme <- lme(LogError ~ Condition, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Condition is not significant; try TaskOrder
+
+graph.avgdeg.lme <- lme(LogError ~ TaskOrder, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# TaskOrder is not significant; try DatasetOrder
+
+graph.avgdeg.lme <- lme(LogError ~ DatasetOrder, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# DatasetOrder is not significant; try DatasetDuration
+
+graph.avgdeg.lme <- lme(LogError ~ DatasetDuration, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(DatasetDuration))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# DatasetDuration is not significant; try Stats.Q_TotalDuration
+
+graph.avgdeg.lme <- lme(LogError ~ Stats.Q_TotalDuration, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Stats.Q_TotalDuration is not significant; try Stats.OperatingSystem
+
+graph.avgdeg.lme <- lme(LogError ~ Stats.OperatingSystem, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Stats.OperatingSystem is not significant; try StatsNumPixels
+
+graph.avgdeg.lme <- lme(LogError ~ StatsNumPixels, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# StatsNumPixels is not significant; try Demo.age
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.age, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.age))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.age is not significant; try Demo.gender
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.gender, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.gender))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.gender is not significant; try Demo.lang
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.lang, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.lang))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# TO DO: try processing Demo.lang more?  English vs. not English?
+
+# Demo.lang is not significant; try Demo.educ
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.educ, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.educ))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# TO DO: try processing Demo.educ more?  at least factor it?
+
+# Demo.educ is not significant; try Demo.acfield
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.acfield, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.acfield))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.acfield is not significant; try Demo.dailytech_Computer
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.dailytech_Computer, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Computer))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.dailytech_Computer is not significant; try Demo.dailytech_Tablet
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.dailytech_Tablet, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Tablet))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.dailytech_Tablet is not significant; try Demo.dailytech_SmartPhone
+
+graph.avgdeg.lme.SP <- lme(LogError ~ Demo.dailytech_SmartPhone, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))))
+
+# TO DO : figure out if this should be a factor
+
+summary(graph.avgdeg.lme.SP)
+
+anova(graph.avgdeg.lme.SP)
+
+## Demo.dailytech_SmartPhone *is* significant
+
+ggplot(graphics_avgdeg) +
+  geom_point(aes(Demo.dailytech_SmartPhone, LogError)) +
+  geom_smooth(aes(Demo.dailytech_SmartPhone, LogError), method="lm")
+
+# try Demo.weeklygaming
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.weeklygaming, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.weeklygaming))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.weeklygaming not significant; try Demo.expdataanal
+# TO DO: need to factor, set levels
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expdataanal, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expdataanal))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expdataanal not significant; try Demo.expdatavis
+# TO DO: need to factor, set levels
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expdatavis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expdatavis))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expdatavis not significant; try Demo.expreadnetvis
+# TO DO: need to factor, set levels
+
+graph.avgdeg.lme.RNV <- lme(LogError ~ Demo.expreadnetvis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis))))
+
+summary(graph.avgdeg.lme.RNV)
+
+anova(graph.avgdeg.lme.RNV)
+
+# Demo.expreadnetvis barely significant (p=0.0494); try just the experts (only 1, actually)
+# TO DO: need to factor, set levels
+
+graphics_avgdeg <- graphics_avgdeg %>% mutate(Demo.expreadnetvis.alot = ifelse(Demo.expreadnetvis == "A lot",1,0))
+
+graph.avgdeg.lme.RNVAL <- lme(LogError ~ Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+summary(graph.avgdeg.lme.RNVAL)
+
+anova(graph.avgdeg.lme.RNVAL)
+
+# better, but still barely significant; p = 0.0106
+
+# try Demo.expcreatenetvis
+# TO DO: need to factor, set levels
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expcreatenetvis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expcreatenetvis))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expcreatenetvis not significant; try AvgDeg
+
+graph.avgdeg.lme <- lme(LogError ~ AvgDeg, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# AvgDeg not significant; try Density
+
+graph.avgdeg.lme <- lme(LogError ~ Density, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Density not significant; try LargeClust1
+
+graph.avgdeg.lme <- lme(LogError ~ LargeClust1, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# LargeClust1 not significant; try Modularity
+
+graph.avgdeg.lme <- lme(LogError ~ Modularity, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Modularity not significant; try NumClust
+
+graph.avgdeg.lme <- lme(LogError ~ NumClust, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumClust not significant; try NumHighDegree
+
+graph.avgdeg.lme <- lme(LogError ~ NumHighDegree, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumHighDegree not significant; try NumLinks
+
+graph.avgdeg.lme <- lme(LogError ~ NumLinks, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumLinks not significant; try NumNodes
+
+graph.avgdeg.lme <- lme(LogError ~ NumNodes, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumNodes not significant; try NumNodesClust1
+
+graph.avgdeg.lme <- lme(LogError ~ NumNodesClust1, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Final; try both significant factors
+
+graph.avgdeg.lme.SP.RNVAL <- lme(LogError ~ Demo.dailytech_SmartPhone + Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+summary(graph.avgdeg.lme.SP.RNVAL)
+
+anova(graph.avgdeg.lme.SP.RNVAL)
+
+# Better than just one predictor?
+
+anova(graph.avgdeg.lme.SP.RNVAL, graph.avgdeg.lme.SP)
+
+# no significant difference
+
+graph.avgdeg.lme.RNVAL <- lme(LogError ~ Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+anova(graph.avgdeg.lme.SP.RNVAL, graph.avgdeg.lme.RNVAL)
+
+# no significant difference; guess we can use both predictors? or maybe should just use stronger
+# predictor, SmartPhone?
+
+
+random.effects(graph.avgdeg.lme.SP)
 
 # do we really need random effects?  test model without random effects using gls
 
-#model.gls <- gls(LogError ~ Task + Dataset + Task:Dataset, data = graphics_lme)
+graph.avgdeg.gls <- gls(LogError ~ Demo.dailytech_SmartPhone, data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))))
 
-#anova(model.lme, model.gls)
+anova(graph.avgdeg.lme.SP, graph.avgdeg.gls)
 
-# result of anova is significant, indicating that there is a significant difference when
+# result of anova is significant (p=0.0019), indicating that there is a significant difference when
 # you remove random effects, so should leave them in
 
 ```
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
+
+# NOTE: nesting is not appropriate, but syntax for tests might be useful in future
 
 # model with nesting; takes *forever* but does finish
 # can nest when I recode Condition as 0, 1, 2, 3 (Condition1), 
 # but if I just list Ctrl as the ref (Condition), won't converge
 
-model.lme.update.nest <- update(model.lme, random = ~ Condition1 | DemoResponseID)
+model.lme.update.nest <- update(model.lme, random = ~ Condition1 | Demo.ResponseID)
 
 summary(model.lme.update.nest)
 
@@ -203,24 +514,24 @@ p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
 ```{r, cache=TRUE}
 
 # adding weights to have a separate residual variance for each treatment group
-# TO DO: are these the only weights I need to consider???
+# TO DO: are these the only weights I need to consider???  check that these weights make sense
 
-model.lme.nest.weight <- lme(LogError ~ Task + Dataset + Task:Dataset, 
-                 random = ~ Condition1 | DemoResponseID, 
+graph.avgdeg.weight <- lme(LogError ~ Demo.dailytech_SmartPhone, 
+                 random = ~ 1 | Demo.ResponseID, 
                  method="REML", 
-                 data=graphics_lme,
-                 weights = varIdent(form = ~1 | Condition1))
+                 data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))),
+                 weights = varIdent(form = ~1 | Condition))
 
-summary(model.lme.nest.weight)
+summary(graph.avgdeg.weight)
 
 # Parameter estimates are:
-#         0         3         1         2 
-# 1.0000000 1.0062359 1.1006189 0.9861303 
+#    Ctrl      Siz      Phr      Col 
+#1.000000 1.486356 1.409153 1.436532 
 
-anova(model.lme.update.nest, model.lme.nest.weight)
+anova(graph.avgdeg.lme.SP, graph.avgdeg.weight)
 
-# result is significant, which suggests that we should retain the second model with the weights,
-# otherwise known as the "heterogeneous variances model" (p. 94)
+# result is significant (p<.0001), which suggests that we should retain the second model with the 
+# weights,  otherwise known as the "heterogeneous variances model" (p. 94)
 
 
 ```
@@ -228,32 +539,28 @@ anova(model.lme.update.nest, model.lme.nest.weight)
 ```{r, cache=TRUE}
 
 
-graphics_lme <- graphics_lme %>% mutate(Ctrl_dummy = 
-                                          case_when(
-  Condition == "Ctrl" ~ 1,
-  Condition != "Ctrl" ~ 2)
-  )
+graphics_avgdeg <- graphics_avgdeg %>% mutate(Ctrl_dummy = 
+                                                case_when(
+                                                  Condition == "Ctrl" ~ 1,
+                                                  Condition != "Ctrl" ~ 2)
+                                              )
 
-graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
-graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
+#graphics_lme$Ctrl_dummy[graphics_lme$Condition == "Ctrl"] <- 1
+#graphics_lme$Ctrl_dummy[graphics_lme$Condition != "Ctrl"] <- 2
 
-model.lme.weight.pooled <- lme(LogError ~ Task + Dataset + Task:Dataset, 
-                 random = ~ Condition1 | DemoResponseID, 
+graph.avgdeg.weight.pooled <- lme(LogError ~ Demo.dailytech_SmartPhone, 
+                 random = ~ 1 | Demo.ResponseID, 
                  method="REML", 
-                 data=graphics_lme,
+                 data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))),
                  weights = varIdent(form = ~1 | Ctrl_dummy))
 
-#anova(model.lme, model.lme.weight.pooled)
-anova(model.lme.nest.weight, model.lme.weight.pooled)
+anova(graph.avgdeg.weight, graph.avgdeg.weight.pooled)
 
-# test is significant, so should keep the weights pooled? or not? p. 95 not clear, since in example difference is not significant but pooled model is retained anyway
+# test is not significant, so should not keep the weights pooled? p. 95 not clear, since in 
+# example difference is not significant but pooled model is retained anyway
 
-anova(model.lme.update.nest, model.lme.weight.pooled)
-
-# wow, okay. so, model with no weights not significantly different from model with pooled weights??
-
-summary(model.lme.weight.pooled)
-anova(model.lme.weight.pooled)
+summary(graph.avgdeg.weight)
+anova(graph.avgdeg.weight)
 
 ```
 
@@ -282,7 +589,7 @@ anova(model.lme.weight.pooled)
 # fitted(), df.residual() which gives the degrees of freedon, deviance() which gives the RSS and
 # coef() which gives the ^Beta."
 
-modsum <- summary(model.lme.weight.pooled)
+modsum <- summary(graph.avgdeg.weight)
 names(modsum)
 modsum$logLik * -2
 
@@ -294,25 +601,25 @@ modsum$sigma # 0.711... what is sigma, exactly?
 ```{r, cache=TRUE}
 
 # Residuals plot
-plot(model.lme.weight.pooled)
+plot(graph.avgdeg.weight)
 
-# Residuals vs. Task, boxplot
-plot(model.lme.weight.pooled, Task ~ resid(.))
+# Residuals vs. SmartPhone, scatterplot
+plot(graph.avgdeg.weight, Demo.dailytech_SmartPhone ~ resid(.))
 
-# Predicted vs. Task
-plot(model.lme.weight.pooled, Task ~ fitted(.))
+# Predicted vs. SmartPhone
+plot(graph.avgdeg.weight, Demo.dailytech_SmartPhone ~ fitted(.))
 
 
 # Predicted vs. Actual LogError
-plot(model.lme.weight.pooled, LogError ~ fitted(.), abline = c(0,1))
+plot(graph.avgdeg.weight, LogError ~ fitted(.), abline = c(0,1))
 
-qqnorm(model.lme.weight.pooled, abline = c(0,1))
+qqnorm(graph.avgdeg.weight, abline = c(0,1))
 
-qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Task, abline = c(0,1))
+qqnorm(graph.avgdeg.weight, ~ resid(., type = "p") | Demo.dailytech_SmartPhone, abline = c(0,1))
 
-qqnorm(model.lme.weight.pooled, ~ resid(., type = "p") | Dataset, abline = c(0,1))
+qqnorm(graph.avgdeg.weight, ~ resid(., type = "p") | Condition, abline = c(0,1))
 
-qqnorm(model.lme.weight.pooled, ~ranef(.))
+qqnorm(graph.avgdeg.weight, ~ranef(.))
 
 
 ```
@@ -321,24 +628,52 @@ qqnorm(model.lme.weight.pooled, ~ranef(.))
 
 ```{r, cache=TRUE}
 
-model.fit.lmer <- lmer(LogError ~ Dataset + Task + Task:Dataset + (1|DemoResponseID), data = graphics_lme, REML = T)
+# Trying dataset first
 
-lmsum <- summary(model.fit.lmer)
+graph.avgdeg.lmer <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = graphics_avgdeg, REML = T)
+
+lmsum <- summary(graph.avgdeg.lmer)
 lmsum
 #names(lmsum)
+
+anova(graph.avgdeg.lmer)
+
+# Dataset not significant; trying SmortPhone
+
+graph.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(graph.avgdeg.lmer.SP)
+
+anova(graph.avgdeg.lmer.SP)
+
+# Smartphone is significant; trying readnetvisalot
+
+graph.avgdeg.lmer.RNVAL <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.avgdeg.lmer.RNVAL)
+
+anova(graph.avgdeg.lmer.RNVAL)
+
+# slightly significant; trying both
+
+graph.avgdeg.lmer.SP.RNVAL <- lmer(LogError ~ Demo.dailytech_SmartPhone + Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.avgdeg.lmer.SP.RNVAL)
+
+anova(graph.avgdeg.lmer.SP.RNVAL)
 
 ```
 
 ```{r, eval=FALSE}
 
-# Try adding condition as a nesting variable for random participant effects; ultimately not necessary
+# Try adding condition as a nesting variable for random participant effects; ultimately not appropriate to do so
 
-#model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition1|DemoResponseID), data = graphics_lme, REML = T)
+#model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition1|Demo.ResponseID), data = graphics_lme, REML = T)
 
 # error: 
 # unable to evaluate scaled gradientModel failed to converge: degenerate  Hessian with 1 negative eigenvalues 
 
-model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition|DemoResponseID), data = graphics_lme, REML = T)
+model.fit.lmer.nest <- lmer(LogError ~ Dataset + Task + Task:Dataset + (Condition|Demo.ResponseID), data = graphics_lme, REML = T)
 
 # warning 
 # Model is nearly unidentifiable: large eigenvalue ratio - Rescale variables?
@@ -368,15 +703,15 @@ p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
 
 ```{r, cache=TRUE}
 
-rand(model.fit.lmer)
+rand(graph.avgdeg.lmer.SP)
 
-# result shows that random effects of participant are *not* significant (p=0.1)
+# result shows that random effects of participant are significant (p=0.002)
 
-anova(model.fit.lmer)
+anova(graph.avgdeg.lmer.SP)
 
-# Task, Dataset, and Task:Dataset significant, < 0.001
+# SmartPhone significant, < 0.01
 
-#ranef(model.fit.lmer)
+#ranef(graph.avgdeg.lmer.SP)
 
 # displays the random effects; not that useful
 
@@ -385,16 +720,16 @@ anova(model.fit.lmer)
 
 ```
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 # From Faraway (2015), p. 156 - use step() to start with a complex model and 
 # systematically remove each effects
 
-full.lmer.model <- lmer(LogError ~ Dataset + Task + Task:Dataset + Condition1 + 
-                           QuestionOrder + filename + (1|DemoResponseID), 
-                         data = graphics_lme, REML = T)
+graph.avgdeg.full.lmer <- lmer(LogError ~ Dataset + Condition + 
+                           QuestionOrder + (1|Demo.ResponseID), 
+                         data = graphics_avgdeg, REML = T)
 
-step(full.lmer.model)
+step(graph.avgdeg.full.lmer)
 
 # not sure this is useful
 
@@ -403,6 +738,7 @@ step(full.lmer.model)
 ```{r, eval=FALSE}
 
 # Clustered Longitudinal Data (Chapter 7)
+# Data are not clustered, so can skip
 
 #model7.1.fit <- lme(gcf ~ time + 
 #                   base_gcf + cda + 
@@ -417,13 +753,13 @@ clust.model.fit <- lme(LogError ~ Task + TaskOrder +
                          Dataset + DatasetOrder +
                          Task:TaskOrder + 
                          Task:Dataset + Task:DatasetOrder,
-                       random = list(`DemoResponseID` = ~Condition),
-                       data = exp_only,
+                       random = list(`Demo.ResponseID` = ~Condition),
+                       data = graphics_lme,
                        method = "REML")
 
 summary(clust.model.fit)
 
-intervals(clust.model.fit)
+intervals(clust.model.fit, which="fixed")
 
 random.effects(clust.model.fit)
 
@@ -433,15 +769,15 @@ random.effects(clust.model.fit)
 
 ```{r}
 
-plot(model.fit.lmer)
+plot(graph.avgdeg.lmer.SP)
 
-plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+plot(graph.avgdeg.lmer.SP, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
 
-plot(model.fit.lmer, resid(.) ~ fitted(.) | Task, abline = 0)
+plot(graph.avgdeg.lmer.SP, resid(.) ~ fitted(.) | Task, abline = 0)
 
-plot(model.fit.lmer, resid(., scaled=TRUE) ~ fitted(.) | Task, abline = 0)
+plot(graph.avgdeg.lmer.SP, resid(., scaled=TRUE) ~ fitted(.) | Task, abline = 0)
 
-plot(model.fit.lmer, LogError ~ fitted(.), abline = c(0,1))
+plot(graph.avgdeg.lmer.SP, LogError ~ fitted(.), abline = c(0,1))
 
 
 
@@ -449,31 +785,31 @@ plot(model.fit.lmer, LogError ~ fitted(.), abline = c(0,1))
 
 ```{r}
 
-model.fit.lmer.f <- fortify(model.fit.lmer)
+graph.avgdeg.lmer.SP.f <- fortify(graph.avgdeg.lmer.SP)
 
-ggplot(model.fit.lmer.f, aes(.fitted,.resid)) + 
+ggplot(graph.avgdeg.lmer.SP.f, aes(.fitted,.resid)) + 
   geom_point() +
   #facet_grid(.~Sex) + 
   geom_hline(yintercept=0)
 
-ggplot(model.fit.lmer.f, aes(.fitted,LogError)) + 
+ggplot(graph.avgdeg.lmer.SP.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
 
 
 ```
 
-```{r, eval=FALSE}
+```{r}
 
-# profile not working yet - takes too long?
+# TO DO: check out interpretation for these plots??
 
 library(lattice)
 
-#prof <-  profile(model.fit.lmer, optimizer="Nelder_Mead", which="beta_")
+prof <-  profile(graph.avgdeg.lmer.SP, optimizer="Nelder_Mead", which="beta_")
 
-#prof.CI <- confint(prof)
+prof.CI <- confint(prof)
 
-CI2 <- confint(model.fit.lmer, maxpts = 8)
+#CI2 <- confint(graph.avgdeg.lmer.SP, maxpts = 8)
 
 xyplot(prof)
 
@@ -489,7 +825,9 @@ splom(prof)
 
 ```
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
+
+# doesn't make sense for continuous predictor???
 
 lsm.task <- lsmeansLT(model.fit.lmer, test.effs = "Task")
 
@@ -516,7 +854,9 @@ ggplot(lsm.task.df) +
 
 
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
+
+# doesn't make sense for continuous predictor???
 
 difflsm.task <- difflsmeans(model.fit.lmer, test.effs = "Task")
 
@@ -559,7 +899,7 @@ ggplot(difflsm.task.df) +
 
 ### Logistic regression for over/underestimation
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 # https://www.r-bloggers.com/how-to-perform-a-logistic-regression-in-r/
 
@@ -612,7 +952,9 @@ exp(cbind(OR = coef(log.model), confint(log.model)))
 with(log.model, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
 # p-value is 0, so model with predictor definitely fits better than the null model
 
+# testing the quality of the variable, is this the best model we can get?
 
+# is this a good fitting model?  check % accuracy; split data into training test, check accuracy on test
 
 anova(log.model, test="Chisq")
 
@@ -626,9 +968,12 @@ pR2(log.model)
 ```
 
 ### Beta regression for percentage
+
+
+
 ### Negative binomial model for responses
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 # https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/
 
@@ -664,7 +1009,7 @@ pchisq(2 * (logLik(nbin.graph.2) - logLik(pois.graph)), df = 1, lower.tail = FAL
 ```
 
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 (est <- cbind(Estimate = coef(nbin.graph.2), confint(nbin.graph.2)))
 
@@ -672,7 +1017,7 @@ exp(est)
 
 ```
 
-```{r, cache=TRUE}
+```{r, eval=FALSE}
 
 nbin.graph.full <- glm.nb(Response ~ Task + factor(Dataset) + Condition + Task:Dataset + Task:Condition + Dataset:Condition, data = graphics_lme)
 

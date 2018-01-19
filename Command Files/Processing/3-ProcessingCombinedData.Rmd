@@ -366,8 +366,33 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 
 ```
 
-
 ## Grade the questions
+
+```{r}
+
+# normalize numerical answers
+
+normalit<-function(m){
+   (m - min(m))/(max(m)-min(m))
+}
+
+# there is a slight chance the "correct" answer will differ between conditions, even when it shouldn't,
+# because all of the answers were calculated by R from network files, and some of them are slightly imperfect
+
+# TO DO: reconsider - is it too weird to have a different min and max for each condition?
+
+joined_num_ans <- joined_num_ans %>% 
+  group_by(Condition, Dataset, Task) %>%
+  mutate(MinResp = ifelse(min(Response) < CorrectAnswer, min(Response), CorrectAnswer),
+         MaxResp = ifelse(max(Response) > CorrectAnswer, max(Response), CorrectAnswer)) %>%
+  ungroup()
+
+joined_num_ans <- joined_num_ans %>%
+  mutate(NormResponse=(Response - MinResp)/(MaxResp-MinResp),
+         NormCorrectAnswer=(CorrectAnswer - MinResp)/(MaxResp-MinResp))
+
+```
+
 
 ```{r}
 
@@ -380,10 +405,15 @@ joined_nodes <- bind_rows(joined_degree, joined_bc)
 # RawDifference will be negative if response was an underestimate
 
 graded_num_ans <- dplyr::mutate(joined_num_ans, 
-                                RawDifference = Response - CorrectAnswer, 
-                                AbsDifference = abs(Response - CorrectAnswer), 
-                                Percentage = abs(Response - CorrectAnswer)/CorrectAnswer,
-                                LogError = log10(abs(Response - CorrectAnswer) + 1))
+                                RawDifference = NormResponse - NormCorrectAnswer, 
+                                AbsDifference = abs(NormResponse - NormCorrectAnswer), 
+                                Percentage = abs(NormResponse - NormCorrectAnswer)/NormCorrectAnswer,
+                                LogError = log10(abs(NormResponse - NormCorrectAnswer) + 1),
+                                Underestimated = ifelse(RawDifference < 0,
+                                                        "under",
+                                                        ifelse(RawDifference == 0, 
+                                                               "correct",
+                                                               "over")))
 
 #ggplot(graded_num_ans) + geom_boxplot(aes(y=log2(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
 #ggplot(graded_num_ans) + geom_boxplot(aes(y=log10(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
@@ -412,12 +442,39 @@ joined_nodes <- mutate(joined_nodes, Distance = sqrt((Click_X-NodeXAdjusted)^2 +
 
 graded_nodes_best_of_25_buffer <- group_by(joined_nodes, `Demo-ResponseID`, Condition, Dataset, Task, Attempt) %>% filter(Distance <= 25) %>% top_n(-1, NodeRank) %>% top_n(-1, Distance)
 
+```
+
+```{r}
+
+# normalize click responses
+
+# there is a slight chance the "correct" answer will differ between conditions, even when it shouldn't,
+# because all of the answers were calculated by R from network files, and some of them are slightly imperfect
+
+graded_nodes_best_of_25_buffer <- graded_nodes_best_of_25_buffer %>% 
+  group_by(Condition, Dataset, Task) %>%
+  mutate(MinResp = ifelse(min(NodeValue) < MaxValue, min(NodeValue), MaxValue),
+         MaxResp = ifelse(max(NodeValue) > MaxValue, max(NodeValue), MaxValue)) %>%
+  ungroup()
+
+graded_nodes_best_of_25_buffer <- graded_nodes_best_of_25_buffer %>%
+  mutate(NormResponse=(NodeValue - MinResp)/(MaxResp-MinResp),
+         NormCorrectAnswer=(MaxValue - MinResp)/(MaxResp-MinResp))
+
+```
+
+```{r}
 
 graded_nodes_top <- dplyr::mutate(graded_nodes_best_of_25_buffer, 
-                                RawDifference = NodeValue - MaxValue, 
-                                AbsDifference = abs(NodeValue - MaxValue), 
-                                Percentage = abs(NodeValue - MaxValue)/MaxValue,
-                                LogError = log10(abs(NodeValue - MaxValue) + 1))
+                                RawDifference = NormResponse - NormCorrectAnswer, 
+                                AbsDifference = abs(NormResponse - NormCorrectAnswer), 
+                                Percentage = abs(NormResponse - NormCorrectAnswer)/NormCorrectAnswer,
+                                LogError = log10(abs(NormResponse - NormCorrectAnswer) + 1),
+                                Underestimated = ifelse(RawDifference < 0,
+                                                        "under",
+                                                        ifelse(RawDifference == 0, 
+                                                               "correct",
+                                                               "over")))
 
 #ggplot(graded_nodes_top) + geom_boxplot(aes(y=log2(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
 
@@ -440,6 +497,22 @@ BC_summary <- graded_nodes_top %>% filter(Task == "BC",Dataset>0) %>%
 
 ```
 
+```{r}
+
+# remove all but the single best click for BC
+
+graded_nodes_top_bc <- graded_nodes_top %>% 
+  filter(Task=="BC") %>%
+  group_by(`Demo-ResponseID`, Condition, Dataset) %>% 
+  top_n(-1, NodeRank) %>% top_n(-1, Distance)
+
+# join back to graded nodes
+
+graded_nodes_top <- graded_nodes_top %>% 
+  filter(Task=="ClickHighDeg") %>% 
+  bind_rows(graded_nodes_top_bc)
+
+```
 
 ```{r}
 
@@ -474,7 +547,7 @@ exp_only <- graded_num_ans %>% filter(QType == "Exp")
 
 num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
 
-nodes_lim <- graded_nodes_top %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, RawDifference, AbsDifference, Percentage, LogError, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
+nodes_lim <- graded_nodes_top %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, NodeRank, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, RawDifference, AbsDifference, Percentage, LogError, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
 
 nodes_lim <- nodes_lim %>% rename(Response = NodeValue, CorrectAnswer = MaxValue)
 
