@@ -50,6 +50,9 @@ detachAllPackages()
 
 require(tidyverse)
 library(stringr)
+#require(igraph)
+library(ggraph)
+library(tidygraph)
 
 # mixed modeling
 
@@ -59,6 +62,7 @@ library(lme4)
 library(lmerTest)
 #library(lsmeans)
 library(emmeans)
+library(multcompView)
 
 require(lattice)
 source(system.file("utils", "allFit.R", package="lme4"))
@@ -319,6 +323,16 @@ graphics_numnodes <- graphics %>% filter(Task == "NumNodes")
 
 ```
 
+```{r}
+
+# Setting up colors, etc., for lsmeans plots
+
+sig.level.names <- c("p < .0001","p < .001","p < .01","p < .05","NS")
+sig.colors <- c("gray20", "gray35", "gray50", "gray65", "white")
+names(sig.colors) <- sig.level.names
+
+
+```
 
 ## Mixed Models
 
@@ -4845,48 +4859,21 @@ splom(prof)
 
 ```
 
-```{r, eval=FALSE}
+#### Least Squares Means
 
-# Do for each categorical predictor? Final predictors:
-# Condition, Dataset, Condition:Dataset, Dataset:Underestimated, DatasetOrder:Underestimated
+Do for each categorical predictor. Final predictors: Condition, Dataset, Condition:Dataset, Dataset:Underestimated, DatasetOrder:Underestimated
 
-# old code: lmerTest is deprecated
+##### Condition
 
-# LSMeans Difference data
+```{r}
 
-graph.numhd.difflsm.cond <- difflsmeans(graph.numhd.lmer.full.int.4, test.effs = "Condition")
+# trying lmerTest::lsmeansLT
 
-plot(graph.numhd.difflsm.cond)
-
-graph.numhd.difflsm.cond.df <- as_data_frame(graph.numhd.difflsm.cond$diffs.lsmeans.table,
-                                             rownames="Condition.Difference")
-
-graph.numhd.difflsm.cond.df
-
-graph.numhd.difflsm.cond.df$Condition.Difference <- 
-  factor(graph.numhd.difflsm.cond.df$Condition.Difference, 
-         levels=graph.numhd.difflsm.cond.df %>% arrange(desc(Estimate)) %>% 
-           dplyr::select(Condition.Difference) %>% unlist())
-
-graph.numhd.difflsm.cond.df %>% arrange(desc(Estimate))
-
-ggplot(graph.numhd.difflsm.cond.df) +
-  geom_point(aes(x=Condition.Difference,y=Estimate, color=`p-value`<.01)) +
-  geom_errorbar(aes(x=Condition.Difference,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
-  coord_flip()
-
-# LSMeans data; note = lmerTest::lsmeans will only report lsmeans for factor variables
-# and is deprecated
-
-graph.numhd.lsmlt.cond <- lmerTest::lsmeans(graph.numhd.lmer.full.int.4, "Condition")
-
-plot(graph.numhd.lsmlt.cond)
-
-# LSMeansLT data
+# note = lmerTest::lsmeans will only report lsmeans for factor variables and is deprecated
 
 graph.numhd.lsmlt.cond.2 <- lsmeansLT(graph.numhd.lmer.full.int.4, test.effs = "Condition")
 
-plot(graph.numhd.lsmlt.cond.2)
+plot(graph.numhd.lsmlt.cond.2) # not a completely terrible style, but not sorted properly
 
 graph.numhd.lsmlt.cond.2.df <- as_data_frame(graph.numhd.lsmlt.cond.2$lsmeans.table)
 
@@ -4896,20 +4883,29 @@ graph.numhd.lsmlt.cond.2.df$Condition <- factor(graph.numhd.lsmlt.cond.2.df$Cond
 
 graph.numhd.lsmlt.cond.2.df %>% arrange(desc(Estimate))
 
+graph.numhd.lsmlt.cond.2.df <- graph.numhd.lsmlt.cond.2.df %>% 
+  mutate(sig.levels = factor(case_when(
+    `p-value` < .0001 ~ sig.level.names[1],
+    `p-value` < .001 ~ sig.level.names[2],
+    `p-value` < .01 ~ sig.level.names[3],
+    `p-value` < .05 ~ sig.level.names[4],
+    TRUE ~ sig.level.names[5]
+    )
+  ,levels=sig.level.names,ordered=TRUE))
+
+graph.numhd.lsmlt.cond.2.df
 
 ggplot(graph.numhd.lsmlt.cond.2.df) +
-  geom_point(aes(x=Condition,y=Estimate, color=`p-value`<.01)) +
   geom_errorbar(aes(x=Condition,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
+  geom_point(aes(x=Condition,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
-
-# TO DO: add a color scale so TRUE/FALSE values are always same color across all plots
-
 
 ```
 
-```{r, eval=FALSE}
+```{r}
 
-# doesn't make sense for continuous predictor???
+# LSMeans Difference data
 
 graph.numhd.difflsmlt.cond <- difflsmeans(graph.numhd.lmer.full.int.4, test.effs = "Condition")
 
@@ -4921,7 +4917,11 @@ graph.numhd.difflsmlt.cond.df
 
 graph.numhd.difflsmlt.cond.df <- graph.numhd.difflsmlt.cond.df %>% mutate(Pair=sub("Condition ","",Pair)) %>% separate(Pair, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
 
-graph.numhd.difflsmlt.cond.df$Pair <- factor(graph.numhd.difflsmlt.cond.df$Pair, levels=graph.numhd.difflsmlt.cond.df %>% arrange(desc(Estimate)) %>% dplyr::select(Pair) %>% unlist())
+copy <- graph.numhd.difflsmlt.cond.df %>% rename(From=To,To=From)
+
+graph.numhd.difflsmlt.cond.df <- bind_rows(graph.numhd.difflsmlt.cond.df,copy)
+
+graph.numhd.difflsmlt.cond.df$Pair <- factor(graph.numhd.difflsmlt.cond.df$Pair, levels=graph.numhd.difflsmlt.cond.df %>% arrange(desc(Estimate)) %>% dplyr::select(Pair) %>% distinct() %>% unlist())
 
 cond.lev <- c("Ctrl","Phr","Col","Siz")
 
@@ -4930,34 +4930,44 @@ graph.numhd.difflsmlt.cond.df$To <- factor(graph.numhd.difflsmlt.cond.df$To, lev
 
 graph.numhd.difflsmlt.cond.df %>% arrange(desc(Estimate))
 
+graph.numhd.difflsmlt.cond.df <- graph.numhd.difflsmlt.cond.df %>% 
+  mutate(sig.levels = factor(case_when(
+    `p-value` < .0001 ~ sig.level.names[1],
+    `p-value` < .001 ~ sig.level.names[2],
+    `p-value` < .01 ~ sig.level.names[3],
+    `p-value` < .05 ~ sig.level.names[4],
+    TRUE ~ sig.level.names[5]
+    )
+  ,levels=sig.level.names,ordered=TRUE))
+
 ggplot(graph.numhd.difflsmlt.cond.df) +
-  geom_point(aes(x=Pair,y=Estimate, color=`p-value`<.01)) +
   geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
-  geom_hline(aes(yintercept=0)) +
+  geom_point(aes(x=Pair,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
 ggplot(graph.numhd.difflsmlt.cond.df) +
-  geom_tile(aes(x=To,y=From,fill=Estimate)) +
-  scale_fill_distiller(type="div", palette=4) +
-  scale_x_discrete(drop=FALSE) +
-  scale_y_discrete(drop=FALSE)
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_point(aes(x=Pair,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
 
 ggplot(graph.numhd.difflsmlt.cond.df) +
-  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=`p-value`<.01), shape=21) +
-  scale_fill_distiller(type="div", palette=4) +
-  scale_color_manual(values=c("grey90","black")) +
-  scale_x_discrete(drop=FALSE) +
-  scale_y_discrete(drop=FALSE)
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numhd.difflsmlt.cond.df) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(Estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
   
-
-
-
 ```
 
 ```{r}
-# Do for each categorical predictor? Final predictors:
-# Condition, Dataset, Condition:Dataset, Dataset:Overestimated, DatasetOrder:Overestimated
-
 # trying to use emmeans package for lsmeans table
 
 # can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
@@ -4969,33 +4979,197 @@ ggplot(graph.numhd.difflsmlt.cond.df) +
 # with(graphics_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
 
-graph.numhd.lsm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", nesting = NULL)
+graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
 
-graph.numhd.lsm.condition
+graph.numhd.emm.condition
 
-graph.numhd.lsm.condition.df <- as.data.frame(graph.numhd.lsm.condition)
+graph.numhd.emm.condition.df <- as.data.frame(graph.numhd.emm.condition)
 
-graph.numhd.lsm.condition.df
+graph.numhd.emm.condition.df
 
-graph.numhd.lsm.dataset <- emmeans(graph.numhd.lmer.full.int.4, "Dataset", nesting = NULL)
-#graph.numhd.lsm.dataset <- emmeans(graph.numhd.lmer.full.int.4, "Dataset", lmer.df = "satterthwaite")
+emmip(graph.numhd.lmer.full.int.4, ~Condition, CIs = TRUE)
+emmip(graph.numhd.emm.condition, ~Condition, CIs = TRUE)
+plot(graph.numhd.emm.condition)
+#plot(graph.numhd.emm.condition, comparisons = TRUE)
 
-graph.numhd.lsm.dataset
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
 
-emmip(graph.numhd.lmer.full.int.4, ~Dataset, CIs = TRUE)
-emmip(graph.numhd.lsm.dataset, ~Dataset, CIs = TRUE)
-plot(graph.numhd.lsm.dataset)
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+full.cld <- cld(graph.numhd.emm.condition,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+graph.numhd.emm.condition.cld <- full.cld$emmeans
+
+graph.numhd.emm.condition.cld %>% dplyr::select(Condition,.group)
+
+graph.numhd.emm.condition.cld
+
+graph.numhd.emm.condition.cld$Condition <- factor(graph.numhd.emm.condition.cld$Condition, levels=graph.numhd.emm.condition.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+graph.numhd.emm.condition.cld %>% arrange(desc(emmean))
+
+ggplot(graph.numhd.emm.condition.cld) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
 
 #plot(ref_grid(graph.numhd.lmer.full.int.4), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
 
-graph.numhd.difflsm.dataset <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Dataset)
+```
 
-graph.numhd.difflsm.dataset
+```{r}
 
-graph.numhd.difflsm.conddata <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Dataset | Condition)
+graph.numhd.emm.condition.pairs <- as.data.frame(pairs(graph.numhd.emm.condition)) 
+graph.numhd.emm.condition.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
 
-graph.numhd.difflsm.conddata
+pairs.CI <- confint(pairs(graph.numhd.emm.condition))
+
+graph.numhd.emm.condition.pairs <- full_join(graph.numhd.emm.condition.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numhd.emm.condition))
+plot(pairs(graph.numhd.emm.condition), comparisons = TRUE)
+
+
+graph.numhd.emm.condition.pairs <- graph.numhd.emm.condition.pairs %>% 
+  mutate(sig.levels = factor(case_when(
+    p.value < .0001 ~ sig.level.names[1],
+    p.value < .001 ~ sig.level.names[2],
+    p.value < .01 ~ sig.level.names[3],
+    p.value < .05 ~ sig.level.names[4],
+    TRUE ~ sig.level.names[5]
+    )
+  ,levels=sig.level.names,ordered=TRUE))
+
+graph.numhd.emm.condition.pairs$contrast <- factor(graph.numhd.emm.condition.pairs$contrast, levels=graph.numhd.emm.condition.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numhd.emm.condition.pairs <- graph.numhd.emm.condition.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE)
+
+ggplot(graph.numhd.emm.condition.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numhd.emm.condition.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.numhd.emm.condition.pairs %>% dplyr::select(-contrast,-del), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*50
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.numhd.emm.condition.pairs %>% dplyr::select(-contrast,-del), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+```{r}
+
+copy <- graph.numhd.emm.condition.pairs %>% rename(From=To,To=From)
+
+graph.numhd.emm.condition.pairs.compl <- bind_rows(graph.numhd.emm.condition.pairs,copy)
+
+
+cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.numhd.emm.condition.pairs.compl$From <- factor(graph.numhd.emm.condition.pairs.compl$From, levels=cond.lev)
+graph.numhd.emm.condition.pairs.compl$To <- factor(graph.numhd.emm.condition.pairs.compl$To, levels=cond.lev)
+
+graph.numhd.emm.condition.pairs.compl %>% arrange(desc(estimate))
+
+ggplot(graph.numhd.emm.condition.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numhd.emm.condition.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numhd.emm.condition.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(graph.numhd.emm.condition.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+
+
+```
+
+
+##### Condition:Dataset
+
+```{r}
+#graph.numhd.diffemm.conddata <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Dataset | Condition)
+
+#graph.numhd.diffemm.conddata
 
 ```
 
