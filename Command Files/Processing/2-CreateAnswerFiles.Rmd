@@ -84,6 +84,10 @@ node_degree_lookup <- node_degree_lookup %>%
   group_by(Condition, Dataset) %>% 
   mutate(NodeRank = dense_rank(desc(NodeValue)))
 
+node_degree_lookup <- node_degree_lookup %>%
+  group_by(Condition, Dataset) %>% 
+  mutate(MaxNodeRank = max(NodeRank))
+
 node_bc_lookup <- node_bc_lookup %>% 
   group_by(Condition, Dataset) %>% 
   summarize(MaxValue = max(NodeValue)) %>% 
@@ -92,6 +96,11 @@ node_bc_lookup <- node_bc_lookup %>%
 node_bc_lookup <- node_bc_lookup %>%
   group_by(Condition, Dataset) %>% 
   mutate(NodeRank = dense_rank(desc(NodeValue)))
+
+node_bc_lookup <- node_bc_lookup %>%
+  group_by(Condition, Dataset) %>% 
+  mutate(MaxNodeRank = max(NodeRank))
+
 
 node_lookup <- bind_rows(node_degree_lookup, node_bc_lookup)
 ```

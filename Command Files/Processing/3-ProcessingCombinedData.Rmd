@@ -15,6 +15,26 @@ Possible data processing steps:
 * Generating new variables
 * Saving intermediate and analysis data files.
 
+## Detach previous packages
+
+```{r}
+
+detachAllPackages <- function() {
+
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+
+  package.list <- setdiff(package.list,basic.packages)
+
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+
+}
+
+detachAllPackages()
+
+```
+
 ## Load packages
 
 ```{r}
@@ -545,9 +565,9 @@ graded_nodes_top <- left_join(graded_nodes_top, stats_datasets_tall)
 
 exp_only <- graded_num_ans %>% filter(QType == "Exp")
 
-num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
+num_ans_lim <- graded_num_ans %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Response, NormResponse, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, CorrectAnswer, NormCorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, Underestimated, ClustConf, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
 
-nodes_lim <- graded_nodes_top %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, NodeRank, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, RawDifference, AbsDifference, Percentage, LogError, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
+nodes_lim <- graded_nodes_top %>% filter(QType == "Exp") %>% select(`Demo-ResponseID`, Condition, Dataset, Task, Attempt, NodeValue, NormResponse, NodeRank, MaxNodeRank, DatasetOrder, DatasetDuration, DatasetStartTime, TaskOrder, MaxValue, NormCorrectAnswer, RawDifference, AbsDifference, Percentage, LogError, Underestimated, filename, `Stats-Q_TotalDuration`, `Stats-dataset_count`, `Stats-CompensationCondition`, `Stats-OperatingSystem`, `Stats-ScreenResolution`, `Demo-age`, `Demo-gender`, `Demo-lang`, `Demo-educ`, `Demo-educ_TEXT`, `Demo-acfield`, `Demo-acfieldother`, `Demo-dailytech_Computer`, `Demo-dailytech_Tablet`, `Demo-dailytech_SmartPhone`, `Demo-weeklygaming`, `Demo-expdataanal`, `Demo-expdatavis`, `Demo-expreadnetvis`, `Demo-expcreatenetvis`, NetVisExperience)
 
 nodes_lim <- nodes_lim %>% rename(Response = NodeValue, CorrectAnswer = MaxValue)
 
