@@ -87,6 +87,7 @@ library(broom)
 #library(gamboostLSS)
 library(brms)
 library(tidybayes)
+library(magrittr)
 
 
 
@@ -120,6 +121,8 @@ figureDir <- "../../Documents/"
 ```
 
 ## Loading analysis data files
+
+TO DO : in previous scripts, save data with saveRDS
 
 ```{r, message=FALSE}
 
@@ -366,7 +369,8 @@ graphics_numnodes <- graphics %>% filter(Task == "NumNodes")
 sig.level.names <- c("p < .0001","p < .001","p < .01","p < .05","NS")
 sig.colors <- c("gray20", "gray35", "gray50", "gray65", "white")
 names(sig.colors) <- sig.level.names
-
+star.colors <- c("gray20","white")
+names(star.colors) <- c(TRUE, FALSE)
 
 ```
 
@@ -1306,6 +1310,12 @@ anova(graph.avgdeg.lmer.full, graph.avgdeg.lmer.int)
 
 ```
 
+```{r}
+
+#SAVE THE RESULTS
+save(graph.avgdeg.lmer.full, file = file.path(analysisDataDir,"fits/graph_avgdeg_lmer_full.RData"))
+
+```
 
 ```{r, cache=TRUE}
 
@@ -2302,6 +2312,135 @@ newdata2 <- cbind(newdata2, predict(graph.avgdeg.nb.full.int, newdata2, type = "
 # Dupont, W. D. 2002. Statistical Modeling for Biomedical Researchers: A Simple Introduction to the Analysis of Complex Data. New York: Cambridge Press.
 
 ```
+
+#### brms/tidybayes
+
+```{r, eval=FALSE}
+
+# graph.avgdeg.lmer.full <- lmer(LogError ~ Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
+
+#library(rstan)
+
+theme_set(theme_grey())
+
+#avgd.fit <- brm(LogError~Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data = temp, REML=T)
+avgd.fit <- brm(LogError~Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data = temp)
+
+summary(avgd.fit, waic = TRUE) 
+
+#plot(avgd.fit)
+
+avgd.fit$formula
+
+#avgd.fit %<>% recover_types(temp)
+
+#tidybayes::parameters(avgd.fit)
+
+
+```
+
+```{r}
+
+#plot(fit, ask=FALSE) 
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),points=TRUE, ask=FALSE)
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),ask=FALSE)
+plot(marginal_effects(avgd.fit, effects="Underestimated", probs = c(0.05, 0.95)),ask=FALSE)
+
+```
+
+
+```{r}
+
+# all pairs
+
+avgd.hyp <- c("Underestimatedunder = 0")
+
+(avgd.hyp.res <- hypothesis(avgd.fit, avgd.hyp))
+
+#plot(avgd.hyp.res, chars = NULL, ask=FALSE)
+
+avgd.hyp.res.df <- avgd.hyp.res$hypothesis
+
+avgd.hyp.res.df$contrast <- c("under-over")
+
+avgd.hyp.res.df$contrast <- factor(avgd.hyp.res.df$contrast,
+                                    levels=avgd.hyp.res.df %>% arrange(desc(Estimate)) %>%
+                                      dplyr::select(contrast) %>% unlist())
+
+ggplot(avgd.hyp.res.df, aes(contrast,Estimate)) + 
+  geom_errorbar(aes(ymin=`l-95% CI`,ymax=`u-95% CI`)) +
+  geom_point(aes(fill=Star=="*"), size=7, shape=21) +
+  #geom_hline(yintercept = 0) +
+  scale_fill_manual(values=star.colors,name="Outside 95% CI") +
+  coord_flip()
+
+```
+
+```{r}
+
+hyp.pairs.2.res.df <- hyp.pairs.2.res.df %>% separate(contrast, c("From", "To"), sep="[-]", remove=FALSE)
+
+copy <- hyp.pairs.2.res.df %>% rename(From=To,To=From) %>% 
+  mutate(Estimate=-Estimate,
+         `l-95% CI`=-`l-95% CI`,
+         `u-95% CI`=-`u-95% CI`)
+
+pairs.compl <- bind_rows(hyp.pairs.2.res.df, copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+pairs.compl$From <- factor(pairs.compl$From, levels=c(9,8,7,5,3,1))
+pairs.compl$To <- factor(pairs.compl$To, levels=c(1,3,5,7,8,9))
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+pairs.compl %>% arrange(Estimate)
+
+# can't get color to go the right direction
+ggplot(pairs.compl %>% filter(Estimate >= 0)) +
+  geom_tile(aes(x=To,y=From,fill=Estimate), color="black") +
+  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Star=="*"),shape=21, color="black") +
+  scale_fill_manual(values=star.colors, name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+hyp.pairs.2.res.df$From <- factor(hyp.pairs.2.res.df$From, levels=c(9,8,7,5,3,1))
+hyp.pairs.2.res.df$To <- factor(hyp.pairs.2.res.df$To, levels=c(1,3,5,7,8,9))
+
+
+ggplot(hyp.pairs.2.res.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+
+
+```
+
 
 #### Least Squares Means-numlinks
 
@@ -3384,6 +3523,13 @@ anova(graph.bc.nb.full, graph.bc.nb.full.int)
 
 ```
 
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.bc.nb.full.int, file = file.path(analysisDataDir,"fits/graph_bc_nb_full_int.RData"))
+
+```
 
 ```{r}
 
@@ -4945,6 +5091,14 @@ anova(graph.clickhd.nb.full, graph.clickhd.nb.full.int)
 
 ```{r}
 
+#SAVE THE RESULTS
+save(graph.clickhd.nb.full, file = file.path(analysisDataDir,"fits/graph_clickhd_nb_full.RData"))
+
+```
+
+
+```{r}
+
 graph.clickhd.nb.full.f <- fortify(graph.clickhd.nb.full)
 
 ggplot(graph.clickhd.nb.full.f, aes(.fitted,.resid)) + 
@@ -5654,7 +5808,7 @@ temp <- graphics_lgclust %>% dplyr::select(Demo.ResponseID, Response, Condition,
 
 ##### brms/tidybayes
 
-```{r}
+```{r, eval=FALSE}
 
 #library(rstan)
 
@@ -5669,39 +5823,232 @@ theme_set(theme_grey())
 
 #compose_data(graphics_lgclust.2)
 
-fit <- brm(bf(ResponseInfl ~ Dataset + UnderestDummy + Demo.gender + 
-    Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows + 
-    Dataset:UnderestDummy + Demo.gender:Stats.OperatingSystemWindows + 
-    UnderestDummy:Demo.gender + UnderestDummy:Stats.OperatingSystemWindows), 
-    data = graphics_lgclust.2, family = zero_one_inflated_beta())
+# THIS WAS RUN
+#fit <- brm(bf(ResponseInfl ~ Dataset + UnderestDummy + Demo.gender + 
+#    Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows + 
+#    Dataset:UnderestDummy + Demo.gender:Stats.OperatingSystemWindows + 
+#    UnderestDummy:Demo.gender + UnderestDummy:Stats.OperatingSystemWindows), 
+#    data = graphics_lgclust.2, family = zero_one_inflated_beta())
 
-library(magrittr)
+#fit2 <- update(fit, formula = . ~ . + (1 | Demo.ResponseID), newdata=graphics_lgclust.2)
 
-fit %<>% recover_types(graphics_lgclust.2)
+LOO(fit, fit2)
 
-print(fit, pars = c("b_Intercept"))
+# fit2 has lower LOOIC (1646.85 < 1620.62), which is good
 
-str(extract(fit))
+fit2$formula
 
-summary(fit, waic = TRUE) 
+#fixed_form <- brms:::extract_effects(fit$formula)$fixed
+#mm <- brms:::get_model_matrix(fixed_form, data = fit$data) 
+
+coef(fit2)
+fixef(fit2)
+fixef(fit2, robust=TRUE)
+fitted(fit2)
+tidy(fit2)
+
+
+fit2 %<>% recover_types(graphics_lgclust.2)
+
+#print(fit2, pars = c("b_Intercept"))
+
+#str(extract(fit2))
+
+summary(fit2, waic = TRUE) 
+
+```
+
+```{r}
+
+#plot(fit, ask=FALSE) 
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),points=TRUE, ask=FALSE)
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),ask=FALSE)
+plot(marginal_effects(fit, effects="Dataset", probs = c(0.05, 0.95)),ask=FALSE)
 
 ```
 
 ```{r, eval=FALSE}
-fit.df <- tidy(fit)
+#fit.df <- tidy(fit2)
 
-lmerTest::lsmeansLT(fit,"Dataset")
+# diff between each dataset and dataset 1
+hyp.vs.1 <- c("Dataset.L = 0", 
+         "Dataset.Q = 0",
+         "Dataset.C = 0",
+         "DatasetE4 = 0",
+         "DatasetE5 = 0")
 
-hyp <- c("exp(Dataset.L) = 0",
-         "exp(Dataset.Q) = 0")
-hypothesis(fit, hyp)
+hyp.vs.1.res <- hypothesis(fit2, hyp.vs.1)
 
-hyp <- "exp(Dataset.L + Dataset.Q) > exp(Dataset.L)"
-(hyp <- hypothesis(fit, hyp))
+# 1 = Intercept
+# 3 = Dataset.L + Intercept
+# 5 = Dataset.Q + Intercept
+# 7 = Dataset.C + Intercept
+# 8 = DatasetE4 + Intercept
+# 9 = DatasetE5 + Intercept
 
-plot(hyp, chars = NULL)
+# diff between each dataset and dataset 3
+hyp.vs.3 <- c("Dataset.Q > Dataset.L", # 5 vs. 3
+         "Dataset.C > Dataset.L",
+         "DatasetE4 > Dataset.L",
+         "DatasetE5 > Dataset.L")
+
+hyp.vs.3.res <- hypothesis(fit2, hyp.vs.3)
+
+# diff between each dataset and dataset 5
+hyp.vs.5 <- c("Dataset.C > Dataset.Q", # 7 vs. 5
+         "DatasetE4 > Dataset.Q",
+         "DatasetE5 > Dataset.Q")
+
+hyp.vs.5.res <- hypothesis(fit2, hyp.vs.5)
+
+# diff between each dataset and dataset 7
+hyp.vs.7 <- c("DatasetE4 > Dataset.C", # 8 vs. 7
+         "DatasetE5 > Dataset.C")
+
+hyp.vs.7.res <- hypothesis(fit2, hyp.vs.7)
+
+# diff between each dataset and dataset 8
+hyp.vs.8 <- c("DatasetE5 > DatasetE4" # 9 vs. 8
+         )
+
+hyp.vs.8.res <- hypothesis(fit2, hyp.vs.8)
+
+# sequential differences
+hyp.seq <- c("Dataset.L = 0",
+             "Dataset.L + Dataset.Q > Dataset.L",
+             "Dataset.Q + Dataset.C > Dataset.Q",
+             "Dataset.C + DatasetE4 > Dataset.C",
+             "DatasetE4 + DatasetE5 > DatasetE4")
+
+(hyp.seq.res <- hypothesis(fit2, hyp.seq))
 
 ```
+
+```{r}
+
+# all pairs
+
+hyp.pairs <- c("Dataset.L = 0", # 3 vs. 1
+         "Dataset.Q = 0",
+         "Dataset.C = 0",
+         "DatasetE4 = 0",
+         "DatasetE5 = 0",
+         "Dataset.Q > Dataset.L", # 5 vs. 3
+         "Dataset.C > Dataset.L",
+         "DatasetE4 > Dataset.L",
+         "DatasetE5 > Dataset.L",
+         "Dataset.C > Dataset.Q", # 7 vs. 5
+         "DatasetE4 > Dataset.Q",
+         "DatasetE5 > Dataset.Q",
+         "DatasetE4 > Dataset.C", # 8 vs. 7
+         "DatasetE5 > Dataset.C",
+         "DatasetE5 > DatasetE4")
+
+# above syntax converts to Dataset.Q - Dataset.L > 0, which then calculates evidence ratio, which often makes upper CI infinite; correct syntax is Dataset.Q - Dataset.L = 0
+
+hyp.pairs.2 <- c("Dataset.L = 0", # 3 vs. 1
+         "Dataset.Q = 0",
+         "Dataset.C = 0",
+         "DatasetE4 = 0",
+         "DatasetE5 = 0",
+         "Dataset.Q - Dataset.L = 0", # 5 vs. 3
+         "Dataset.C - Dataset.L = 0",
+         "DatasetE4 - Dataset.L = 0",
+         "DatasetE5 - Dataset.L = 0",
+         "Dataset.C - Dataset.Q = 0", # 7 vs. 5
+         "DatasetE4 - Dataset.Q = 0",
+         "DatasetE5 - Dataset.Q = 0",
+         "DatasetE4 - Dataset.C = 0", # 8 vs. 7
+         "DatasetE5 - Dataset.C = 0",
+         "DatasetE5 - DatasetE4 = 0")
+
+
+(hyp.pairs.2.res <- hypothesis(fit2, hyp.pairs.2))
+
+#plot(hyp.pairs.2.res, chars = NULL, ask=FALSE)
+
+hyp.pairs.2.res.df <- hyp.pairs.2.res$hypothesis
+
+hyp.pairs.2.res.df$contrast <- c("3-1","5-1","7-1","8-1","9-1","5-3","7-3","8-3","9-3","7-5","8-5","9-5","8-7","9-7","9-8")
+
+hyp.pairs.2.res.df$contrast <- factor(hyp.pairs.2.res.df$contrast,
+                                    levels=hyp.pairs.2.res.df %>% arrange(desc(Estimate)) %>%
+                                      dplyr::select(contrast) %>% unlist())
+
+ggplot(hyp.pairs.2.res.df, aes(contrast,Estimate)) + 
+  geom_errorbar(aes(ymin=`l-95% CI`,ymax=`u-95% CI`)) +
+  geom_point(aes(fill=Star=="*"), size=7, shape=21) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values=star.colors,name="Outside 95% CI") +
+  coord_flip()
+
+```
+
+```{r}
+
+hyp.pairs.2.res.df <- hyp.pairs.2.res.df %>% separate(contrast, c("From", "To"), sep="[-]", remove=FALSE)
+
+copy <- hyp.pairs.2.res.df %>% rename(From=To,To=From) %>% 
+  mutate(Estimate=-Estimate,
+         `l-95% CI`=-`l-95% CI`,
+         `u-95% CI`=-`u-95% CI`)
+
+pairs.compl <- bind_rows(hyp.pairs.2.res.df, copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+pairs.compl$From <- factor(pairs.compl$From, levels=c(9,8,7,5,3,1))
+pairs.compl$To <- factor(pairs.compl$To, levels=c(1,3,5,7,8,9))
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+pairs.compl %>% arrange(Estimate)
+
+# can't get color to go the right direction
+ggplot(pairs.compl %>% filter(Estimate >= 0)) +
+  geom_tile(aes(x=To,y=From,fill=Estimate), color="black") +
+  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Star=="*"),shape=21, color="black") +
+  scale_fill_manual(values=star.colors, name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+hyp.pairs.2.res.df$From <- factor(hyp.pairs.2.res.df$From, levels=c(9,8,7,5,3,1))
+hyp.pairs.2.res.df$To <- factor(hyp.pairs.2.res.df$To, levels=c(1,3,5,7,8,9))
+
+
+ggplot(hyp.pairs.2.res.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+
+
+```
+
 
 ##### mgcv
 
@@ -5785,6 +6132,139 @@ Anova(graph.lgclust.beta.cond, type="II")
 
 ```
 
+##### broom
+
+```{r, cache=TRUE}
+
+mod7$call
+
+mod7.tidy.df <- tidy(mod7)
+mod7.tidy.df.mu <- mod7.tidy.df %>% filter(parameter == "mu")
+
+mod7.ci.df <- confint_tidy(mod7)
+mod7.ci.df.nona <- mod7.ci.df %>% drop_na()
+
+mod7.tidyci.df <- bind_cols(mod7.tidy.df.mu, mod7.ci.df.nona)
+
+mod7.aug.df <- augment(mod7,temp) # augment isn't supposed to work but seems to
+#mod7.summ.df <- glance(mod7) #glance doesn't work
+
+mod7.tidyci.df$term <- factor(mod7.tidyci.df$term,
+                                          levels=mod7.tidyci.df %>% arrange(estimate) %>%
+                                            dplyr::select(term) %>% unlist())
+
+ggplot(mod7.aug.df) + geom_point(aes(ResponsePct,.fitted))
+
+#ggplot(mod7.tidyci.df, aes(term, estimate)) + 
+#  geom_point() + 
+#  coord_flip()
+
+#ggplot(mod7.aug.df %>% group_by(Dataset) %>% summarize(est=mean(.fitted))) +
+#  geom_point(aes(Dataset,est)) +
+#  #scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+#  coord_flip()
+
+#plot(emmeans(graph.clickhd.nb.full, "Dataset"))
+
+#ggplot(mod7.aug.df) +
+#  geom_violin(aes(Dataset,.fitted)) +
+#  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% summarize(est=median(ResponsePct)),aes(Dataset,est)) +
+#  #scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+#  coord_flip()
+
+# could be okay, but not sure of calculation
+#ggplot(data = mod7.aug.df) + 
+#  geom_errorbar(data=mod7.aug.df %>% group_by(Dataset) %>% 
+#               summarize(est=mean(.fitted), 
+#                         ymin=mean(.fitted-1.96*.se.fit), 
+#                         ymax=mean(.fitted+1.96*.se.fit)),
+#             aes(Dataset,est, ymin=ymin, ymax=ymax, width=.2)) +
+#  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% 
+#               summarize(est=mean(.fitted), 
+#                         ymin=mean(.fitted-1.96*.se.fit), 
+#                         ymax=mean(.fitted+1.96*.se.fit)),
+#             aes(Dataset,est))
+
+# no good
+#ggplot(data = mod7.aug.df) + 
+#  geom_errorbar(data=mod7.aug.df %>% group_by(Dataset) %>% 
+#               summarize(est=mean(ResponsePct), 
+#                         ymin=mean(.fitted-1.96*.se.fit), 
+#                         ymax=mean(.fitted+1.96*.se.fit)),
+#             aes(Dataset,est, ymin=ymin, ymax=ymax, width=.2)) +
+#  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% 
+#               summarize(est=mean(ResponsePct), 
+#                         ymin=mean(.fitted-1.96*.se.fit), 
+#                         ymax=mean(.fitted+1.96*.se.fit)),
+#             aes(Dataset,est))
+  
+
+```
+
+```{r, eval=FALSE}
+
+
+
+set.seed(2014)
+
+# doesn't work
+bootnls <- mod7.aug.df %>% bootstrap(100) %>% do(tidy(
+      gamlss(formula = ResponsePct ~ Dataset + UnderestDummy + Demo.gender + 
+    Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows + 
+    Dataset:UnderestDummy + Demo.gender:Stats.OperatingSystemWindows + 
+    UnderestDummy:Demo.gender + UnderestDummy:Stats.OperatingSystemWindows, 
+    sigma.formula = ~Dataset + UnderestDummy, family = BEINF, 
+    ., trace = FALSE)
+    ))
+alpha = .05
+bootnls %>% group_by(term) %>% summarize(low=quantile(estimate, alpha / 2),
+                                         high=quantile(estimate, 1 - alpha / 2))
+ggplot(bootnls, aes(estimate)) + geom_histogram(binwidth=2) + facet_wrap(~ term, scales="free")
+
+bootnls_aug <- mtcars %>% bootstrap(100) %>%
+    do(augment(nls(mpg ~ k / wt + b, ., start=list(k=1, b=0)), .))
+
+ggplot(bootnls_aug, aes(wt, mpg)) + geom_point() +
+    geom_line(aes(y=.fitted, group=replicate), alpha=.2)
+
+smoothspline_aug <- mtcars %>% bootstrap(100) %>%
+    do(augment(smooth.spline(.$wt, .$mpg, df=4), .))
+
+ggplot(smoothspline_aug, aes(wt, mpg)) + geom_point() +
+    geom_line(aes(y=.fitted, group=replicate), alpha=.2)
+
+```
+
+
+```{r, eval=FALSE}
+
+graph.lgclust.broom.tidy <- tidy(mod7)
+graph.lgclust.broom.aug <- augment(graph.lgclust.nb.full, temp)
+graph.lgclust.broom.ci <- confint_tidy(graph.lgclust.nb.full)
+graph.lgclust.broom.tidyci <- bind_cols(graph.lgclust.broom.tidy %>% arrange(group), graph.lgclust.broom.ci)
+
+graph.clickhd.broom.tidyci$term <- factor(graph.clickhd.broom.tidyci$term,
+                                          levels=graph.clickhd.broom.tidyci %>% arrange(estimate) %>%
+                                            select(term) %>% unlist())
+
+ggplot(graph.clickhd.broom.tidyci, aes(term, estimate)) + 
+  geom_point() + 
+  coord_flip()
+
+ggplot(graph.clickhd.broom.aug %>% group_by(Dataset) %>% summarize(est=mean(.fitted))) +
+  geom_point(aes(Dataset,est)) +
+  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+  coord_flip()
+
+plot(emmeans(graph.clickhd.nb.full, "Dataset"))
+
+ggplot(graph.clickhd.broom.aug) +
+  geom_violin(aes(Dataset,.fitted)) +
+  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+  coord_flip()
+
+```
+
 ##### gamlss
 
 ```{r, eval=FALSE}
@@ -5803,7 +6283,7 @@ Anova(graph.lgclust.beta.cond, type="II")
 # The function refit() can be used if the converged component of the gamlss fitted object is FALSE
 # Warning: The random(), ra() and rc() additive functions do not have a predict option implemented.
 
-temp <- graphics_lgclust %>% mutate(Response=Response/100) %>% dplyr::select(Demo.ResponseID, Response, Condition, Dataset, DatasetOrder) %>% drop_na()
+#temp <- graphics_lgclust %>% mutate(Response=Response/100) %>% dplyr::select(Demo.ResponseID, Response, Condition, Dataset, DatasetOrder) %>% drop_na()
 
 ```
 
@@ -5965,7 +6445,7 @@ plotBEINF(mu=fitted(mod01)[1],
 
 ```
 
-```{r, eval=FALSE}
+```{r, cache=TRUE}
 
 
 
@@ -6051,21 +6531,62 @@ op <- par(mfrow = c(3, 2))
  par(op)
 
 mod7<-stepGAIC(mod3, what="sigma", scope=~Dataset + UnderestDummy + Demo.gender + Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows)
+
+
 # final sigma: ~Dataset + UnderestDummy 
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(mod7, file = file.path(analysisDataDir,"fits/graph_lgclust_beinf_int.RData"))
+
+```
+
+
+```{r}
+
+predict.current <- bind_cols(temp,as.data.frame(predict(mod7,what="mu",type="response",se.fit=TRUE)))
+# can also get fitted values with fitted(mod7), just join to temp
+
+ggplot(predict.current) + geom_point(aes(ResponsePct,fit))
+
+# trying to reproduce other M/SE calculations; doesn't seem quite right
+#ggplot(predict.current %>% 
+#         group_by(Dataset) %>% 
+#         summarise(avgFit=mean(fit),avgSE=mean(se.fit)) %>% 
+#         mutate(lower.CI=avgFit-avgSE, upper.CI=avgFit+avgSE)) + 
+#  geom_pointrange(aes(Dataset,avgFit,ymin=lower.CI,ymax=upper.CI))
+
+#lsmeans(mod7, ~ Dataset)
+#Anova(mod7)
+
+ggplot(mod7.aug.df) + geom_point(aes(ResponsePct, .fitted))
+
+# the fitted values from this are different from the fitted values from augment with broom --
+# different scale anyway.  why?
+# answer: augment is using type="link" rather than type="response"; hard to compare to ResponsePct directly, but
+# matches result from term.plot better?
+
+```
+
+
+```{r}
+
+Rsq(mod7)
+Rsq(mod7, type="both")
+
 ```
 
 ```{r, eval=FALSE}
 #a1 <- mod7$anova
-a1 <- anova(mod7)
+#a1 <- anova(mod7)
 #a1 <- aov(mod7, what="mu")
 
 #posthoc <- TukeyHSD(x=a1, 'temp$Dataset', conf.level=0.95)
 # doesn't work
 
 summary(mod7)
-
-Rsq(mod7)
-Rsq(mod7, type="both")
 
 #acfResid(mod7)
 
@@ -6109,13 +6630,14 @@ plotBEINF(mu = predict(mod7, what="mu", type="response")[1],
           to = 1, 
           n = 101)
 
-plotBEINF(mu = predict(mod7, what="mu", type="link"), 
-          sigma = predict(mod7, what="sigma", type="link"), 
-          nu = predict(mod7, what="nu", type="link"), 
-          tau = predict(mod7, what="tau", type="link"),
-          from = 0, 
-          to = 1, 
-          n = 101)
+# trying link instead
+#plotBEINF(mu = predict(mod7, what="mu", type="link"), 
+#          sigma = predict(mod7, what="sigma", type="link"), 
+#          nu = predict(mod7, what="nu", type="link"), 
+#          tau = predict(mod7, what="tau", type="link"),
+#          from = 0, 
+#          to = 1, 
+#          n = 101)
 
 
 # plotting the cdf
@@ -6152,7 +6674,7 @@ fittedPlot(mod7, x=factor(temp$Stats.OperatingSystemWindows))
 fittedPlot(mod7, x=factor(temp$UnderestDummy))
 fittedPlot(mod7, x=factor(temp$Demo.gender))
 
-Q.stats(mod7,xvar=temp$Dataset,n.inter=30)
+#Q.stats(mod7,xvar=temp$Dataset,n.inter=30)
 
 
 ```
@@ -6176,59 +6698,23 @@ estimate.pval.mu <- as.data.frame(cbind(term=rownames(smod7$coef.table[c(1:23),]
 
 ```{r, eval=FALSE}
 
-#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
-
-means_m1 <- lpred(mod7, type='terms', terms="Dataset", what='mu', se.fit=T)
-
-mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
-#mod.t
-
-mod.lp <- lp(mod7)
-#mod.lp
-
-df_fit <- data.frame(Dataset = temp$Dataset, M = means_m1$fit, SE = means_m1$se.fit)
-
-ggplot(df_fit, aes(Dataset, M)) + geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
-  scale_y_continuous(labels=scales::percent)
-
-#print(vcov(mod7))
-
-new.data <- expand.grid(
-  ResponsePct=seq(0,1,by=.001),
-  Dataset=unique(temp$Dataset),
-  UnderestDummy=unique(temp$UnderestDummy),
-  Demo.gender=unique(temp$Demo.gender),
-  Demo.lang=unique(temp$Demo.lang),
-  Demo.expreadnetvis=unique(temp$Demo.expreadnetvis),
-  Stats.OperatingSystemWindows=unique(temp$Stats.OperatingSystemWindows)
-  )
-
-beta.pred <-bind_cols(as.data.frame(predictAll(mod7, newdata=new.data, type="response")))
-
-predict.current <- bind_cols(temp,as.data.frame(predict(mod7,what="mu",type="response",se.fit=TRUE)))
-# can also get fitted values with fitted(mod7), just join to temp
-
-ggplot(predict.current) + geom_point(aes(ResponsePct,fit))
-
-ggplot(predict.current %>% 
-         group_by(Dataset) %>% 
-         summarise(avgFit=mean(fit),avgSE=mean(se.fit)) %>% 
-         mutate(lower.CI=avgFit-avgSE, upper.CI=avgFit+avgSE)) + 
-  geom_pointrange(aes(Dataset,avgFit,ymin=lower.CI,ymax=upper.CI))
-
-#lsmeans(mod7, ~ Dataset)
-#Anova(mod7)
-ggplot(mod7.aug.df) + geom_point(aes(ResponsePct, .fitted))
-# the fitted values from this are different from the fitted values from augment with broom --
-# different scale anyway.  why?
-# answer: augment is using type="link" rather than type="response"; hard to compare to ResponsePct directly, but
-# matches result from term.plot better?
-
-
-
 # try https://stats.stackexchange.com/questions/29044/plotting-confidence-intervals-for-the-predicted-probabilities-from-a-logistic-re
 
 # https://stats.stackexchange.com/questions/299792/r-lm-covariance-matrix-manual-calculation-failure
+
+#print(vcov(mod7))
+
+#new.data <- expand.grid(
+#  ResponsePct=seq(0,1,by=.001),
+#  Dataset=unique(temp$Dataset),
+#  UnderestDummy=unique(temp$UnderestDummy),
+#  Demo.gender=unique(temp$Demo.gender),
+#  Demo.lang=unique(temp$Demo.lang),
+#  Demo.expreadnetvis=unique(temp$Demo.expreadnetvis),
+#  Stats.OperatingSystemWindows=unique(temp$Stats.OperatingSystemWindows)
+#  )
+
+#beta.pred <-bind_cols(as.data.frame(predictAll(mod7, newdata=new.data, type="response")))
 
 pi <- mod7.aug.df$.fitted
 
@@ -6314,6 +6800,39 @@ ggplot(sum.pred, aes(Dataset, mean)) + geom_errorbar(aes(ymin=lower.ci,ymax=uppe
 
 ```{r, eval=FALSE}
 
+# https://github.com/mjskay/when-ish-is-my-bus/blob/master/bus-model.Rmd
+
+predictions <- expand.grid(
+  ResponsePct=seq(0,1,by=.001),
+  Dataset=unique(temp$Dataset),
+  UnderestDummy=unique(temp$UnderestDummy),
+  Demo.gender=unique(temp$Demo.gender),
+  Demo.lang=unique(temp$Demo.lang),
+  Demo.expreadnetvis=unique(temp$Demo.expreadnetvis),
+  Stats.OperatingSystemWindows=unique(temp$Stats.OperatingSystemWindows)
+  ) %>% 
+  cbind(predictAll(mod7, newdata = ., data=temp)) %>% 
+  mutate(
+        upper95 = qBEINF(.975, mu, sigma, nu, tau),
+        lower95 = qBEINF(.025, mu, sigma, nu, tau),
+        upper80 = qBEINF(.9, mu, sigma, nu, tau),
+        lower80 = qBEINF(.1, mu, sigma, nu, tau),
+        upper50 = qBEINF(.75, mu, sigma, nu, tau),
+        lower50 = qBEINF(.25, mu, sigma, nu, tau),
+        upper10 = qBEINF(.55, mu, sigma, nu, tau),
+        lower10 = qBEINF(.45, mu, sigma, nu, tau)
+    )
+  
+# What is predictAll adding?  is it really predicting a new value for ResponsePct? maybe need to take a log of mu?
+
+predictions %>%
+    ggplot(aes(x = ResponsePct, y=mu)) +
+  geom_bin2d() +
+  facet_wrap(~Dataset)
+```
+
+```{r, eval=FALSE}
+
 mbi1 <- gamlss(ResponsePct ~ 1, data = temp, family = BEINF)
 mbi2<-stepGAIC(mbi1,scope=list(upper=~(Condition + Dataset + DatasetOrder)^2))
 
@@ -6348,6 +6867,72 @@ gamlss(formula = ResponsePct ~ Dataset + UnderestDummy + Demo.gender +
 
 ##### Dataset
 
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="Dataset", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(Dataset = temp$Dataset, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("Dataset","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(Dataset, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+```{r, eval=FALSE}
+
+#df_fit.compare <- df_fit %>% tibble::rowid_to_column(., ".iteration") %>% 
+#  mutate(.chain=1,
+#         Dataset=as.character(Dataset)) %>% 
+#  rename(estimate=M) %>%
+#  dplyr::select(-SE)
+
+df_fit.compare <- mod7.aug.df %>% 
+  dplyr::select(Dataset,.fitted) %>%
+  tibble::rowid_to_column(., ".iteration") %>% 
+  mutate(.chain=1, Dataset=as.character(Dataset)) %>% 
+  rename(estimate=.fitted) 
+
+mod7.pairs <- df_fit.compare %>% compare_levels(estimate, by=Dataset)
+
+```
+
+```{r, eval=FALSE}
+
+library(modelr)
+
+mod7.aug.df %>%
+  data_grid(Dataset) %>%
+  add_predicted_samples(mod7) %>%
+  ggplot(aes(x = pred, y = Dataset)) +
+  stat_pointintervalh(.prob = c(.66, .95))
+
+```
+
+
 ###### lsmeans/emmeans
 
 ```{r, eval=FALSE}
@@ -6371,28 +6956,71 @@ emmeans(graph.lgclust.beta.cond.norand, "Condition")
 
 ###### brms/tidybayes
 
-TO DO : confirm pairs calculation; not convinced using intercept for dataset 1 is right; maybe need to refit model so Dataset doesn't get split???
+note: moved code up ; this section never got updated
 
-```{r}
+```{r, eval=FALSE}
 
-#plot(fit, ask=FALSE) 
-#plot(marginal_effects(fit, probs = c(0.05, 0.95)),points=TRUE, ask=FALSE)
-#plot(marginal_effects(fit, probs = c(0.05, 0.95)),ask=FALSE)
-plot(marginal_effects(fit, effects="Dataset", probs = c(0.05, 0.95)),ask=FALSE)
 
 # https://mvuorre.github.io/post/2017/bayes-factors-with-brms/
 
 # http://mjskay.github.io/tidybayes/articles/tidy-brms.html#gathering-samples-from-a-fit-in-tidy-format-using-spread_samples
 
+# https://github.com/paul-buerkner/brms/issues/95
+
 # Check exact names of terms
 #tidybayes::parameters(fit)
 
-# Here, b_Intercept is the global mean, and the r_condition parameters are offsets from that mean for each condition
+# b_Intercept is the global mean, and sigma is the standard deviation of observations
 
 fit %>%
-  gather_samples(b_Dataset.L, b_Dataset.Q, b_Dataset.C, b_DatasetE4, b_DatasetE5) %>%
+  gather_samples(b_Intercept, sigma) %>%
   head(10)
 
+# If we want the mean and 95% quantile interval of the parameters, we can apply mean_qi
+# We can specify the columns we want to get means and intervals from, as above, or if we omit the list of columns, mean_qi will use every column that is not a grouping column or a special column (one that starts with ., like .chain or .iteration).
+
+fit %>%
+  gather_samples(b_Intercept, sigma) %>%
+  mean_qi()
+
+# b_Intercept is the global mean, and the individual parameters are offsets from that mean
+
+fit %>%
+  gather_samples(b_Intercept, b_Dataset.L, b_Dataset.Q, b_Dataset.C, b_DatasetE4, b_DatasetE5) %>%
+  head(10)
+
+m %>%
+  spread_samples(`condition_.*`[condition], regex = TRUE) %>%
+  head(10)
+
+
+
+```
+
+```{r, eval=FALSE}
+
+library(modelr)
+
+graphics_lgclust.2 %>%
+  data_grid(Dataset) %>%
+  add_fitted_samples(fit) %>%
+  ggplot(aes(x = estimate, y = Dataset)) +
+  stat_pointintervalh(.prob = c(.66, .95))
+
+```
+
+```{r, eval=FALSE}
+
+# https://github.com/paul-buerkner/brms/issues/95
+
+(hyp2 <- hypothesis(fit, c("Aa2 + Bb2 + Aa2:Bb2 = 0", "Intercept = 0"),
+                    alpha = 0.025))
+plot(hyp2)
+
+```
+
+
+```{r, eval=FALSE}
 
 pairs <- fit %>%
   gather_samples(b_Intercept, b_Dataset.L, b_Dataset.Q, b_Dataset.C, b_DatasetE4, b_DatasetE5) %>%
@@ -6411,16 +7039,23 @@ pairs$contrast <- factor(pairs$contrast,
                            group_by(contrast) %>% 
                            summarise(avgEst=mean(estimate)) %>%
                            arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% unlist())
-```
 
+m %>%
+  spread_samples(b_Intercept, r_condition[condition,]) %>%
+  mean_qi(condition_mean = b_Intercept + r_condition)
 
-```{r}
+m %>%
+  spread_samples(b_Intercept, r_condition[condition,]) %>%
+  mean_qi(condition_mean = b_Intercept + r_condition, .prob = c(.95, .66)) %>%
+  ggplot(aes(y = condition, x = condition_mean)) +
+  geom_pointintervalh() 
+
 ggplot(pairs, aes(y=contrast,x=estimate)) + geom_halfeyeh()
 ggplot(pairs, aes(y=contrast,x=estimate)) + geom_halfeyeh() + geom_vline(xintercept=0)
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 grouped_pairs <- pairs %>% group_by(contrast) %>% summarise(avgEst=mean(estimate)) %>% 
   separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
@@ -6473,133 +7108,64 @@ ggplot(pairs.compl) +
 
 ```
 
-
-###### broom
-
-```{r, cache=TRUE, eval=FALSE}
-
-mod7$call
-
-mod7.tidy.df <- tidy(mod7)
-mod7.tidy.df.mu <- mod7.tidy.df %>% filter(parameter == "mu")
-
-mod7.ci.df <- confint_tidy(mod7)
-mod7.ci.df.nona <- mod7.ci.df %>% drop_na()
-
-mod7.tidyci.df <- bind_cols(mod7.tidy.df.mu, mod7.ci.df.nona)
-
-mod7.aug.df <- augment(mod7,temp) # augment isn't supposed to work but seems to
-#mod7.summ.df <- glance(mod7) #glance doesn't work
-
-mod7.tidyci.df$term <- factor(mod7.tidyci.df$term,
-                                          levels=mod7.tidyci.df %>% arrange(estimate) %>%
-                                            select(term) %>% unlist())
-
-ggplot(mod7.tidyci.df, aes(term, estimate)) + 
-  geom_point() + 
-  coord_flip()
-
-ggplot(mod7.aug.df %>% group_by(Dataset) %>% summarize(est=mean(.fitted))) +
-  geom_point(aes(Dataset,est)) +
-  #scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
-  coord_flip()
-
-#plot(emmeans(graph.clickhd.nb.full, "Dataset"))
-
-ggplot(mod7.aug.df) +
-  geom_violin(aes(Dataset,.fitted)) +
-  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% summarize(est=median(ResponsePct)),aes(Dataset,est)) +
-  #scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
-  coord_flip()
-
-ggplot(data = mod7.aug.df) + 
-  geom_errorbar(data=mod7.aug.df %>% group_by(Dataset) %>% 
-               summarize(est=mean(.fitted), 
-                         ymin=mean(.fitted-1.96*.se.fit), 
-                         ymax=mean(.fitted+1.96*.se.fit)),
-             aes(Dataset,est, ymin=ymin, ymax=ymax, width=.2)) +
-  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% 
-               summarize(est=mean(.fitted), 
-                         ymin=mean(.fitted-1.96*.se.fit), 
-                         ymax=mean(.fitted+1.96*.se.fit)),
-             aes(Dataset,est))
-
-ggplot(data = mod7.aug.df) + 
-  geom_errorbar(data=mod7.aug.df %>% group_by(Dataset) %>% 
-               summarize(est=mean(ResponsePct), 
-                         ymin=mean(.fitted-1.96*.se.fit), 
-                         ymax=mean(.fitted+1.96*.se.fit)),
-             aes(Dataset,est, ymin=ymin, ymax=ymax, width=.2)) +
-  geom_point(data=mod7.aug.df %>% group_by(Dataset) %>% 
-               summarize(est=mean(ResponsePct), 
-                         ymin=mean(.fitted-1.96*.se.fit), 
-                         ymax=mean(.fitted+1.96*.se.fit)),
-             aes(Dataset,est))
-  
-
-```
+###### bayesplot
 
 ```{r, eval=FALSE}
 
-ggplot(mod7.aug.df) + geom_point(aes(ResponsePct,.fitted))
+# https://cran.r-project.org/web/packages/bayesplot/vignettes/plotting-mcmc-draws.html
 
-set.seed(2014)
-bootnls <- mod7.aug.df %>% bootstrap(100) %>% do(tidy(
-      gamlss(formula = ResponsePct ~ Dataset + UnderestDummy + Demo.gender + 
-    Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows + 
-    Dataset:UnderestDummy + Demo.gender:Stats.OperatingSystemWindows + 
-    UnderestDummy:Demo.gender + UnderestDummy:Stats.OperatingSystemWindows, 
-    sigma.formula = ~Dataset + UnderestDummy, family = BEINF, 
-    ., trace = FALSE)
-    ))
-alpha = .05
-bootnls %>% group_by(term) %>% summarize(low=quantile(estimate, alpha / 2),
-                                         high=quantile(estimate, 1 - alpha / 2))
-ggplot(bootnls, aes(estimate)) + geom_histogram(binwidth=2) + facet_wrap(~ term, scales="free")
+library(bayesplot)
 
-bootnls_aug <- mtcars %>% bootstrap(100) %>%
-    do(augment(nls(mpg ~ k / wt + b, ., start=list(k=1, b=0)), .))
+posterior <- as.array(fit) # in example, model is from stan_glm
 
-ggplot(bootnls_aug, aes(wt, mpg)) + geom_point() +
-    geom_line(aes(y=.fitted, group=replicate), alpha=.2)
+mcmc_scatter(x, pars = c("alpha", "sigma"),
+                  transform = list(sigma = "log"))
 
-smoothspline_aug <- mtcars %>% bootstrap(100) %>%
-    do(augment(smooth.spline(.$wt, .$mpg, df=4), .))
+mcmc_hex(x, pars = c("sigma", "alpha"), transform = list(sigma = "log"))
 
-ggplot(smoothspline_aug, aes(wt, mpg)) + geom_point() +
-    geom_line(aes(y=.fitted, group=replicate), alpha=.2)
+mcmc_intervals(posterior, pars = c("cyl", "drat", "am", "sigma"))
+
+mcmc_violin(posterior, pars = c("wt", "sigma"), probs = c(0.1, 0.5, 0.9))
+
+mcmc_pairs(posterior, pars = c("(Intercept)", "wt", "sigma"),
+           off_diag_args = list(size = 1.5))
+
+mcmc_pairs(x, pars = "alpha", regex_pars = "beta\\[[1,4]\\]",
+           diag_fun = "dens", off_diag_fun = "hex")
+
 
 ```
 
+###### ggmcmc
 
 ```{r, eval=FALSE}
 
-graph.lgclust.broom.tidy <- tidy(mod7)
-graph.lgclust.broom.aug <- augment(graph.lgclust.nb.full, temp)
-graph.lgclust.broom.ci <- confint_tidy(graph.lgclust.nb.full)
-graph.lgclust.broom.tidyci <- bind_cols(graph.lgclust.broom.tidy %>% arrange(group), graph.lgclust.broom.ci)
+library(ggmcmc)
 
-graph.clickhd.broom.tidyci$term <- factor(graph.clickhd.broom.tidyci$term,
-                                          levels=graph.clickhd.broom.tidyci %>% arrange(estimate) %>%
-                                            select(term) %>% unlist())
+# http://xavier-fim.net/packages/ggmcmc/
+# S is a data frame object with four variables, namely:
+# - Iteration Number of iteration.
+# - Chain Number of the chain.
+# - Parameter Name of the parameter.
+# - value value sampled.
 
-ggplot(graph.clickhd.broom.tidyci, aes(term, estimate)) + 
-  geom_point() + 
-  coord_flip()
+ggmcmc(S)
 
-ggplot(graph.clickhd.broom.aug %>% group_by(Dataset) %>% summarize(est=mean(.fitted))) +
-  geom_point(aes(Dataset,est)) +
-  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
-  coord_flip()
+ggs_histogram(S)
 
-plot(emmeans(graph.clickhd.nb.full, "Dataset"))
+ggs_crosscorrelation(S)
 
-ggplot(graph.clickhd.broom.aug) +
-  geom_violin(aes(Dataset,.fitted)) +
-  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
-  coord_flip()
+L.radon.intercepts <- data.frame(
+  Parameter=paste("alpha[", radon$counties$id.county, "]", sep=""),
+  Label=radon$counties$County)
+head(L.radon.intercepts)
+
+S.full <- ggs(radon$s.radon, par_labels=L.radon.intercepts, family="^alpha")
+
+ggs_caterpillar(S.full)
 
 ```
+
 
 ###### networks
 
@@ -6647,21 +7213,278 @@ ggraph(graph, layout = 'kk') +
 
 ##### UnderestDummy
 
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="UnderestDummy", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(UnderestDummy = temp$UnderestDummy, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("UnderestDummy","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(UnderestDummy, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+
 ##### Demo.gender
+
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="Demo.gender", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(Demo.gender = temp$Demo.gender, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("Demo.gender","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(Demo.gender, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+
 
 ##### Demo.lang
 
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="Demo.lang", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(Demo.lang = temp$Demo.lang, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("Demo.lang","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(Demo.lang, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+
+
+
 ##### Demo.expreadnetvis
+
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="Demo.expreadnetvis", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(Demo.expreadnetvis = temp$Demo.expreadnetvis, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("Demo.expreadnetvis","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(Demo.expreadnetvis, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+
+
+
+
 
 ##### Stats.OperatingSystemWindows
 
+###### gamlss
+
+```{r}
+
+term.plot(mod7, ask=FALSE)
+
+```
+
+
+```{r}
+
+#means_m1 <- lpred(mod7, type='response', what='mu', se.fit=T)
+
+means_m1 <- lpred(mod7, type='terms', terms="Stats.OperatingSystemWindows", what='mu', se.fit=T)
+
+#mod.t <- lpred(mod7, type = "terms", terms= "Dataset")
+#mod.t
+
+#mod.lp <- lp(mod7)
+#mod.lp
+
+df_fit <- data.frame(Stats.OperatingSystemWindows = temp$Stats.OperatingSystemWindows, M = means_m1$fit, SE = means_m1$se.fit)
+names(df_fit) <- c("Stats.OperatingSystemWindows","M","SE")
+
+#ggplot(df_fit, aes(Dataset, M)) + 
+#  geom_pointrange(aes(ymin=M-SE, ymax=M+SE)) + 
+#  scale_y_continuous(labels=scales::percent)
+
+# not bad, might work
+ggplot(df_fit, aes(Stats.OperatingSystemWindows, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7)
+
+```
+
+
+
+
+
+
+
 ##### Dataset:UnderestDummy
+
+###### gamlss
+
+```{r}
+
+plot2way(mod7,c("Dataset","UnderestDummy"))
+plot2way(mod7,c("UnderestDummy","Dataset"))
+
+```
+
+
+```{r, eval=FALSE}
+
+means_m1 <- data.frame(lpred(mod7, type='terms', terms=c("Dataset","UnderestDummy"), what='mu', se.fit=T)) %>%
+  unite(data.comb, fit.Dataset, se.fit.Dataset) %>% 
+  unite(under.comb, fit.UnderestDummy, se.fit.UnderestDummy) %>%
+  bind_cols(temp %>% dplyr::select(Dataset, UnderestDummy),.) %>%
+  gather(key=term,value=united, data.comb, under.comb) %>%
+  separate(united,into=c("fit","se.fit"), sep="[_]",convert=TRUE) %>%
+  mutate(term=case_when(term=="data.comb" ~ "Dataset",
+                        term=="under.comb" ~ "UnderestDummy"))
+
+#means_m1
+
+means_m1 <- data.frame(lpred(mod7, type='terms', terms=c("Dataset","UnderestDummy"), what='mu', se.fit=T)) %>%
+  unite(data.comb, fit.Dataset, se.fit.Dataset) %>% 
+  unite(under.comb, fit.UnderestDummy, se.fit.UnderestDummy) %>%
+  bind_cols(temp %>% dplyr::select(Dataset, UnderestDummy),.) %>%
+  gather(key=term,value=united, data.comb, under.comb) %>%
+  separate(united,into=c("fit","se.fit"), sep="[_]",convert=TRUE) %>%
+  mutate(term=case_when(term=="data.comb" ~ "Dataset",
+                        term=="under.comb" ~ "UnderestDummy")) %>%
+  group_by(Dataset, UnderestDummy,term) %>%
+  summarize(meanFit=mean(fit),
+            meanSE=mean(se.fit))
+
+ggplot(means_m1, aes(Dataset, meanFit, color=term)) + 
+  geom_errorbar(aes(ymin=meanFit-meanSE, ymax=meanFit+meanSE), width=.2) + 
+  geom_point(size=7) +
+  facet_grid(.~term)
+
+```
+
 
 ##### Demo.gender:Stats.OperatingSystemWindows
 
+
+```{r}
+
+plot2way(mod7,c("Demo.gender","Stats.OperatingSystemWindows"))
+plot2way(mod7,c("Stats.OperatingSystemWindows","Demo.gender"))
+
+```
+
 ##### UnderestDummy:Demo.gender
 
+```{r}
+
+plot2way(mod7,c("UnderestDummy","Demo.gender"))
+plot2way(mod7,c("Demo.gender","UnderestDummy"))
+
+```
+
 ##### UnderestDummy:Stats.OperatingSystemWindows
+
+```{r}
+
+plot2way(mod7,c("UnderestDummy","Stats.OperatingSystemWindows"))
+plot2way(mod7,c("Stats.OperatingSystemWindows","UnderestDummy"))
+
+```
 
 ### Number of Clusters
 
@@ -7251,6 +8074,14 @@ anova(graph.numclust.lmer.full.int.7)
 
 anova(graph.numclust.lmer.full.int.7, graph.numclust.lmer.full.int.6)
 # 6 is better, but need to avoid Demo.expreadnetvis
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numclust.lmer.full.int.7, 
+     file = file.path(analysisDataDir,"fits/graph_numclust_lmer_int.RData"))
 
 ```
 
@@ -9023,6 +9854,15 @@ anova(graph.numhd.lmer.full.int.4, graph.numhd.lmer.full.int.3)
 
 ```
 
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numhd.lmer.full.int.4, 
+     file = file.path(analysisDataDir,"fits/graph_numhd_lmer_int.RData"))
+
+```
+
+
 ```{r, cache=TRUE}
 
 rand(graph.numhd.lmer.full.int.4)
@@ -10693,6 +11533,16 @@ anova(graph.numlinks.lmer.full,graph.numlinks.lmer.full.int)
 # keep interaction
 
 ```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numlinks.lmer.full.int, 
+     file = file.path(analysisDataDir,"fits/graph_numlinks_lmer_int.RData"))
+
+```
+
+
 ```{r, cache=TRUE}
 
 rand(graph.numlinks.lmer.full.int)
@@ -10769,6 +11619,150 @@ densityplot(prof)
 splom(prof)
 
 ```
+
+#### brms/tidybayes
+
+```{r, eval=FALSE}
+
+# graph.numlinks.lmer.full.int <- lmer(LogError ~ Condition + Dataset + Condition:Dataset + (1|Demo.ResponseID), data=temp, REML = T)
+
+#library(rstan)
+
+theme_set(theme_grey())
+
+#avgd.fit <- brm(LogError~Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data = temp, REML=T)
+numlinks.fit <- brm(LogError ~ Condition + Dataset + Condition:Dataset + (1|Demo.ResponseID), data = temp)
+
+summary(numlinks.fit, waic = TRUE) 
+
+#plot(numlinks.fit)
+
+numlinks.fit$formula
+
+#numlinks.fit %<>% recover_types(temp)
+
+#tidybayes::parameters(numlinks.fit)
+
+
+```
+
+```{r}
+
+#plot(fit, ask=FALSE) 
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),points=TRUE, ask=FALSE)
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),ask=FALSE)
+plot(marginal_effects(numlinks.fit, effects="Dataset", probs = c(0.05, 0.95)),ask=FALSE)
+
+```
+
+
+```{r}
+
+# all pairs
+
+numlinks.pairs.2 <- c("Dataset.L = 0", # 3 vs. 1
+         "Dataset.Q = 0",
+         "Dataset.C = 0",
+         "DatasetE4 = 0",
+         "DatasetE5 = 0",
+         "Dataset.Q - Dataset.L = 0", # 5 vs. 3
+         "Dataset.C - Dataset.L = 0",
+         "DatasetE4 - Dataset.L = 0",
+         "DatasetE5 - Dataset.L = 0",
+         "Dataset.C - Dataset.Q = 0", # 7 vs. 5
+         "DatasetE4 - Dataset.Q = 0",
+         "DatasetE5 - Dataset.Q = 0",
+         "DatasetE4 - Dataset.C = 0", # 8 vs. 7
+         "DatasetE5 - Dataset.C = 0",
+         "DatasetE5 - DatasetE4 = 0")
+
+
+(numlinks.pairs.2.res <- hypothesis(numlinks.fit, numlinks.pairs.2))
+
+#plot(numlinks.pairs.2.res, chars = NULL, ask=FALSE)
+
+numlinks.pairs.2.res.df <- numlinks.pairs.2.res$hypothesis
+
+numlinks.pairs.2.res.df$contrast <- c("3-1","5-1","7-1","8-1","9-1","5-3","7-3","8-3","9-3","7-5","8-5","9-5","8-7","9-7","9-8")
+
+numlinks.pairs.2.res.df$contrast <- factor(numlinks.pairs.2.res.df$contrast,
+                                    levels=numlinks.pairs.2.res.df %>% arrange(desc(Estimate)) %>%
+                                      dplyr::select(contrast) %>% unlist())
+
+ggplot(numlinks.pairs.2.res.df, aes(contrast,Estimate)) + 
+  geom_errorbar(aes(ymin=`l-95% CI`,ymax=`u-95% CI`)) +
+  geom_point(aes(fill=Star=="*"), size=7, shape=21) +
+  geom_hline(yintercept = 0) +
+  scale_fill_manual(values=star.colors,name="Outside 95% CI") +
+  coord_flip()
+
+```
+
+```{r}
+
+numlinks.pairs.2.res.df <- numlinks.pairs.2.res.df %>% separate(contrast, c("From", "To"), sep="[-]", remove=FALSE)
+
+copy <- numlinks.pairs.2.res.df %>% rename(From=To,To=From) %>% 
+  mutate(Estimate=-Estimate,
+         `l-95% CI`=-`l-95% CI`,
+         `u-95% CI`=-`u-95% CI`)
+
+pairs.compl <- bind_rows(numlinks.pairs.2.res.df, copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+pairs.compl$From <- factor(pairs.compl$From, levels=c(9,8,7,5,3,1))
+pairs.compl$To <- factor(pairs.compl$To, levels=c(1,3,5,7,8,9))
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+pairs.compl %>% arrange(Estimate)
+
+# can't get color to go the right direction
+ggplot(pairs.compl %>% filter(Estimate >= 0)) +
+  geom_tile(aes(x=To,y=From,fill=Estimate), color="black") +
+  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Star=="*"),shape=21, color="black") +
+  scale_fill_manual(values=star.colors, name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+numlinks.pairs.2.res.df$From <- factor(numlinks.pairs.2.res.df$From, levels=c(9,8,7,5,3,1))
+numlinks.pairs.2.res.df$To <- factor(numlinks.pairs.2.res.df$To, levels=c(1,3,5,7,8,9))
+
+
+ggplot(numlinks.pairs.2.res.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+
+
+```
+
 
 #### Least Squares Means
 
@@ -11149,6 +12143,11 @@ graph.numlinks.emm.data.cld.df <- graph.numlinks.emm.data.cld$emmeans
 graph.numlinks.emm.data.cld.df %>% dplyr::select(Dataset,.group)
 
 graph.numlinks.emm.data.cld.df
+
+ggplot(graph.numlinks.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) 
 
 graph.numlinks.emm.data.cld.df$Dataset <- factor(graph.numlinks.emm.data.cld.df$Dataset, levels=graph.numlinks.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
 
@@ -11972,6 +12971,14 @@ anova(graph.numnodes.lmer.int.3,graph.numnodes.lmer.int.5)
 
 # keep 3
 
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numnodes.lmer.int.3, 
+     file = file.path(analysisDataDir,"fits/graph_numnodes_lmer_int.RData"))
 
 ```
 
