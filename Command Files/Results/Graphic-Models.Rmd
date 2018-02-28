@@ -63,6 +63,8 @@ library(lmerTest)
 #library(lsmeans)
 library(emmeans)
 library(multcompView)
+library(r2glmm)
+library(splines)
 
 require(lattice)
 source(system.file("utils", "allFit.R", package="lme4"))
@@ -376,7 +378,40 @@ names(star.colors) <- c(TRUE, FALSE)
 
 ## Mixed Models
 
-TO DO : figures for non-lmer models
+```{r}
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of LogError for Numerical Response Tasks,\ngraphics conditions")
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Dataset, Percentage)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of Percentage for Numerical Response Tasks,\ngraphics conditions") +
+  facet_wrap(~Task) + scale_y_log10()
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Dataset, abs(Response - CorrectAnswer)/CorrectAnswer)) + geom_violin() + #scale_y_log10() +
+  labs(title="Error as Percentage of Correct Answer for Numerical Response Tasks,\ngraphics conditions") +
+  facet_wrap(~Task) + scale_y_log10(breaks=c(.1,10,1000),labels=c("10%","1,000%","100,000%")) +
+  geom_hline(yintercept = 1)
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>%
+ggplot() + geom_violin(aes(Dataset,Response)) + geom_point(data=graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% group_by(Task, Dataset) %>% summarise(Correct=mean(CorrectAnswer)), aes(Dataset,Correct)) +
+facet_grid(.~Task) + scale_y_log10()
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>%
+    ggplot() + geom_boxplot(aes(Dataset,LogError)) +
+    facet_grid(.~Task) + labs(title="LogError distributions by Task and Dataset, graphics conditions")
+
+ggplot(graphics_bc) +
+  geom_bar(aes(NodeRank)) +
+  #coord_flip() +
+  labs(title="Rank of Selected Node for Betweenness Centrality Task by Dataset",
+       x="Rank of selected node", y="Number of times selected") +
+  facet_wrap(~Dataset, scales="free_x")
+
+```
+
 
 ### Average Degree
 
@@ -1331,6 +1366,10 @@ anova(graph.avgdeg.lmer.full)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+ggplot(graphics_avgdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Average Degree task,\ngraphics conditions")
+
+(r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))
+(r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))[1,'Rsq']
 
 ```
 
@@ -1399,14 +1438,19 @@ plot(graph.avgdeg.lmer.full, LogError ~ fitted(.), abline = c(0,1))
 
 graph.avgdeg.lmer.full.f <- fortify(graph.avgdeg.lmer.full)
 
+ggplot(graph.avgdeg.lmer.full.f) +
+  geom_density(aes(.fitted))
+
 ggplot(graph.avgdeg.lmer.full.f, aes(.fitted,.resid)) + 
   geom_point() +
   #facet_grid(.~Sex) + 
   geom_hline(yintercept=0)
 
-ggplot(graph.avgdeg.lmer.full.f, aes(.fitted,LogError)) + 
+ggplot(graph.avgdeg.lmer.full.f, aes(LogError,.fitted)) + 
   geom_point() +
-  geom_abline(aes(slope = 1, intercept = 0))
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  scale_y_continuous(limits=c(0,0.3)) +
+  labs(title="Real vs. Predicted LogError values for Average Degree task,\ngraphics conditions")
 
 
 ```
@@ -2838,6 +2882,11 @@ ggplot(graph.numlinks.emm.data.pairs.compl) +
 
 ### Betweenness Centrality
 
+```{r}
+
+
+```
+
 #### Negative binomial model for click questions Node Rank
 
 Ranks are like count data, in that they are nonnegative integers, so using a negative binomial distribution to model. Negative binomial is especially useful for over-dispersed data - data where the conditional variances exceed conditional means. 
@@ -3569,6 +3618,17 @@ ggplot(graph.bc.nb.full.int.f, aes(NodeRank,.fitted)) +
   geom_hline(yintercept=0) +
   facet_wrap(~Dataset)
 
+(r2nsj = r2beta(graph.bc.nb.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_bc) + geom_histogram(aes(NodeRank), binwidth=1) + 
+  labs(title="Distribution of NodeRank values for\nNode Betweenness Centrality task, graphics conditions")
+
+ggplot(graph.bc.nb.full.int.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nNode Betweenness Centrality task, graphics conditions")
+
 
 ```
 
@@ -3778,6 +3838,14 @@ ggplot(graph.bc.emm.data.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.bc.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for\nNode Betweenness Centrality task, graphics conditions")
+
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -3953,7 +4021,17 @@ ggraph(graph, layout = 'kk') +
 
 ##### Stats.Q_TotalDuration
 
-Not a factor
+```{r}
+
+ggplot(graphics_bc) + 
+  geom_bin2d(aes(Stats.Q_TotalDuration,NodeRank)) +
+  geom_smooth(aes(Stats.Q_TotalDuration,NodeRank), method="lm") +
+  labs(title="Total Survey Duration vs. NodeRank for\nNode Betweenness Centrality task, graphics conditions",
+       x="Total Duration (sec)")
+
+
+
+```
 
 ##### Demo.acfieldGrouped2
 
@@ -4018,6 +4096,17 @@ ggplot(graph.bc.emm.acfield2.cld.df) +
   geom_point(aes(x=Demo.acfieldGrouped2,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(graph.bc.emm.acfield2.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped2,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped2,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+  scale_x_discrete(labels=c("High Error Group","Low Error Group")) +
+labs(title="Estimated Marginal Means for Academic Field for\nNode Betweenness Centrality task, graphics conditions",
+     x="Academic Field")
+
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -4263,8 +4352,9 @@ ggplot(graph.bc.emm.ecnv.cld.df) +
   #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
   geom_errorbar(aes(x=ordered(Demo.expcreatenetvis,levels=rev(freq4)),ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
   geom_point(aes(x=Demo.expcreatenetvis,y=emmean), size=7) +
-  #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  coord_flip() +
+  labs(title="Estimated Marginal Means for Experience Creating Network Visualizations for\nNode Betweenness Centrality task, graphics conditions",
+       x="Experience Creating Network Visualizations")
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -4443,7 +4533,18 @@ ggraph(graph, layout = 'kk') +
 
 ##### Demo.acfieldGrouped2:Stats.Q_TotalDuration
 
-Duration is not a factor
+```{r}
+
+ggplot(graphics_bc) + 
+  geom_bin2d(aes(Stats.Q_TotalDuration,NodeRank)) +
+  geom_smooth(aes(Stats.Q_TotalDuration,NodeRank), method="lm") +
+  labs(title="Total Survey Duration vs. NodeRank by Academic Field for\nNode Betweenness Centrality task, graphics conditions",
+       x="Total Duration (sec)") +
+  facet_wrap(~factor(Demo.acfieldGrouped2, labels=c("Low Error Group","High Error Group")))
+
+
+
+```
 
 ### Select Highest Degree Node
 
@@ -5127,6 +5228,18 @@ ggplot(graph.clickhd.nb.full.f, aes(.fitted,NodeRank)) +
   scale_y_log10() +
   facet_wrap(~Dataset)
 
+(r2nsj = r2beta(graph.numhd.lmer.full.int.6, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_clickhighdeg) + geom_histogram(aes(NodeRank), binwidth=1) +
+labs(title="Distribution of NodeRank values for\nHighest Degree Node task, graphics conditions")
+
+ggplot(graph.clickhd.nb.full.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nHighest Degree Node task, graphics conditions")
+
+
 
 ```
 
@@ -5366,6 +5479,13 @@ ggplot(graph.clickhd.emm.data.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.clickhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for\nHighest Degree Node task, graphics conditions")
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -5603,6 +5723,14 @@ ggplot(graph.bc.emm.acfield3.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.bc.emm.acfield3.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped3,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped3,y=emmean), size=7) +
+  scale_x_discrete(labels=c("High Error Group","Low Error Group"),name="Academic Field") +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Academic Field for\nHighest Degree Node task, graphics conditions")
+
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -5780,8 +5908,16 @@ ggraph(graph, layout = 'kk') +
 
 ##### Demo.dailytech_SmartPhone
 
-Not a factor
+```{r}
 
+ggplot(graphics_clickhighdeg, aes(Demo.dailytech_SmartPhone, NodeRank)) +
+  geom_bin2d() +
+  geom_smooth(method="lm") +
+  labs(title="Smart Phone Usage vs. NodeRank for\nHighest Degree Node task, graphics conditions",
+x="Average Daily Time Using Smart Phone (hours)")
+
+
+```
 
 ### Percentage of Nodes in Largest Cluster
 
@@ -6526,9 +6662,9 @@ mod3$anova
 #mod4$anova
 #formula(mod4, "mu")
 
-op <- par(mfrow = c(3, 2))
- term.plot(mod3, se = T, partial = T)
- par(op)
+#op <- par(mfrow = c(3, 2))
+# term.plot(mod3, se = T, partial = T)
+# par(op)
 
 mod7<-stepGAIC(mod3, what="sigma", scope=~Dataset + UnderestDummy + Demo.gender + Demo.lang + Demo.expreadnetvis + Stats.OperatingSystemWindows)
 
@@ -6573,8 +6709,23 @@ ggplot(mod7.aug.df) + geom_point(aes(ResponsePct, .fitted))
 
 ```{r}
 
+ggplot(graphics_lgclust, aes(Response)) +
+  geom_histogram(binwidth = 1) +
+  labs(title="Distribution of Response values for Percentage of Nodes\nin Largest Cluster task, graphics conditions")
+
+
 Rsq(mod7)
 Rsq(mod7, type="both")
+
+#mod7.aug.df <- augment(mod7,temp)
+
+ggplot(mod7.aug.df, aes(ResponsePct,.fitted)) + 
+  geom_bin2d() +
+  geom_smooth(method="lm") +
+  labs(title="Real vs. Predicted Response values for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+       x="Response as a Percentage")
+
+
 
 ```
 
@@ -6898,7 +7049,10 @@ names(df_fit) <- c("Dataset","M","SE")
 # not bad, might work
 ggplot(df_fit, aes(Dataset, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
-  geom_point(size=7)
+  geom_point(size=7) +
+  labs(title="Model Fit for Dataset for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+       y="Fit")
+
 
 ```
 
@@ -7246,6 +7400,14 @@ ggplot(df_fit, aes(UnderestDummy, M)) +
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
   geom_point(size=7)
 
+ggplot(df_fit, aes(UnderestDummy, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7) +
+  scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+  labs(title="Model Fit for Underestimated for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+       y="Fit")
+
+
 ```
 
 
@@ -7283,6 +7445,13 @@ names(df_fit) <- c("Demo.gender","M","SE")
 ggplot(df_fit, aes(Demo.gender, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
   geom_point(size=7)
+
+ggplot(df_fit, aes(Demo.gender, M)) + 
+  geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+  geom_point(size=7) +
+  #scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+  labs(title="Model Fit for Gender for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+       y="Fit")
 
 ```
 
@@ -7323,6 +7492,13 @@ ggplot(df_fit, aes(Demo.lang, M)) +
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
   geom_point(size=7)
 
+ggplot(df_fit, aes(Demo.lang, M)) + 
+    geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+    geom_point(size=7) +
+    #scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+    labs(title="Model Fit for Language for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+         y="Fit", x="Primary Language Spoken at Home")
+
 ```
 
 
@@ -7362,6 +7538,14 @@ names(df_fit) <- c("Demo.expreadnetvis","M","SE")
 ggplot(df_fit, aes(Demo.expreadnetvis, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
   geom_point(size=7)
+
+ggplot(df_fit, aes(Demo.expreadnetvis, M)) + 
+    geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+    geom_point(size=7) +
+    #scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+    labs(title="Model Fit for Experience Reading Network Visualizations for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+         y="Fit", x="Experience Reading Network Visualizations")
+
 
 ```
 
@@ -7404,6 +7588,13 @@ names(df_fit) <- c("Stats.OperatingSystemWindows","M","SE")
 ggplot(df_fit, aes(Stats.OperatingSystemWindows, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
   geom_point(size=7)
+
+ggplot(df_fit, aes(Stats.OperatingSystemWindows, M)) + 
+    geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
+    geom_point(size=7) +
+    #scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+    labs(title="Model Fit for Operating Systems for Percentage of Nodes\nin Largest Cluster task, graphics conditions",
+         y="Fit", x="Operating Systems")
 
 ```
 
@@ -8098,6 +8289,10 @@ rand(graph.numclust.lmer.full.int.7)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(graph.numclust.lmer.full.int.7, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters task,\ngraphics conditions")
+
 
 ```
 
@@ -8129,6 +8324,12 @@ ggplot(graph.numclust.lmer.full.int.7.f, aes(.fitted,.resid)) +
 ggplot(graph.numclust.lmer.full.int.7.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(graph.numclust.lmer.full.int.7.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Clusters task,\ngraphics conditions")
 
 
 ```
@@ -8297,7 +8498,10 @@ ggplot(graph.numclust.emm.cond.cld.df) +
   geom_errorbar(aes(x=ConditionColor,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=ConditionColor,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  scale_x_discrete(labels=c("Blue","Black")) +
+  coord_flip() +
+  labs(title="Estimated Marginal Means for Node Color for Number of Clusters task,\ngraphics conditions",
+       x="Node Color")
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -8517,7 +8721,8 @@ ggplot(graph.numclust.emm.data.cld.df) +
   geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=Dataset,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Clusters task,\ngraphics conditions")
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -8691,7 +8896,9 @@ ggplot(graph.numclust.emm.over.cld.df) +
   geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=Overestimated,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Overestimated for Number of Clusters task,\ngraphics conditions")
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -8864,8 +9071,11 @@ ggplot(graph.numclust.emm.OS.cld.df) +
   #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
   geom_errorbar(aes(x=Stats.OperatingSystemNumClust,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=Stats.OperatingSystemNumClust,y=emmean), size=7) +
+  scale_x_discrete(labels=c("High Error Group","Low Error Group")) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  coord_flip() +
+    labs(title="Estimated Marginal Means for Operating Systems for Number of Clusters task,\ngraphics conditions",
+         x="Operating Systems")
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -8997,6 +9207,7 @@ ggplot(graph.numclust.emm.OS.pairs.compl) +
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
 graph.numclust.emm.conddata <- emmeans(graph.numclust.lmer.full.int.7, ~ Dataset | ConditionColor, nesting = NULL)
+graph.numclust.emm.conddata.2 <- emmeans(graph.numclust.lmer.full.int.7, ~  ConditionColor | Dataset, nesting = NULL)
 
 graph.numclust.emm.conddata
 
@@ -9030,6 +9241,8 @@ graph.numclust.emm.conddata.cld.df <- graph.numclust.emm.conddata.cld[["emmeans"
 
 graph.numclust.emm.conddata.cld.df %>% dplyr::select(Dataset,ConditionColor,.group) %>% print()
 
+cld(graph.numclust.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,ConditionColor,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -9049,6 +9262,22 @@ ggplot(graph.numclust.emm.conddata.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Dataset) + 
   coord_flip()
+
+ggplot(graph.numclust.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Dataset,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor)
+
+ggplot(graph.numclust.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=ConditionColor), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=ConditionColor), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=ConditionColor, group=ConditionColor), position=position_dodge(width=0.2)) +
+  scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  labs(title="Estimated Marginal Means for Node Color vs. Dataset for Number of Clusters task,\ngraphics conditions")
+
 
 ```
 
@@ -9212,6 +9441,7 @@ ggplot(graph.numclust.emm.conddata.pairs.compl) +
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
 graph.numclust.emm.overnclust <- emmeans(graph.numclust.lmer.full.int.7, ~ Overestimated | Stats.OperatingSystemNumClust, nesting = NULL)
+graph.numclust.emm.overnclust.2 <- emmeans(graph.numclust.lmer.full.int.7, ~ Stats.OperatingSystemNumClust | Overestimated, nesting = NULL)
 
 graph.numclust.emm.overnclust
 
@@ -9245,6 +9475,8 @@ graph.numclust.emm.overnclust.cld.df <- graph.numclust.emm.overnclust.cld[["emme
 
 graph.numclust.emm.overnclust.cld.df %>% dplyr::select(Overestimated,Stats.OperatingSystemNumClust,.group) %>% print()
 
+cld(graph.numclust.emm.overnclust.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Overestimated,Stats.OperatingSystemNumClust,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -9265,6 +9497,14 @@ ggplot(graph.numclust.emm.overnclust.cld.df) +
   facet_wrap(~Stats.OperatingSystemNumClust) + 
   coord_flip()
 
+ggplot(graph.numclust.emm.overnclust.cld.df) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL, color=Stats.OperatingSystemNumClust), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean, color=Stats.OperatingSystemNumClust)) +
+  geom_line(aes(x=Overestimated,y=emmean, color=Stats.OperatingSystemNumClust, group=Stats.OperatingSystemNumClust)) +
+  scale_color_discrete(name="Operating\nSystems", labels=c("Low Error Group","High Error Group"))+
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+labs(title="Estimated Marginal Means for Operating System vs. Overestimated for\nNumber of Clusters task, graphics conditions")
+
 ```
 
 ```{r}
@@ -9274,6 +9514,10 @@ graph.numclust.emm.overnclust.pairs #%>% View()
 # for some reason, full.cld$comparisons returns estimates that are all positive; 
 # pairs(graph.numhd.emm.condition) has both negative and positive estimates
 # and joins better to confint()
+
+graph.numclust.emm.overnclust.2.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.overnclust.2)) 
+graph.numclust.emm.overnclust.2.pairs #%>% View()
+
 
 overnclust.pairs.CI <- confint(pairs(graph.numclust.emm.overnclust))
 
@@ -9852,12 +10096,46 @@ anova(graph.numhd.lmer.full.int.4, graph.numhd.lmer.full.int.3)
 
 # no significant difference and 4 is way simpler, so keeping 4
 
+graph.numhd.lmer.full.int.5 <- lmer(LogError ~ Condition + 
+                                    Dataset +
+                                    Condition:Dataset +
+                                      Dataset:Overestimated +
+                                      factor(DatasetOrder):Overestimated +
+                                    (1|Demo.ResponseID), 
+                                  data=temp, REML = T)
+
+summary(graph.numhd.lmer.full.int.5)
+
+anova(graph.numhd.lmer.full.int.5)
+
+anova(graph.numhd.lmer.full.int.4)
+
+anova(graph.numhd.lmer.full.int.4, graph.numhd.lmer.full.int.5)
+
+# should keep 5, where datasetorder is treated as a factor; only a slight difference between 4 and 5
+
+# redoing 5 with factor in the dataset
+
+temp.numhd.gr <- temp %>% mutate(DatasetOrder=factor(DatasetOrder))
+
+graph.numhd.lmer.full.int.6 <- lmer(LogError ~ Condition + 
+                                    Dataset +
+                                    Condition:Dataset +
+                                      Dataset:Overestimated +
+                                      DatasetOrder:Overestimated +
+                                    (1|Demo.ResponseID), 
+                                  data=temp.numhd.gr, REML = T)
+
+summary(graph.numhd.lmer.full.int.6)
+
+anova(graph.numhd.lmer.full.int.6)
+
 ```
 
 ```{r}
 
 #SAVE THE RESULTS
-save(graph.numhd.lmer.full.int.4, 
+save(graph.numhd.lmer.full.int.6, 
      file = file.path(analysisDataDir,"fits/graph_numhd_lmer_int.RData"))
 
 ```
@@ -9865,7 +10143,7 @@ save(graph.numhd.lmer.full.int.4,
 
 ```{r, cache=TRUE}
 
-rand(graph.numhd.lmer.full.int.4)
+rand(graph.numhd.lmer.full.int.6)
 
 # result shows that random effects of participant are *not* significant (p=1)
 
@@ -9875,20 +10153,9 @@ rand(graph.numhd.lmer.full.int.4)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(graph.numhd.lmer.full.int.6, method = 'nsj', partial = TRUE))[1,'Rsq']
 
-```
-
-```{r}
-
-plot(graph.numhd.lmer.full.int.4)
-
-plot(graph.numhd.lmer.full.int.4, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
-
-plot(graph.numhd.lmer.full.int.4, resid(.) ~ fitted(.) | Condition, abline = 0)
-
-plot(graph.numhd.lmer.full.int.4, resid(., scaled=TRUE) ~ fitted(.) | Condition, abline = 0)
-
-plot(graph.numhd.lmer.full.int.4, LogError ~ fitted(.), abline = c(0,1))
+ggplot(graphics_numhighdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Degree of Highest Degree Node task,\ngraphics conditions")
 
 
 
@@ -9896,16 +10163,38 @@ plot(graph.numhd.lmer.full.int.4, LogError ~ fitted(.), abline = c(0,1))
 
 ```{r}
 
-graph.numhd.lmer.full.int.4.f <- fortify(graph.numhd.lmer.full.int.4)
+plot(graph.numhd.lmer.full.int.6)
 
-ggplot(graph.numhd.lmer.full.int.4.f, aes(.fitted,.resid)) + 
+plot(graph.numhd.lmer.full.int.6, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(graph.numhd.lmer.full.int.6, resid(.) ~ fitted(.) | Condition, abline = 0)
+
+plot(graph.numhd.lmer.full.int.6, resid(., scaled=TRUE) ~ fitted(.) | Condition, abline = 0)
+
+plot(graph.numhd.lmer.full.int.6, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+graph.numhd.lmer.full.int.6.f <- fortify(graph.numhd.lmer.full.int.6)
+
+ggplot(graph.numhd.lmer.full.int.6.f, aes(.fitted,.resid)) + 
   geom_point() +
   #facet_grid(.~Sex) + 
   geom_hline(yintercept=0)
 
-ggplot(graph.numhd.lmer.full.int.4.f, aes(.fitted,LogError)) + 
+ggplot(graph.numhd.lmer.full.int.6.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(graph.numhd.lmer.full.int.6.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Degree of Highest Degree Node task,\ngraphics conditions")
 
 
 ```
@@ -10060,7 +10349,7 @@ ggplot(graph.numhd.difflsmlt.cond.df) +
 # with(graphics_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
 
-graph.numhd.emm.cond <- emmeans(graph.numhd.lmer.full.int.4, "Condition", nesting = NULL)
+graph.numhd.emm.cond <- emmeans(graph.numhd.lmer.full.int.6, "Condition", nesting = NULL)
 #graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
 
 graph.numhd.emm.cond
@@ -10098,7 +10387,8 @@ ggplot(graph.numhd.emm.cond.cld.df) +
   geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=Condition,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Degree of\nHighest Degree Node task, graphics conditions")
 
 #plot(ref_grid(graph.numhd.lmer.full.int.4), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -10262,7 +10552,7 @@ ggraph(graph, layout = 'kk') +
 # with(graphics_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
 
-graph.numhd.emm.data <- emmeans(graph.numhd.lmer.full.int.4, "Dataset", nesting = NULL)
+graph.numhd.emm.data <- emmeans(graph.numhd.lmer.full.int.6, "Dataset", nesting = NULL)
 #graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
 
 graph.numhd.emm.data
@@ -10308,7 +10598,9 @@ ggplot(graph.numhd.emm.data.cld.df) +
   geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
   geom_point(aes(x=Dataset,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
-  coord_flip()
+  coord_flip() +
+  labs(title="Estimated Marginal Means for Dataset for Degree of\nHighest Degree Node task, graphics conditions")
+
 
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
@@ -10481,7 +10773,8 @@ ggraph(graph, layout = 'kk') +
 # See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
-graph.numhd.emm.conddata <- emmeans(graph.numhd.lmer.full.int.4, ~ Dataset | Condition, nesting = NULL)
+graph.numhd.emm.conddata <- emmeans(graph.numhd.lmer.full.int.6, ~ Dataset | Condition, nesting = NULL)
+graph.numhd.emm.conddata.2 <- emmeans(graph.numhd.lmer.full.int.6, ~ Condition | Dataset, nesting = NULL)
 
 graph.numhd.emm.conddata
 
@@ -10515,6 +10808,8 @@ graph.numhd.emm.conddata.cld.df <- graph.numhd.emm.conddata.cld[["emmeans"]]
 
 graph.numhd.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
+cld(graph.numhd.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -10535,6 +10830,13 @@ ggplot(graph.numhd.emm.conddata.cld.df) +
   facet_wrap(~Dataset) + 
   coord_flip()
 
+ggplot(graph.numhd.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nDegree of Highest Degree Node task, graphics conditions")
 
 ```
 
@@ -10699,7 +11001,8 @@ ggplot(graph.numhd.emm.conddata.pairs.compl) +
 # See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
-graph.numhd.emm.dataover <- emmeans(graph.numhd.lmer.full.int.4, ~ Dataset | Overestimated, nesting = NULL)
+graph.numhd.emm.dataover <- emmeans(graph.numhd.lmer.full.int.6, ~ Dataset | Overestimated, nesting = NULL)
+graph.numhd.emm.dataover.2 <- emmeans(graph.numhd.lmer.full.int.6, ~ Overestimated | Dataset, nesting = NULL)
 
 graph.numhd.emm.dataover
 
@@ -10732,6 +11035,7 @@ graph.numhd.emm.dataover.cld[["emmeans"]]
 graph.numhd.emm.dataover.cld.df <- graph.numhd.emm.dataover.cld[["emmeans"]]
 
 graph.numhd.emm.dataover.cld.df %>% dplyr::select(Dataset,Overestimated,.group) %>% print()
+cld(graph.numhd.emm.dataover.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Overestimated,.group) %>% print()
 
 # TO DO : get this to print as single table
 
@@ -10752,6 +11056,15 @@ ggplot(graph.numhd.emm.dataover.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Overestimated) + 
   coord_flip()
+
+ggplot(graph.numhd.emm.dataover.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Overestimated), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Overestimated), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Overestimated, group=Overestimated), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  labs(title="Estimated Marginal Means for Dataset vs. Overestimated for\nDegree of Highest Degree Node task, graphics conditions")
+
 
 
 ```
@@ -10899,13 +11212,11 @@ ggplot(graph.numhd.emm.dataover.pairs.compl) +
 
 ##### DatasetOrder:Overestimated
 
-NOTE: processed as continuous
-
-TO DO : try model (all models???) with DatasetOrder as ordered factor
+TO DO : add factor to DatasetOrder at beginning
 
 ###### emmeans
 
-```{r, eval=FALSE}
+```{r}
 
 # trying to use emmeans package for lsmeans table
 
@@ -10921,7 +11232,8 @@ TO DO : try model (all models???) with DatasetOrder as ordered factor
 # See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
-graph.numhd.emm.dorderover <- emmeans(graph.numhd.lmer.full.int.4, ~ DatasetOrder | Overestimated, nesting = NULL)
+graph.numhd.emm.dorderover <- emmeans(graph.numhd.lmer.full.int.6, ~ DatasetOrder | Overestimated, nesting = NULL)
+graph.numhd.emm.dorderover.2 <- emmeans(graph.numhd.lmer.full.int.6, ~ Overestimated | DatasetOrder, nesting = NULL)
 
 graph.numhd.emm.dorderover
 
@@ -10954,6 +11266,8 @@ graph.numhd.emm.dorderover.cld[["emmeans"]]
 graph.numhd.emm.dorderover.cld.df <- graph.numhd.emm.dorderover.cld[["emmeans"]]
 
 graph.numhd.emm.dorderover.cld.df %>% dplyr::select(DatasetOrder,Overestimated,.group) %>% print()
+cld(graph.numhd.emm.dorderover.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(DatasetOrder,Overestimated,.group) %>% print()
+
 
 # TO DO : get this to print as single table
 
@@ -10974,6 +11288,14 @@ ggplot(graph.numhd.emm.dorderover.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Overestimated) + 
   coord_flip()
+
+ggplot(graph.numhd.emm.dorderover.cld.df) +
+  geom_errorbar(aes(x=DatasetOrder,ymax=upper.CL,ymin=lower.CL, color=Overestimated), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=DatasetOrder,y=emmean, color=Overestimated), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=DatasetOrder,y=emmean, color=Overestimated, group=Overestimated), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  labs(title="Estimated Marginal Means for Dataset Order vs. Overestimated for\nDegree of Highest Degree Node task, graphics conditions", x="Dataset Order")
 
 
 ```
@@ -11559,6 +11881,10 @@ anova(graph.numlinks.lmer.full.int)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(graph.numlinks.lmer.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numlinks) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Links task,\ngraphics conditions")
+
 
 ```
 
@@ -11591,6 +11917,11 @@ ggplot(graph.numlinks.lmer.full.int.f, aes(.fitted,LogError)) +
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
 
+ggplot(graph.numlinks.lmer.full.int.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Links task,\ngraphics conditions")
 
 ```
 
@@ -11945,6 +12276,12 @@ ggplot(graph.numlinks.emm.cond.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numlinks.emm.cond.cld.df) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Number of Links task,\ngraphics conditions")
+
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -12166,6 +12503,12 @@ ggplot(graph.numlinks.emm.data.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numlinks.emm.data.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Links task,\ngraphics conditions")
+
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -12296,6 +12639,7 @@ ggplot(graph.numlinks.emm.data.pairs.compl) +
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
 graph.numlinks.emm.conddata <- emmeans(graph.numlinks.lmer.full.int, ~ Dataset | Condition, nesting = NULL)
+graph.numlinks.emm.conddata.2 <- emmeans(graph.numlinks.lmer.full.int, ~ Condition | Dataset, nesting = NULL)
 
 graph.numlinks.emm.conddata
 
@@ -12328,6 +12672,7 @@ graph.numlinks.emm.conddata.cld[["emmeans"]]
 graph.numlinks.emm.conddata.cld.df <- graph.numlinks.emm.conddata.cld[["emmeans"]]
 
 graph.numlinks.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
+cld(graph.numlinks.emm.conddata.2,details=TRUE,sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
 # TO DO : get this to print as single table
 
@@ -12348,6 +12693,14 @@ ggplot(graph.numlinks.emm.conddata.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Dataset) + 
   coord_flip()
+
+ggplot(graph.numlinks.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Links task, graphics conditions")
 
 ```
 
@@ -12998,6 +13351,10 @@ anova(graph.numnodes.lmer.int.3)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(graph.numnodes.lmer.int.3, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numnodes) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Nodes task,\ngraphics conditions")
+
 
 ```
 
@@ -13029,6 +13386,12 @@ ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,.resid)) +
 ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(graph.numnodes.lmer.int.3.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Nodes task,\ngraphics conditions")
 
 
 ```
@@ -13247,6 +13610,13 @@ ggplot(graph.numnodes.emm.cond.cld) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numnodes.emm.cond.cld) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Number of Nodes task,\ngraphics conditions")
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -13458,6 +13828,13 @@ ggplot(graph.numnodes.emm.data.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numnodes.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Nodes task,\ngraphics conditions")
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
 # try to figure this out? maybe only works on the interaction?
@@ -13571,17 +13948,16 @@ This is continuous; just plot against the estimate?
 
 ```{r}
 
-graph.numnodes.lmer.int.3.f <- fortify(graph.numnodes.lmer.int.3)
+#graph.numnodes.lmer.int.3.f <- fortify(graph.numnodes.lmer.int.3)
 
 graph.numnodes.lmer.int.3.f %>% View()
 
 ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,QuestionOrder)) + 
   geom_bin2d()
 
-ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,LogError)) + 
-  geom_point() +
-  geom_abline(aes(slope = 1, intercept = 0))
+ggplot(temp.numnodes) + geom_point(aes(QuestionOrderSc, LogError))
 
+ggplot(temp.numnodes) + geom_point(aes(QuestionOrderSc, LogError)) + geom_smooth(aes(QuestionOrderSc, LogError),method="lm") + labs(title="Overall Question Order (scaled) vs. LogError for\nNumber of Nodes task, graphics conditions", x="Overall Question Order (scaled)")
 
 ```
 
@@ -13649,6 +14025,15 @@ ggplot(graph.numnodes.emm.underest.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numnodes.emm.underest.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=UnderestDummy,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=UnderestDummy,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Underestimated","Correct or\nOverestimated")) + 
+labs(title="Estimated Marginal Means for Underestimated for Number of Nodes task,\ngraphics conditions",
+     x="Underestimated") +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
 # try to figure this out? maybe only works on the interaction?
@@ -13822,6 +14207,13 @@ ggplot(graph.numnodes.emm.acfieldgr.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(graph.numnodes.emm.acfieldgr.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Academic Field for Number of Nodes task,\ngraphics conditions",x="Academic Field")
 
 #plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
 # try to figure this out? maybe only works on the interaction?
@@ -13957,6 +14349,7 @@ ggplot(graph.numnodes.emm.acfieldgr.pairs.compl) +
 
 #graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
 graph.numnodes.emm.conddata <- emmeans(graph.numnodes.lmer.int.3, ~ Dataset | Condition, nesting = NULL)
+graph.numnodes.emm.conddata.2 <- emmeans(graph.numnodes.lmer.int.3, ~ Condition | Dataset, nesting = NULL)
 
 graph.numnodes.emm.conddata
 
@@ -13989,6 +14382,7 @@ graph.numnodes.emm.conddata.cld[["emmeans"]]
 graph.numnodes.emm.conddata.cld.df <- graph.numnodes.emm.conddata.cld[["emmeans"]]
 
 graph.numnodes.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
+cld(graph.numnodes.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
 # TO DO : get this to print as single table
 
@@ -14008,6 +14402,15 @@ ggplot(graph.numnodes.emm.conddata.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Dataset) + 
   coord_flip()
+
+ggplot(graph.numnodes.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Nodes task, graphics conditions")
+
 
 ```
 
@@ -14208,7 +14611,7 @@ graph.numnodes.emm.condunder.cld.df %>% dplyr::select(Condition,UnderestDummy,.g
 
 #graph.numnodes.emm.dataunder.cld.df$Underestimated <- factor(graph.numnodes.emm.dataunder.cld.df$Underestimated, levels=graph.numnodes.emm.dataunder.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Underestimated) %>% unlist())
 
-graph.numnodes.emm.condunder.cld.df$Condition <- factor(graph.numnodes.emm.condunder.cld.df$Condition, levels=rev(cond.lev))
+#graph.numnodes.emm.condunder.cld.df$Condition <- factor(graph.numnodes.emm.condunder.cld.df$Condition, levels=graph.numnodes.emm.condunder.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
 
 #emmip(graph.numnodes.lmer.int.3, ~Dataset, CIs = TRUE)
 emmip(graph.numnodes.emm.condunder, ~Condition|UnderestDummy, CIs = TRUE)
@@ -14224,6 +14627,14 @@ ggplot(graph.numnodes.emm.condunder.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~UnderestDummy) + 
   coord_flip()
+
+ggplot(graph.numnodes.emm.condunder.cld.df) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL, color=UnderestDummy), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Condition,y=emmean, color=UnderestDummy), position=position_dodge(width=0.2)) +
+  #geom_line(aes(x=Condition,y=emmean, color=UnderestDummy, group=UnderestDummy), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Underestimated","Correct or\nOverestimated"), name="Underestimated") +
+  labs(title="Estimated Marginal Means for Condition vs. Underestimated for\nNumber of Nodes task, graphics conditions")
 
 ```
 

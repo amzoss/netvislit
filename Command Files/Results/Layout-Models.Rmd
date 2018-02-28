@@ -341,6 +341,18 @@ names(star.colors) <- c(TRUE, FALSE)
 
 ## Mixed Models
 
+```{r}
+
+layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_violin() + scale_y_log10()
+
+layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of LogError for Numerical Response Tasks,\nlayout conditions")
+
+
+```
+
 ### Average Degree
 
 #### lme4
@@ -772,6 +784,12 @@ anova(layout.avgdeg.lmer.int.2)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+ggplot(layouts_avgdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Average Degree task,\nlayout conditions")
+
+(r2nsj = r2beta(layout.avgdeg.lmer.int.2, method = 'nsj', partial = TRUE))
+(r2nsj = r2beta(layout.avgdeg.lmer.int.2, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+
 
 ```
 
@@ -804,11 +822,18 @@ ggplot(layout.avgdeg.lmer.int.2.f, aes(.fitted,LogError)) +
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
 
+ggplot(layout.avgdeg.lmer.int.2.f, aes(LogError,.fitted)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  #scale_y_continuous(limits=c(0,0.3)) +
+  labs(title="Real vs. Predicted LogError values for Average Degree task,\nlayout conditions")
+
+
 
 ```
 
 
-#### Least Squares Means-numlinks
+#### Least Squares Means
 
 Do for each categorical predictor. 
 Final model: 
@@ -1772,7 +1797,7 @@ anova(layout.bc.nb.dataset, layout.bc.nb.dataset.offset)
 # Multiple predictors
 #---------------------------------
 
-temp.bc <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes)
+temp.bc <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes, CorrectAnswer=scale(CorrectAnswer))
 
 layout.bc.nb.full <- glmer.nb(NodeRank ~ Condition + Dataset + 
                                 CorrectAnswer +
@@ -1807,6 +1832,17 @@ summary(layout.bc.nb.full.int)
 
 anova(layout.bc.nb.full, layout.bc.nb.full.int)
 # yes, interaction is significantly different from just main effects (p < 2.2e-16)
+
+temp.bc.2 <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes)
+
+layout.bc.nb.full.int.2 <- glmer.nb(NodeRank ~ Condition + Dataset + 
+                                CorrectAnswer +
+                                  Condition:Dataset +
+                                   (1|Demo.ResponseID),
+                                 data=temp.bc.2, verbose=TRUE,
+                                 control=glmerControl(optimizer = "bobyqa"))
+
+summary(layout.bc.nb.full.int.2)
 
 
 ```
@@ -1856,6 +1892,28 @@ ggplot(layout.bc.nb.full.int.f, aes(NodeRank,.fitted)) +
   geom_point() +
   geom_hline(yintercept=0) +
   facet_wrap(~Dataset)
+
+(r2nsj = r2beta(layout.bc.nb.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(layouts_bc) + geom_histogram(aes(NodeRank), binwidth=1) + 
+  labs(title="Distribution of NodeRank values for\nNode Betweenness Centrality task, layout conditions")
+
+ggplot(layout.bc.nb.full.int.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nNode Betweenness Centrality task, layout conditions")
+
+(r2nsj = r2beta(layout.bc.nb.full.int.2, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+layout.bc.nb.full.int.2.f <- fortify(layout.bc.nb.full.int.2)
+
+ggplot(layout.bc.nb.full.int.2.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nNode Betweenness Centrality task, layout conditions")
+
 
 
 ```
@@ -2018,9 +2076,8 @@ Full model (layout.bc.nb.full.int):
 # with(layouts_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(layout.bc.nb.full.int) @ grid; .wgt. is number of observations
 
-layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int, "Condition", nesting = NULL)
+layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int.2, "Condition", nesting = NULL)
 #layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int, "Condition", nesting = NULL, cov.reduce = FALSE)
-layout.bc.emm.cond.2 <- emmeans(layout.bc.nb.full.int, "Condition", lmer.df = "satterthwaite")
 
 layout.bc.emm.cond
 
@@ -2066,6 +2123,14 @@ ggplot(layout.bc.emm.cond.cld.df) +
   geom_point(aes(x=Condition,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.bc.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for\nNode Betweenness Centrality task, layout conditions")
 
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
@@ -2256,8 +2321,11 @@ glayout(layout, layout = 'kk') +
 # with(layouts_bc, table(Dataset,Condition))
 # ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
 
-layout.bc.emm.data <- emmeans(layout.bc.nb.full.int, "Dataset", nesting = NULL)
+layout.bc.emm.data <- emmeans(layout.bc.nb.full.int.2, "Dataset", nesting = NULL)
 #layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+#layout.bc.emm.data.2 <- emmeans(layout.bc.nb.full.int, "Dataset", nesting = NULL)
+
 
 layout.bc.emm.data
 
@@ -2303,6 +2371,14 @@ ggplot(layout.bc.emm.data.cld.df) +
   geom_point(aes(x=Dataset,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.bc.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=3) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for\nNode Betweenness Centrality task, layout conditions")
 
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
@@ -2479,11 +2555,254 @@ glayout(layout, layout = 'kk') +
 
 ##### CorrectAnswer
 
-Not a factor
+```{r}
+
+ggplot(layouts_bc, aes(CorrectAnswer, NodeRank)) +
+  geom_bin2d() +
+  geom_smooth(method="lm") +
+  labs(title="Correct Answer vs. NodeRank for\nNode Betweenness Centrality task, layout conditions",
+       x="Correct Answer")
+
+```
 
 ##### Condition:Dataset
 
-Duration is not a factor
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numnodes, table(Dataset,Underestimated))
+# ref_grid(layout.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
+layout.bc.emm.conddata <- emmeans(layout.bc.nb.full.int.2, ~ Dataset | Condition, nesting = NULL)
+layout.bc.emm.conddata.2 <- emmeans(layout.bc.nb.full.int.2, ~ Condition | Dataset, nesting = NULL)
+
+layout.bc.emm.conddata
+
+#layout.numnodes.diffemm.conddata <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#layout.numnodes.diffemm.conddata
+
+layout.bc.emm.conddata.df <- dplyr::as_data_frame(layout.bc.emm.conddata)
+
+layout.bc.emm.conddata.df %>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.bc.emm.conddata.cld <- cld(layout.bc.emm.conddata,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+
+layout.bc.emm.conddata.cld[["emmeans"]]
+
+
+layout.bc.emm.conddata.cld.df <- layout.bc.emm.conddata.cld[["emmeans"]]
+
+layout.bc.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
+cld(layout.bc.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(layout.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(layout.bc.emm.conddata, ~Condition|Dataset, CIs = TRUE)
+plot(layout.bc.emm.conddata)
+#plot(layout.numnodes.emm.conddata, comparisons = TRUE)
+
+layout.bc.emm.conddata.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.bc.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Dataset) + 
+  coord_flip()
+
+ggplot(layout.bc.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNode Betweenness Centrality task, layout conditions")
+
+ggplot(layout.bc.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Condition,ymax=asymp.UCL,ymin=asymp.LCL), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Condition,y=emmean), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNode Betweenness Centrality task, layout conditions") +
+  coord_flip() +
+  facet_wrap(~Dataset, scales = "free_x")
+
+
+
+```
+
+```{r}
+
+layout.numnodes.emm.conddata.pairs <- dplyr::as_data_frame(pairs(layout.numnodes.emm.conddata)) 
+layout.numnodes.emm.conddata.pairs %>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+conddata.pairs.CI <- confint(pairs(layout.numnodes.emm.conddata))
+
+layout.numnodes.emm.conddata.pairs <- full_join(layout.numnodes.emm.conddata.pairs, conddata.pairs.CI)
+
+#layout.numnodes.diffemm.cond <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Condition)
+#layout.numnodes.diffemm.cond$contrasts
+#contrast(layout.numnodes.emm.cond)
+#confint(layout.numnodes.emm.cond)
+#pairs(layout.numnodes.emm.cond, details=TRUE)
+#confint(contrast(layout.numnodes.emm.cond))
+#confint(pairs(layout.numnodes.emm.cond))
+#coef(pairs(layout.numnodes.emm.cond))
+
+plot(pairs(layout.numnodes.emm.conddata))
+plot(pairs(layout.numnodes.emm.conddata), comparisons = TRUE)
+
+layout.numnodes.emm.conddata.pairs$sig.levels <- 
+  case_when(layout.numnodes.emm.conddata.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numnodes.emm.conddata.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numnodes.emm.conddata.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numnodes.emm.conddata.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numnodes.emm.conddata.pairs$sig.levels <- factor(layout.numnodes.emm.conddata.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+layout.numnodes.emm.conddata.pairs$contrast.cond <- paste0(layout.numnodes.emm.conddata.pairs$contrast,layout.numnodes.emm.conddata.pairs$Condition)
+
+layout.numnodes.emm.conddata.pairs$contrast.cond <- factor(layout.numnodes.emm.conddata.pairs$contrast.cond, levels=layout.numnodes.emm.conddata.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.cond) %>% distinct() %>% unlist())
+
+#layout.numnodes.emm.conddata.pairs %>% View()
+
+layout.numnodes.emm.conddata.pairs$contrast <- 
+  factor(as.character(layout.numnodes.emm.conddata.pairs$contrast), 
+         levels=layout.numnodes.emm.conddata.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+layout.numnodes.emm.conddata.pairs <- layout.numnodes.emm.conddata.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numnodes.emm.conddata.pairs %>% arrange(estimate)
+#layout.numnodes.emm.conddata.pairs %>% View()
+
+ggplot(layout.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+
+ggplot(layout.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+
+```
+
+
+```{r}
+
+copy <- layout.numnodes.emm.conddata.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numnodes.emm.conddata.pairs.compl <- bind_rows(layout.numnodes.emm.conddata.pairs,copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numnodes.emm.conddata.pairs.compl$From <- factor(layout.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#layout.numnodes.emm.conddata.pairs.compl$To <- factor(layout.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+layout.numnodes.emm.conddata.pairs.compl$From <- factor(layout.numnodes.emm.conddata.pairs.compl$From, levels=c(9,7,1))
+
+
+#layout.numnodes.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+layout.numnodes.emm.conddata.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numnodes.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numnodes.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numnodes.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numnodes.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+
+```
+
+
+
+
+
 
 ### Select Highest Degree Node
 
@@ -3105,6 +3424,18 @@ summary(layout.clickhd.nb.full.int)
 anova(layout.clickhd.nb.full, layout.clickhd.nb.full.int)
 # keep int
 
+temp.clickhd.2 <- layouts_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na()
+
+layout.clickhd.nb.full.int.2 <- glmer.nb(NodeRank ~ Condition + Dataset + CorrectAnswer +
+                                         Condition:Dataset +
+                                        (1|Demo.ResponseID),
+                                      data=temp.clickhd.2, verbose=TRUE,
+                                      control=glmerControl(optimizer = "bobyqa"))
+
+summary(layout.clickhd.nb.full.int.2)
+
+
+
 ```
 
 
@@ -3145,6 +3476,19 @@ ggplot(layout.clickhd.nb.full.int.f, aes(.fitted,NodeRank)) +
   geom_hline(yintercept=0) +
   scale_y_log10() +
   facet_wrap(~Dataset)
+
+(r2nsj = r2beta(layout.clickhd.nb.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+
+ggplot(layouts_clickhighdeg) + geom_histogram(aes(NodeRank), binwidth=1) +
+labs(title="Distribution of NodeRank values for\nHighest Degree Node task, layout conditions")
+
+
+ggplot(layout.clickhd.nb.full.int.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nHighest Degree Node task, layout conditions")
 
 
 ```
@@ -3306,7 +3650,7 @@ NodeRank ~ Condition + Dataset + CorrectAnswer + Condition:Dataset + (1|Demo.Res
 
 layout.clickhd.broom.tidy <- tidy(layout.clickhd.nb.full.int, conf.int=TRUE)
 layout.clickhd.broom.aug <- augment(layout.clickhd.nb.full.int, temp.clickhd)
-#layout.clickhd.broom.ci <- confint_tidy(layout.clickhd.nb.full.int)
+layout.clickhd.broom.ci <- confint_tidy(layout.clickhd.nb.full.int)
 #layout.clickhd.broom.tidyci <- bind_cols(layout.clickhd.broom.tidy %>% arrange(group), layout.clickhd.broom.ci)
 
 #layout.clickhd.broom.tidyci$term <- factor(layout.clickhd.broom.tidyci$term,
@@ -3344,9 +3688,9 @@ ggplot(layout.clickhd.broom.aug) +
 
 # also want to check if any combination of two factors has zeroes in the cells
 # with(layouts_numhighdeg, table(Dataset,Overestimated))
-# ref_grid(layout.clickhd.nb.full.int) @ grid; .wgt. is number of observations
+# ref_grid(layout.clickhd.nb.full.int.2) @ grid; .wgt. is number of observations
 
-layout.clickhd.emm.data <- emmeans(layout.clickhd.nb.full.int, "Dataset", nesting = NULL)
+layout.clickhd.emm.data <- emmeans(layout.clickhd.nb.full.int.2, "Dataset", nesting = NULL)
 #layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
 
 layout.clickhd.emm.data
@@ -3840,7 +4184,16 @@ glayout(layout, layout = 'kk') +
 
 ##### CorrectAnswer
 
-Not a factor
+```{r}
+
+ggplot(layouts_clickhighdeg, aes(CorrectAnswer, NodeRank)) +
+geom_bin2d() +
+geom_smooth(method="lm") +
+labs(title="Correct Answer vs. NodeRank for\nHighest Degree Node task, layout conditions",
+x="Correct Answer")
+
+
+```
 
 ##### Condition:Dataset
 
@@ -3866,7 +4219,7 @@ ggplot(layout.clickhd.broom.aug %>% group_by(Dataset) %>% summarize(est=mean(.fi
   #scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
   coord_flip()
 
-plot(emmeans(layout.clickhd.nb.full.int, "Dataset"))
+#plot(emmeans(layout.clickhd.nb.full.int, "Dataset"))
 
 ggplot(layout.clickhd.broom.aug) +
   geom_violin(aes(Dataset,.fitted)) +
@@ -4855,9 +5208,9 @@ mod3$anova
 #mod4$anova
 #formula(mod4, "mu")
 
-op <- par(mfrow = c(3, 2))
- term.plot(mod3, se = T, partial = T)
- par(op)
+#op <- par(mfrow = c(3, 2))
+# term.plot(mod3, se = T, partial = T)
+# par(op)
 
 mod7<-stepGAIC(mod3, what="sigma", scope=~Dataset + DatasetOrder + UnderestDummy)
 
@@ -5029,6 +5382,20 @@ mod7.tidyci.df$term <- factor(mod7.tidyci.df$term,
                                             dplyr::select(term) %>% unlist())
 
 ggplot(mod7.aug.df) + geom_point(aes(ResponsePct,.fitted))
+
+ggplot(layouts_lgclust, aes(Response)) +
+geom_histogram(binwidth = 1) +
+labs(title="Distribution of Response values for Percentage of Nodes\nin Largest Cluster task, layout conditions")
+
+ggplot(mod7.aug.df, aes(ResponsePct,.fitted)) +
+geom_bin2d() +
+geom_smooth(method="lm") +
+labs(title="Real vs. Predicted Response values for Percentage of Nodes\nin Largest Cluster task, layout conditions",
+x="Response as a Percentage")
+
+
+Rsq(mod7)
+
 
 #ggplot(mod7.tidyci.df, aes(term, estimate)) + 
 #  geom_point() + 
@@ -5428,7 +5795,12 @@ names(df_fit) <- c("Dataset","M","SE")
 # not bad, might work
 ggplot(df_fit, aes(Dataset, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
-  geom_point(size=7)
+  geom_point(size=7) +
+  labs(title="Model Fit for Dataset for Percentage of Nodes\nin Largest Cluster task, layout conditions",
+       y="Fit")
+
+
+
 
 ```
 
@@ -5496,7 +5868,11 @@ names(df_fit) <- c("DatasetOrder","M","SE")
 # not bad, might work
 ggplot(df_fit, aes(DatasetOrder, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
-  geom_point(size=7)
+  geom_point(size=7) +
+  labs(title="Model Fit for Dataset Order for Percentage of Nodes\nin Largest Cluster task, layout conditions",
+       x="Dataset Order",
+       y="Fit")
+
 
 ```
 
@@ -5535,7 +5911,11 @@ names(df_fit) <- c("UnderestDummy","M","SE")
 # not bad, might work
 ggplot(df_fit, aes(UnderestDummy, M)) + 
   geom_errorbar(aes(ymin=M-SE, ymax=M+SE), width=.2) + 
-  geom_point(size=7)
+  geom_point(size=7) +
+  scale_x_discrete(labels=c("Underestimated", "Correct or Overestimated"), name="Underestimated") +
+labs(title="Model Fit for Underestimated for Percentage of Nodes\nin Largest Cluster task, layout conditions",
+y="Fit")
+
 
 ```
 
@@ -6202,6 +6582,10 @@ rand(layout.numclust.lmer.full.int)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+ggplot(layouts_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters task,\nlayout conditions")
+
+(r2nsj = r2beta(layout.numclust.lmer.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
 
 ```
 
@@ -6233,6 +6617,12 @@ ggplot(layout.numclust.lmer.full.int.f, aes(.fitted,.resid)) +
 ggplot(layout.numclust.lmer.full.int.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.numclust.lmer.full.int.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+labs(title="Real vs. Predicted LogError values for Number of Clusters task,\nlayout conditions")
+
 
 
 ```
@@ -6333,6 +6723,12 @@ ggplot(layout.numclust.emm.over.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(layout.numclust.emm.over.cld.df) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Overestimated for Number of Clusters task,\nlayout conditions")
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -7277,6 +7673,11 @@ rand(layout.numhd.lmer.full.int.4)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(layout.numhd.lmer.full.int.4, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(layouts_numhighdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Degree of Highest Degree Node task,\nlayout conditions")
+
+
 
 ```
 
@@ -7308,6 +7709,12 @@ ggplot(layout.numhd.lmer.full.int.4.f, aes(.fitted,.resid)) +
 ggplot(layout.numhd.lmer.full.int.4.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.numhd.lmer.full.int.4.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+labs(title="Real vs. Predicted LogError values for Degree of Highest Degree Node task,\nlayout conditions")
+
 
 
 ```
@@ -7404,6 +7811,14 @@ ggplot(layout.numhd.emm.cond.cld.df) +
   geom_point(aes(x=Condition,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.numhd.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Degree of\nHighest Degree Node task, layout conditions")
 
 #plot(ref_grid(layout.numhd.lmer.full.int.4), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -7573,6 +7988,14 @@ ggplot(layout.numhd.emm.data.cld.df) +
   geom_point(aes(x=Dataset,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.numhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Degree of\nHighest Degree Node task, layout conditions")
 
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
@@ -7748,6 +8171,14 @@ ggplot(layout.numhd.emm.under.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(layout.numhd.emm.under.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Underestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Underestimated,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Overestimated","Underestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Underestimated for Degree of\nHighest Degree Node task, layout conditions")
+
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -7879,6 +8310,7 @@ ggplot(layout.numhd.emm.under.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numhd.emm.conddata <- emmeans(layout.numhd.lmer.full.int.4, ~ Dataset | Condition, nesting = NULL)
+layout.numhd.emm.conddata.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Condition | Dataset, nesting = NULL)
 
 layout.numhd.emm.conddata
 
@@ -7912,6 +8344,8 @@ layout.numhd.emm.conddata.cld.df <- layout.numhd.emm.conddata.cld[["emmeans"]]
 
 layout.numhd.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
+cld(layout.numhd.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -7932,6 +8366,13 @@ ggplot(layout.numhd.emm.conddata.cld.df) +
   facet_wrap(~Dataset) + 
   coord_flip()
 
+ggplot(layout.numhd.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nDegree of Highest Degree Node task, layout conditions")
 
 ```
 
@@ -8097,6 +8538,7 @@ ggplot(layout.numhd.emm.conddata.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numhd.emm.condunder <- emmeans(layout.numhd.lmer.full.int.4, ~ Condition | Underestimated, nesting = NULL)
+layout.numhd.emm.condunder.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Underestimated | Condition, nesting = NULL)
 
 layout.numhd.emm.condunder
 
@@ -8130,6 +8572,9 @@ layout.numhd.emm.condunder.cld.df <- layout.numhd.emm.condunder.cld[["emmeans"]]
 
 layout.numhd.emm.condunder.cld.df %>% dplyr::select(Condition,Underestimated,.group) %>% print()
 
+cld(layout.numhd.emm.condunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Condition,Underestimated,.group) %>% print()
+
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -8152,7 +8597,10 @@ ggplot(layout.numhd.emm.condunder.cld.df) +
 
 ggplot(layout.numhd.emm.condunder.cld.df) +
   geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position="dodge") +
-  geom_point(aes(x=Condition,y=emmean,color=Underestimated),position=position_dodge(width=0.2))
+  geom_point(aes(x=Condition,y=emmean,color=Underestimated),position=position_dodge(width=0.2))+
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Condition vs. Underestimated for\nDegree of Highest Degree Node task, layout conditions")
+
 
 
 ```
@@ -8318,6 +8766,7 @@ ggplot(layout.numhd.emm.condunder.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numhd.emm.dataunder <- emmeans(layout.numhd.lmer.full.int.4, ~ Dataset | Underestimated, nesting = NULL)
+layout.numhd.emm.dataunder.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Underestimated | Dataset, nesting = NULL)
 
 layout.numhd.emm.dataunder
 
@@ -8351,6 +8800,9 @@ layout.numhd.emm.dataunder.cld.df <- layout.numhd.emm.dataunder.cld[["emmeans"]]
 
 layout.numhd.emm.dataunder.cld.df %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
 
+cld(layout.numhd.emm.dataunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
+
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -8372,8 +8824,11 @@ ggplot(layout.numhd.emm.dataunder.cld.df) +
   coord_flip()
 
 ggplot(layout.numhd.emm.dataunder.cld.df) +
-  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position="dodge") +
-  geom_point(aes(x=Dataset,y=emmean, color=Underestimated), position=position_dodge(width=0.2))
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Underestimated), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Underestimated, group=Underestimated), position=position_dodge(width=0.2)) +
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Dataset vs. Underestimated for\nDegree of Highest Degree Node task, layout conditions")
 
 ```
 
@@ -8958,6 +9413,10 @@ anova(layout.numlinks.lmer.full.int.3)
 
 # unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
 
+(r2nsj = r2beta(layout.numlinks.lmer.full.int.3, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numlinks) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Links task,\nlayout conditions")
+
 
 ```
 
@@ -8990,6 +9449,11 @@ ggplot(layout.numlinks.lmer.full.int.3.f, aes(.fitted,LogError)) +
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
 
+ggplot(layout.numlinks.lmer.full.int.3.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Links task,\nlayout conditions")
 
 ```
 
@@ -9085,6 +9549,15 @@ ggplot(layout.numlinks.emm.cond.cld.df) +
   geom_point(aes(x=Condition,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.numlinks.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Number of Links task,\nlayout conditions")
+
 
 #plot(ref_grid(layout.numhd.lmer.full.int.4), by="Condition") 
 # try to figure this out? maybe only works on the interaction?
@@ -9254,6 +9727,14 @@ ggplot(layout.numlinks.emm.data.cld.df) +
   geom_point(aes(x=Dataset,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.numlinks.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Links task,\nlayout conditions")
 
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
@@ -9560,6 +10041,7 @@ ggplot(layout.numlinks.emm.under.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numlinks.emm.conddata <- emmeans(layout.numlinks.lmer.full.int.3, ~ Dataset | Condition, nesting = NULL)
+layout.numlinks.emm.conddata.2 <- emmeans(layout.numlinks.lmer.full.int.3, ~ Condition | Dataset, nesting = NULL)
 
 layout.numlinks.emm.conddata
 
@@ -9593,6 +10075,8 @@ layout.numlinks.emm.conddata.cld.df <- layout.numlinks.emm.conddata.cld[["emmean
 
 layout.numlinks.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
+cld(layout.numlinks.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -9612,6 +10096,14 @@ ggplot(layout.numlinks.emm.conddata.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Dataset) + 
   coord_flip()
+
+ggplot(layout.numlinks.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Links task, layout conditions")
 
 
 ```
@@ -9778,6 +10270,8 @@ ggplot(layout.numlinks.emm.conddata.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numlinks.emm.condunder <- emmeans(layout.numlinks.lmer.full.int.3, ~ Condition | Underestimated, nesting = NULL)
+layout.numlinks.emm.condunder.2 <- emmeans(layout.numlinks.lmer.full.int.3, ~ Underestimated | Condition, nesting = NULL)
+
 
 layout.numlinks.emm.condunder
 
@@ -9810,6 +10304,8 @@ layout.numlinks.emm.condunder.cld[["emmeans"]]
 layout.numlinks.emm.condunder.cld.df <- layout.numlinks.emm.condunder.cld[["emmeans"]]
 
 layout.numlinks.emm.condunder.cld.df %>% dplyr::select(Condition,Underestimated,.group) %>% print()
+cld(layout.numlinks.emm.condunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Condition,Underestimated,.group) %>% print()
+
 
 # TO DO : get this to print as single table
 
@@ -9833,7 +10329,10 @@ ggplot(layout.numlinks.emm.condunder.cld.df) +
 
 ggplot(layout.numlinks.emm.condunder.cld.df) +
   geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position="dodge") +
-  geom_point(aes(x=Condition,y=emmean,color=Underestimated),position=position_dodge(width=0.2))
+  geom_point(aes(x=Condition,y=emmean,color=Underestimated),position=position_dodge(width=0.2)) +
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Condition vs. Underestimated for\nNumber of Links task, layout conditions")
+
 
 
 ```
@@ -9999,6 +10498,7 @@ ggplot(layout.numlinks.emm.condunder.pairs.compl) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numlinks.emm.dataunder <- emmeans(layout.numlinks.lmer.full.int.3, ~ Dataset | Underestimated, nesting = NULL)
+layout.numlinks.emm.dataunder.2 <- emmeans(layout.numlinks.lmer.full.int.3, ~ Underestimated | Dataset, nesting = NULL)
 
 layout.numlinks.emm.dataunder
 
@@ -10032,6 +10532,9 @@ layout.numlinks.emm.dataunder.cld.df <- layout.numlinks.emm.dataunder.cld[["emme
 
 layout.numlinks.emm.dataunder.cld.df %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
 
+cld(layout.numlinks.emm.dataunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
+
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -10054,7 +10557,11 @@ ggplot(layout.numlinks.emm.dataunder.cld.df) +
 
 ggplot(layout.numlinks.emm.dataunder.cld.df) +
   geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position="dodge") +
-  geom_point(aes(x=Dataset,y=emmean, color=Underestimated), position=position_dodge(width=0.2))
+  geom_point(aes(x=Dataset,y=emmean, color=Underestimated), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Underestimated, group=Underestimated), position=position_dodge(width=0.2)) +
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Dataset vs. Underestimated for\nNumber of Links task, layout conditions")
+
 
 ```
 
@@ -10641,6 +11148,8 @@ plot(layout.numnodes.lmer.int, LogError ~ fitted(.), abline = c(0,1))
 
 ```{r}
 
+rand(layout.numnodes.lmer.int)
+
 layout.numnodes.lmer.int.f <- fortify(layout.numnodes.lmer.int)
 
 ggplot(layout.numnodes.lmer.int.f, aes(.fitted,.resid)) + 
@@ -10651,6 +11160,17 @@ ggplot(layout.numnodes.lmer.int.f, aes(.fitted,.resid)) +
 ggplot(layout.numnodes.lmer.int.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+(r2nsj = r2beta(layout.numnodes.lmer.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(layouts_numnodes) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Nodes task,\nlayout conditions")
+
+ggplot(layout.numnodes.lmer.int.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Nodes task,\nlayout conditions")
+
 
 
 ```
@@ -10751,6 +11271,14 @@ ggplot(layout.numnodes.emm.cond.cld) +
   geom_point(aes(x=Condition,y=emmean), size=7) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
+
+ggplot(layout.numnodes.emm.cond.cld) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Number of Nodes task,\nlayout conditions")
 
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
@@ -10925,6 +11453,15 @@ ggplot(layout.numnodes.emm.data.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   coord_flip()
 
+ggplot(layout.numnodes.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Nodes task,\nlayout conditions")
+
+
 
 #plot(ref_grid(layout.numnodes.lmer.int.3), by="Dataset") 
 # try to figure this out? maybe only works on the interaction?
@@ -11042,16 +11579,23 @@ This is continuous; just plot against the estimate?
 
 ```{r}
 
-layout.numnodes.lmer.int.f <- fortify(layout.numnodes.lmer.int)
+#layout.numnodes.lmer.int.f <- fortify(layout.numnodes.lmer.int)
 
 layout.numnodes.lmer.int.f %>% View()
 
-ggplot(layout.numnodes.lmer.int.f, aes(.fitted,DatasetDuration)) + 
-  geom_bin2d()
+ggplot(layout.numnodes.lmer.int.f, aes(DatasetDuration,LogError)) + 
+  geom_bin2d() +
+  geom_smooth(method="lm")
 
 ggplot(layout.numnodes.lmer.int.f, aes(.fitted,LogError)) + 
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.numnodes.lmer.int.f, aes(DatasetDuration,LogError)) + 
+  geom_bin2d() +
+  geom_smooth(method="lm",se=FALSE) +
+  labs(title="Time to Complete Dataset vs. LogError for\nNumber of Nodes task, layout conditions",
+       x="Time to Complete Dataset (in sec)")
 
 
 ```
@@ -11083,6 +11627,7 @@ ggplot(temp.numnodes) +
 
 #layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
 layout.numnodes.emm.conddata <- emmeans(layout.numnodes.lmer.int, ~ Dataset | Condition, nesting = NULL)
+layout.numnodes.emm.conddata.2 <- emmeans(layout.numnodes.lmer.int, ~ Condition | Dataset, nesting = NULL)
 
 layout.numnodes.emm.conddata
 
@@ -11116,6 +11661,8 @@ layout.numnodes.emm.conddata.cld.df <- layout.numnodes.emm.conddata.cld[["emmean
 
 layout.numnodes.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
 
+cld(layout.numnodes.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
 # TO DO : get this to print as single table
 
 #layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
@@ -11134,6 +11681,15 @@ ggplot(layout.numnodes.emm.conddata.cld.df) +
   #scale_fill_manual("Significance Levels", values=sig.colors) +
   facet_wrap(~Dataset) + 
   coord_flip()
+
+ggplot(layout.numnodes.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Nodes task, layout conditions")
+
 
 ```
 

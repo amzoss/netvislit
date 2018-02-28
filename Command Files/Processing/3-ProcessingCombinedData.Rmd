@@ -408,8 +408,10 @@ joined_num_ans <- joined_num_ans %>%
   ungroup()
 
 joined_num_ans <- joined_num_ans %>%
-  mutate(NormResponse=(Response - MinResp)/(MaxResp-MinResp),
-         NormCorrectAnswer=(CorrectAnswer - MinResp)/(MaxResp-MinResp))
+  mutate(NormResponse=(Response - MinResp)/(MaxResp-MinResp), 
+         # take numerical responses within condition/data/task and convert to 0 to 1 scale
+         NormCorrectAnswer=(CorrectAnswer - MinResp)/(MaxResp-MinResp)) 
+         # convert correct answer to same scale
 
 ```
 
@@ -434,6 +436,10 @@ graded_num_ans <- dplyr::mutate(joined_num_ans,
                                                         ifelse(RawDifference == 0, 
                                                                "correct",
                                                                "over")))
+
+# so, max of NormResponse - NormCorrectAnswer is 1, then add 1, then take log base 10? 
+# so max LogError is .30, but that's relative to the full range of responses rather than
+# the scale of the data
 
 #ggplot(graded_num_ans) + geom_boxplot(aes(y=log2(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
 #ggplot(graded_num_ans) + geom_boxplot(aes(y=log10(AbsDifference+1),x=factor(Dataset))) + facet_grid(.~Task)
