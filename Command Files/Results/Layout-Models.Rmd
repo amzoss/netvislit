@@ -8374,6 +8374,9 @@ ggplot(layout.numhd.emm.conddata.cld.df) +
   #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
   labs(title="Estimated Marginal Means for Condition vs. Dataset for\nDegree of Highest Degree Node task, layout conditions")
 
+ggsave(file.path(figureDir, "emmeansconddatanumhdlayout.pdf"), width=7, height=5)
+
+
 ```
 
 ```{r}

@@ -384,6 +384,8 @@ graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","
   ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
   labs(title="Distribution of LogError for Numerical Response Tasks,\ngraphics conditions")
 
+ggsave(file.path(figureDir, "logerrortasksgraphics.pdf"), width=10, height=6)
+
 graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
   ggplot(aes(Dataset, Percentage)) + geom_boxplot() + #scale_y_log10() +
   labs(title="Distribution of Percentage for Numerical Response Tasks,\ngraphics conditions") +
@@ -402,6 +404,8 @@ facet_grid(.~Task) + scale_y_log10()
 graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>%
     ggplot() + geom_boxplot(aes(Dataset,LogError)) +
     facet_grid(.~Task) + labs(title="LogError distributions by Task and Dataset, graphics conditions")
+
+ggsave(file.path(figureDir, "logerrortasksdatasetsgraphics.pdf"), width=10, height=6)
 
 ggplot(graphics_bc) +
   geom_bar(aes(NodeRank)) +
@@ -1368,6 +1372,9 @@ anova(graph.avgdeg.lmer.full)
 
 ggplot(graphics_avgdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Average Degree task,\ngraphics conditions")
 
+ggsave(file.path(figureDir, "logerroravgdeggraphics.pdf"), width=5, height=3)
+
+
 (r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))
 (r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))[1,'Rsq']
 
@@ -1450,8 +1457,9 @@ ggplot(graph.avgdeg.lmer.full.f, aes(LogError,.fitted)) +
   geom_point() +
   geom_abline(aes(slope = 1, intercept = 0)) +
   scale_y_continuous(limits=c(0,0.3)) +
-  labs(title="Real vs. Predicted LogError values for Average Degree task,\ngraphics conditions")
+  labs(title="Real vs. Predicted LogError values for Average Degree\ntask, graphics conditions")
 
+ggsave(file.path(figureDir, "fittedpredictavgdeggraphics.pdf"), width=5, height=3)
 
 ```
 
@@ -8291,7 +8299,9 @@ rand(graph.numclust.lmer.full.int.7)
 
 (r2nsj = r2beta(graph.numclust.lmer.full.int.7, method = 'nsj', partial = TRUE))[1,'Rsq']
 
-ggplot(graphics_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters task,\ngraphics conditions")
+ggplot(graphics_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters\ntask, graphics conditions")
+
+ggsave(file.path(figureDir, "logerrornumclustgraphics.pdf"), width=5, height=3)
 
 
 ```
@@ -8329,7 +8339,10 @@ ggplot(graph.numclust.lmer.full.int.7.f, aes(LogError,.fitted)) +
 geom_point() +
 geom_abline(aes(slope = 1, intercept = 0)) +
 scale_y_continuous(limits=c(0,0.3)) +
-labs(title="Real vs. Predicted LogError values for Number of Clusters task,\ngraphics conditions")
+labs(title="Real vs. Predicted LogError values for Number of\nClusters task, graphics conditions")
+
+ggsave(file.path(figureDir, "fittedpredictnumclustgraphics.pdf"), width=5, height=3)
+
 
 
 ```
@@ -9276,8 +9289,9 @@ ggplot(graph.numclust.emm.conddata.cld.df) +
   geom_point(aes(x=Dataset,y=emmean, color=ConditionColor), position=position_dodge(width=0.2)) +
   geom_line(aes(x=Dataset,y=emmean, color=ConditionColor, group=ConditionColor), position=position_dodge(width=0.2)) +
   scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
-  labs(title="Estimated Marginal Means for Node Color vs. Dataset for Number of Clusters task,\ngraphics conditions")
+  labs(title="Estimated Marginal Means for Node Color vs. Dataset for Number of Clusters\ntask, graphics conditions")
 
+ggsave(file.path(figureDir, "emmeanscolordatanumclustgraphics.pdf"), width=7, height=5)
 
 ```
 
@@ -12702,6 +12716,9 @@ ggplot(graph.numlinks.emm.conddata.cld.df) +
   scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
   labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Links task, graphics conditions")
 
+ggsave(file.path(figureDir, "emmeanscolordatanumlinksgraphics.pdf"), width=7, height=5)
+
+
 ```
 
 ```{r}
@@ -12845,6 +12862,38 @@ ggplot(graph.numlinks.emm.conddata.pairs.compl) +
 
 
 ### Number of Nodes
+
+Extra figures
+
+```{r}
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(Response,CorrectAnswer) %>% ggplot() + geom_histogram(aes(Response),binwidth = 5) + geom_vline(aes(xintercept=CorrectAnswer))
+
+ggsave(file.path(figureDir, "resp3hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(NormResponse,NormCorrectAnswer) %>% ggplot() + geom_histogram(aes(NormResponse),binwidth = .05) + geom_vline(aes(xintercept=NormCorrectAnswer))
+
+ggsave(file.path(figureDir, "normresp3hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(LogError) %>% ggplot() + geom_histogram(aes(LogError),binwidth = .01) + scale_x_continuous(limits = c(0,.3)) + scale_y_continuous(limits=c(0,10))
+
+ggsave(file.path(figureDir, "logerror3hist.pdf"), width=6, height=3)
+
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(Response,CorrectAnswer) %>% ggplot() + geom_histogram(aes(Response),binwidth = 50) + geom_vline(aes(xintercept=CorrectAnswer))
+
+ggsave(file.path(figureDir, "resp9hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(NormResponse,NormCorrectAnswer) %>% ggplot() + geom_histogram(aes(NormResponse),binwidth = .05) + geom_vline(aes(xintercept=NormCorrectAnswer))
+
+ggsave(file.path(figureDir, "normresp9hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(LogError) %>% ggplot() + geom_histogram(aes(LogError),binwidth = .01) + scale_x_continuous(limits = c(0,.3)) + scale_y_continuous(limits=c(0,10))
+
+ggsave(file.path(figureDir, "logerror9hist.pdf"), width=6, height=3)
+
+
+```
 
 #### lme4
 
