@@ -1,0 +1,2476 @@
+---
+title: "Analysis for Average Degree task, Graphics conditions"
+author: "Angela Zoss"
+date: "March 23, 2018"
+output: github_document
+---
+
+#### nlme
+
+```{r, cache=TRUE}
+
+# https://iucat.iu.edu/catalog/14518998, chapters 3 and 5
+# data at http://www-personal.umich.edu/~bwest/almmussp.html
+
+# testing models, no nesting/grouping
+
+# Repeated measures, tasks and datasets (crossed)
+
+# starting with older package (nlme), with function lme()
+
+# R by default treats the lowest category (alphabetically or numerically) of a
+# categorical fixed factor as the reference category in a model
+
+# We don't really have reference categories for the repeated measures factors, 
+# though, so I guess it doesn't matter?  Maybe want to exclude training dataset
+
+# Note about syntax; can use either ":" or "*" for interaction, but using "*" automatically adds
+# the main effects of each factor into the model, too, instead of just the interaction
+
+graph.avgdeg.lme <- lme(LogError ~ Dataset, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+
+# Dataset is not significant for AvgDeg; try Condition
+
+graph.avgdeg.lme <- lme(LogError ~ Condition, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Condition is not significant; try ConditionPhrasing
+
+graph.avgdeg.lme <- lme(LogError ~ ConditionPhrasing, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# ConditionPhrasing is not significant; try ConditionGraphics
+
+graph.avgdeg.lme <- lme(LogError ~ ConditionGraphics, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# ConditionGraphics is not significant; try TaskOrder
+
+graph.avgdeg.lme <- lme(LogError ~ TaskOrder, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# TaskOrder is not significant; try DatasetOrder
+
+graph.avgdeg.lme <- lme(LogError ~ DatasetOrder, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# DatasetOrder is not significant; try DatasetDuration
+
+graph.avgdeg.lme <- lme(LogError ~ DatasetDuration, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(DatasetDuration))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# DatasetDuration is not significant; try Stats.Q_TotalDuration
+
+graph.avgdeg.lme <- lme(LogError ~ Stats.Q_TotalDuration, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Stats.Q_TotalDuration is not significant; try Stats.OperatingSystem
+
+graph.avgdeg.lme <- lme(LogError ~ Stats.OperatingSystem, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Stats.OperatingSystem is not significant; try StatsNumPixels
+
+graph.avgdeg.lme <- lme(LogError ~ StatsNumPixels, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# StatsNumPixels is not significant; try Demo.age
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.age, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.age))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.age is not significant; try Demo.gender
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.gender, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.gender))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.gender is not significant; try Demo.lang
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.lang, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.lang))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.lang is not significant; try Demo.educ
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.educ, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.educ))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.educ is not significant; try Demo.acfield
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.acfield, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.acfield))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.acfield is not significant; try Demo.dailytech_Computer
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.dailytech_Computer, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Computer))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.dailytech_Computer is not significant; try Demo.dailytech_Tablet
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.dailytech_Tablet, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Tablet))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.dailytech_Tablet is not significant; try Demo.dailytech_SmartPhone
+
+graph.avgdeg.lme.SP <- lme(LogError ~ Demo.dailytech_SmartPhone, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))))
+
+# TO DO : figure out if SmartPhone should be a factor
+
+summary(graph.avgdeg.lme.SP)
+
+anova(graph.avgdeg.lme.SP)
+
+## Demo.dailytech_SmartPhone *is* significant
+
+ggplot(graphics_avgdeg) +
+  geom_point(aes(Demo.dailytech_SmartPhone, LogError)) +
+  geom_smooth(aes(Demo.dailytech_SmartPhone, LogError), method="lm")
+
+# try Demo.weeklygaming
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.weeklygaming, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.weeklygaming))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.weeklygaming not significant; try Demo.expdataanal
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expdataanal, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expdataanal))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expdataanal not significant; try Demo.expdatavis
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expdatavis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expdatavis))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expdatavis not significant; try Demo.expreadnetvis
+
+graph.avgdeg.lme.RNV <- lme(LogError ~ Demo.expreadnetvis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis))))
+
+summary(graph.avgdeg.lme.RNV)
+
+anova(graph.avgdeg.lme.RNV)
+
+# Demo.expreadnetvis barely significant (p=0.0494); try just the experts (only 1, actually)
+
+graph.avgdeg.lme.RNVAL <- lme(LogError ~ Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+summary(graph.avgdeg.lme.RNVAL)
+
+anova(graph.avgdeg.lme.RNVAL)
+
+# better, but still barely significant; p = 0.0106
+
+# try Demo.expcreatenetvis
+
+graph.avgdeg.lme <- lme(LogError ~ Demo.expcreatenetvis, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.expcreatenetvis))))
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Demo.expcreatenetvis not significant; try AvgDeg
+
+graph.avgdeg.lme <- lme(LogError ~ AvgDeg, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# AvgDeg not significant; try Density
+
+graph.avgdeg.lme <- lme(LogError ~ Density, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Density not significant; try LargeClust1
+
+graph.avgdeg.lme <- lme(LogError ~ LargeClust1, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# LargeClust1 not significant; try Modularity
+
+graph.avgdeg.lme <- lme(LogError ~ Modularity, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Modularity not significant; try NumClust
+
+graph.avgdeg.lme <- lme(LogError ~ NumClust, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumClust not significant; try NumHighDegree
+
+graph.avgdeg.lme <- lme(LogError ~ NumHighDegree, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumHighDegree not significant; try NumLinks
+
+graph.avgdeg.lme <- lme(LogError ~ NumLinks, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumLinks not significant; try NumNodes
+
+graph.avgdeg.lme <- lme(LogError ~ NumNodes, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# NumNodes not significant; try NumNodesClust1
+
+graph.avgdeg.lme <- lme(LogError ~ NumNodesClust1, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg)
+
+summary(graph.avgdeg.lme)
+
+anova(graph.avgdeg.lme)
+
+# Final; try both significant factors
+
+graph.avgdeg.lme.SP.RNVAL <- lme(LogError ~ Demo.dailytech_SmartPhone + Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+summary(graph.avgdeg.lme.SP.RNVAL)
+
+anova(graph.avgdeg.lme.SP.RNVAL)
+
+# Better than just one predictor?
+
+anova(graph.avgdeg.lme.SP.RNVAL, graph.avgdeg.lme.SP)
+
+# no significant difference
+
+graph.avgdeg.lme.RNVAL <- lme(LogError ~ Demo.expreadnetvis.alot, random = ~ 1 | Demo.ResponseID, method="REML", data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))))
+
+anova(graph.avgdeg.lme.SP.RNVAL, graph.avgdeg.lme.RNVAL)
+
+# no significant difference; guess we can use both predictors? or maybe should just use stronger
+# predictor, SmartPhone?
+
+
+random.effects(graph.avgdeg.lme.SP)
+
+# do we really need random effects?  test model without random effects using gls
+
+graph.avgdeg.gls <- gls(LogError ~ Demo.dailytech_SmartPhone, data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))))
+
+anova(graph.avgdeg.lme.SP, graph.avgdeg.gls)
+
+# result of anova is significant (p=0.0019), indicating that there is a significant difference when
+# you remove random effects, so should leave them in
+
+```
+
+```{r, eval=FALSE}
+
+# NOTE: nesting is not appropriate, but syntax for tests might be useful in future
+
+# model with nesting; takes *forever* but does finish
+# can nest when I recode Condition as 0, 1, 2, 3 (Condition1), 
+# but if I just list Ctrl as the ref (Condition), won't converge
+
+model.lme.update.nest <- update(model.lme, random = ~ Condition1 | Demo.ResponseID)
+
+summary(model.lme.update.nest)
+
+anova(model.lme.update.nest)
+
+# might want to check whether nesting makes a difference, but can't run anova because 
+# "the test statistic has a null distribution that is a mixture of X12 and X22 distributions
+# with equal weights of 0.5, so the anova() function cannot be used for the p-value." (p.220)
+
+# Check summary of each model for -2 REML log-likelihood values 
+
+# "logLik" value for unnested: -14415.3
+# "logLik" value for nested: -14441
+# -2 REML logLik is just -2 * the logLik value
+
+# test statistics = unnested - nested
+test.stat <- abs((-2*-14415.3) - (-2*-14441)) # ~51.4
+
+# note: when test.stat was negative, p-value was not significant, but highly significant when
+# positive
+p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
+
+# p-value is < 0.001, so nesting is significantly different
+
+
+```
+
+```{r, cache=TRUE}
+
+# adding weights to have a separate residual variance for each treatment group
+# TO DO: are these the only weights I need to consider???  check that these weights make sense
+
+graph.avgdeg.weight <- lme(LogError ~ Demo.dailytech_SmartPhone, 
+                 random = ~ 1 | Demo.ResponseID, 
+                 method="REML", 
+                 data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))),
+                 weights = varIdent(form = ~1 | Condition))
+
+summary(graph.avgdeg.weight)
+
+# Parameter estimates are:
+#    Ctrl      Siz      Phr      Col 
+#1.000000 1.486356 1.409153 1.436532 
+
+anova(graph.avgdeg.lme.SP, graph.avgdeg.weight)
+
+# result is significant (p<.0001), which suggests that we should retain the second model with the 
+# weights,  otherwise known as the "heterogeneous variances model" (p. 94)
+
+
+```
+
+```{r, cache=TRUE}
+
+graph.avgdeg.weight.pooled <- lme(LogError ~ Demo.dailytech_SmartPhone, 
+                 random = ~ 1 | Demo.ResponseID, 
+                 method="REML", 
+                 data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))),
+                 weights = varIdent(form = ~1 | Ctrl_dummy))
+
+anova(graph.avgdeg.weight, graph.avgdeg.weight.pooled)
+
+# test is not significant, so should not keep the weights pooled? p. 95 not clear, since in 
+# example difference is not significant but pooled model is retained anyway
+
+summary(graph.avgdeg.weight)
+anova(graph.avgdeg.weight)
+
+```
+
+```{r, cache=TRUE}
+
+# TO DO: need to conduct Type I F-test (section 5.7)? to try to remove nonsignficant fixed effects?
+# note p. 223 explains that large F-statistics can indicate significance, even when you don't compute
+# p-values
+
+# another way to test if each additional item is significant:
+# create two models, one with and one without the fixed effect
+# use ML estimation (REML = F for lmer()) for each
+# use anova() to compare the models (see 4.4.3.2)
+
+# On p. 238, talks about needing to be careful about interpretation because an interaction is
+# also significant; can investigate "estimated marginal means" of the combinations of levels in the
+# interaction (needs to be pairwise for the interaction?)
+
+# On p. 133, "Post-hoc comparisons can also be computed in R with 
+# some additional programming (Faraway, 2005)"
+
+# From Faraway, 2015, p. 20:
+# https://search.library.duke.edu/search?id=DUKE008022150
+
+# "We can extract the regression quantities we need from the model object. Commonly used are residuals(),
+# fitted(), df.residual() which gives the degrees of freedon, deviance() which gives the RSS and
+# coef() which gives the ^Beta."
+
+modsum <- summary(graph.avgdeg.weight)
+names(modsum)
+modsum$logLik * -2
+
+modsum$sigma # 0.711... what is sigma, exactly?
+
+```
+
+
+```{r, cache=TRUE}
+
+# Residuals plot
+plot(graph.avgdeg.weight)
+
+# Residuals vs. SmartPhone, scatterplot
+plot(graph.avgdeg.weight, Demo.dailytech_SmartPhone ~ resid(.))
+
+# Predicted vs. SmartPhone
+plot(graph.avgdeg.weight, Demo.dailytech_SmartPhone ~ fitted(.))
+
+
+# Predicted vs. Actual LogError
+plot(graph.avgdeg.weight, LogError ~ fitted(.), abline = c(0,1))
+
+qqnorm(graph.avgdeg.weight, abline = c(0,1))
+
+qqnorm(graph.avgdeg.weight, ~ resid(., type = "p") | Demo.dailytech_SmartPhone, abline = c(0,1))
+
+qqnorm(graph.avgdeg.weight, ~ resid(., type = "p") | Condition, abline = c(0,1))
+
+qqnorm(graph.avgdeg.weight, ~ranef(.))
+
+
+```
+
+#### lme4
+
+```{r, eval=FALSE}
+
+# Trying dataset first
+
+graph.avgdeg.lmer <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = graphics_avgdeg, REML = T)
+
+lmsum <- summary(graph.avgdeg.lmer)
+lmsum
+#names(lmsum)
+
+anova(graph.avgdeg.lmer)
+
+# Dataset not significant; trying SmortPhone
+
+graph.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(graph.avgdeg.lmer.SP)
+
+anova(graph.avgdeg.lmer.SP)
+
+# Smartphone is significant; trying readnetvisalot
+
+graph.avgdeg.lmer.RNVAL <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.avgdeg.lmer.RNVAL)
+
+anova(graph.avgdeg.lmer.RNVAL)
+
+# slightly significant; trying both
+
+graph.avgdeg.lmer.SP.RNVAL <- lmer(LogError ~ Demo.dailytech_SmartPhone + Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))) %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.avgdeg.lmer.SP.RNVAL)
+
+anova(graph.avgdeg.lmer.SP.RNVAL)
+
+```
+
+```{r, cache=TRUE}
+
+# Condition
+
+graph.avgdeg.lmer <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Condition is not significant; trying Ctrl_dummy
+
+graph.avgdeg.lmer <- lmer(LogError ~ Ctrl_dummy + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Ctrl_dummy is not significant; trying ConditionPhrasing
+
+graph.avgdeg.lmer <- lmer(LogError ~ ConditionPhrasing + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# ConditionPhrasing is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ ConditionGraphics + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# ConditionGraphics is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ ConditionColor + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# ConditionColor is not significant
+
+# trying Dataset
+
+graph.avgdeg.lmer <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Dataset is not significant
+
+#graph.avgdeg.lmer <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+graphics_avgdeg.CS <- graphics_avgdeg %>% mutate(QuestionOrder=scale(QuestionOrder))
+
+graph.avgdeg.lmer <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_avgdeg.CS, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# QuestionOrder is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# DatasetOrder is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# DatasetDuration is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+graph.avgdeg.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+graph.avgdeg.lmer <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# CorrectAnswer is not significant
+
+graph.avgdeg.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer.underest)
+
+anova(graph.avgdeg.lmer.underest)
+
+# Underestimated is highly significant (p < 2.2e-16)
+
+graph.avgdeg.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+graph.avgdeg.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Stats.dataset_count is not significant; trying Stats.OperatingSystem
+
+graph.avgdeg.lmer <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Stats.OperatingSystem is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Stats.OperatingSystemCombined is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Stats.OperatingSystemiPhone + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Stats.OperatingSystemiPhone is not significant
+
+graphics_avgdeg.CS <- graphics_avgdeg %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+graph.avgdeg.lmer <- lmer(LogError ~ StatsNumPixels + (1|Demo.ResponseID), data=graphics_avgdeg.CS, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# StatsNumPixels is not significant; trying Demo.age
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.age is not significant; trying Demo.gender
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.gender is not signficant; trying Demo.lang
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.lang is not signficant; trying Demo.educ
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.educ is not signficant; trying Demo.acfield
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.acfield is not signficant overall; trying Demo.acfieldGrouped
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.acfieldGrouped is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped2 + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped2))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.acfieldGrouped2 is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped3 + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped3))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.acfieldGrouped3 is not signficant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.dailytech_Computer is not significant; trying Demo.dailytech_Tablet
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.dailytech_Computer is not significant
+
+graph.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(graph.avgdeg.lmer.SP)
+
+anova(graph.avgdeg.lmer.SP)
+
+# Demo.dailytech_SmartPhone is significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.weeklygaming is not significant; trying Demo.expdataanal
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expdataanal is not significant; trying Demo.expdatavis
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expdatavis is not significant; trying Demo.expreadnetvis
+
+graph.avgdeg.lmer.ERNV <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(graph.avgdeg.lmer.ERNV)
+
+anova(graph.avgdeg.lmer.ERNV)
+
+# Demo.expreadnetvis is somewhat significant (p=0.04943), but very small numbers in some categories
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expreadnetvis.none + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.none))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expreadnetvis.none is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expreadnetvis.three + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expreadnetvis.three))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expreadnetvis.three is not significant; 
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expcreatenetvis is not significant; trying Demo.expcreatenetvis.alot
+
+graph.avgdeg.lmer <- lmer(LogError ~ Demo.expcreatenetvis.alot + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!(is.na(Demo.expcreatenetvis.alot))), REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Demo.expcreatenetvis.alot is not significant; trying AvgDeg
+
+graph.avgdeg.lmer <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# AvgDeg is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Density is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# LargeClust1 is note significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# Modularity is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# NumClust is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# NumHighDegree is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# NumLinks is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# NumNodes is not significant
+
+graph.avgdeg.lmer <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=graphics_avgdeg, REML = T)
+
+summary(graph.avgdeg.lmer)
+
+anova(graph.avgdeg.lmer)
+
+# NumNodesClust1 is not significant
+
+
+```
+
+
+```{r}
+
+temp <- graphics_avgdeg %>% dplyr::select(Demo.ResponseID, LogError, Underestimated, Demo.dailytech_SmartPhone) %>% drop_na()
+
+graph.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
+
+graph.avgdeg.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=temp, REML = T)
+
+graph.avgdeg.lmer.full <- lmer(LogError ~ Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.avgdeg.lmer.full)
+
+anova(graph.avgdeg.lmer.full)
+
+anova(graph.avgdeg.lmer.full, graph.avgdeg.lmer.SP)
+anova(graph.avgdeg.lmer.full, graph.avgdeg.lmer.underest)
+# keep full
+
+graph.avgdeg.lmer.int <- lmer(LogError ~ Underestimated + Demo.dailytech_SmartPhone + Underestimated:Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.avgdeg.lmer.int)
+
+anova(graph.avgdeg.lmer.int)
+
+anova(graph.avgdeg.lmer.full, graph.avgdeg.lmer.int)
+# interaction not significantly better; keep full
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.avgdeg.lmer.full, file = file.path(analysisDataDir,"fits/graph_avgdeg_lmer_full.RData"))
+
+```
+
+```{r, cache=TRUE}
+
+rand(graph.avgdeg.lmer.full)
+
+# result shows that random effects of participant are not significant (p=0.07), but going to keep anyway(?)
+
+anova(graph.avgdeg.lmer.full)
+
+#ranef(graph.avgdeg.lmer.full)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+ggplot(graphics_avgdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Average Degree task,\ngraphics conditions")
+
+ggsave(file.path(figureDir, "logerroravgdeggraphics.pdf"), width=5, height=3)
+
+
+(r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))
+(r2nsj = r2beta(graph.avgdeg.lmer.full, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+```
+
+```{r, eval=FALSE}
+
+# From Faraway (2015), p. 156 - use step() to start with a complex model and 
+# systematically remove each effects
+
+graph.avgdeg.full.lmer <- lmer(LogError ~ Dataset + Condition + 
+                           QuestionOrder + (1|Demo.ResponseID), 
+                         data = graphics_avgdeg, REML = T)
+
+step(graph.avgdeg.full.lmer)
+
+# not sure this is useful
+
+```
+
+```{r, eval=FALSE}
+
+# Clustered Longitudinal Data (Chapter 7)
+# Data are not clustered, so can skip
+
+#model7.1.fit <- lme(gcf ~ time + 
+#                   base_gcf + cda + 
+#                   age + 
+#                   time:base_gcf + time:cda + 
+#                   time:age, 
+#                   random = list(patient = ~time, tooth = ~1), 
+#                   data = veneer, 
+#                   method = "REML")
+
+clust.model.fit <- lme(LogError ~ Task + TaskOrder +
+                         Dataset + DatasetOrder +
+                         Task:TaskOrder + 
+                         Task:Dataset + Task:DatasetOrder,
+                       random = list(`Demo.ResponseID` = ~Condition),
+                       data = graphics_avgdeg,
+                       method = "REML")
+
+summary(clust.model.fit)
+
+intervals(clust.model.fit, which="fixed")
+
+random.effects(clust.model.fit)
+
+```
+
+```{r}
+
+plot(graph.avgdeg.lmer.full)
+
+plot(graph.avgdeg.lmer.full, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(graph.avgdeg.lmer.full, resid(.) ~ fitted(.) | Underestimated, abline = 0)
+
+plot(graph.avgdeg.lmer.full, resid(., scaled=TRUE) ~ fitted(.) | Underestimated, abline = 0)
+
+plot(graph.avgdeg.lmer.full, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+graph.avgdeg.lmer.full.f <- fortify(graph.avgdeg.lmer.full)
+
+ggplot(graph.avgdeg.lmer.full.f) +
+  geom_density(aes(.fitted))
+
+ggplot(graph.avgdeg.lmer.full.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(graph.avgdeg.lmer.full.f, aes(LogError,.fitted)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  scale_y_continuous(limits=c(0,0.3)) +
+  labs(title="Real vs. Predicted LogError values for Average Degree\ntask, graphics conditions")
+
+ggsave(file.path(figureDir, "fittedpredictavgdeggraphics.pdf"), width=5, height=3)
+
+```
+
+```{r, eval=FALSE}
+
+# TO DO: check out interpretation for these plots??
+
+library(lattice)
+
+prof <-  profile(graph.avgdeg.lmer.full, optimizer="Nelder_Mead", which="beta_")
+
+prof.CI <- confint(prof)
+
+#CI2 <- confint(graph.avgdeg.lmer.SP, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+
+#### Logistic regression for over/underestimation with mixed effects (lme4, glmer)
+
+```{r, eval=FALSE}
+
+# https://stats.idre.ucla.edu/r/dae/mixed-effects-logistic-regression/
+
+#ggpairs(graphics_avgdeg %>% dplyr::select(Response, DatasetDuration, CorrectAnswer, AbsDifference, Stats.Q_TotalDuration, StatsNumPixels, Demo.age, Demo.dailytech_Computer, Demo.dailytech_Tablet, Demo.dailytech_SmartPhone, Demo.weeklygaming, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodes))
+
+```
+
+```{r, eval=FALSE}
+
+graphics_avgdeg_incorrect <- graphics_avgdeg %>% filter(Underestimated != "correct")
+
+graphics_avgdeg_incorrect$Underestimated <- factor(graphics_avgdeg_incorrect$Underestimated)
+
+graph.avgdeg.logit <- glmer(Underestimated ~ Dataset + Condition +
+    (1 | Demo.ResponseID), data = graphics_avgdeg_incorrect, family = binomial, control = glmerControl(optimizer = "bobyqa"),
+    nAGQ = 10)
+
+print(graph.avgdeg.logit, corr = FALSE)
+
+se <- sqrt(diag(vcov(graph.avgdeg.logit)))
+
+# table of estimates with 95% CI using coefficients
+(tab <- cbind(Est = fixef(graph.avgdeg.logit), LL = fixef(graph.avgdeg.logit) - 1.96 * se, UL = fixef(graph.avgdeg.logit) + 1.96 * se))
+
+# odds ratios instead of coefficients
+exp(tab)
+
+```
+
+```{r, eval=FALSE}
+
+# bootstrapping, but sampling function isn't working
+
+sampler <- function(dat, clustervar, replace = TRUE, reps = 1) {
+    cid <- unique(dat[, clustervar[1]])
+    ncid <- length(cid)
+    recid <- sample(cid, size = ncid * reps, replace = TRUE)
+    if (replace) {
+        rid <- lapply(seq_along(recid), function(i) {
+            cbind(NewID = i, RowID = sample(which(dat[, clustervar] == recid[i]),
+                size = length(which(dat[, clustervar] == recid[i])), replace = TRUE))
+        })
+    } else {
+        rid <- lapply(seq_along(recid), function(i) {
+            cbind(NewID = i, RowID = which(dat[, clustervar] == recid[i]))
+        })
+    }
+    dat <- as.data.frame(do.call(rbind, rid))
+    dat$Replicate <- factor(cut(dat$NewID, breaks = c(1, ncid * 1:reps), include.lowest = TRUE,
+        labels = FALSE))
+    dat$NewID <- factor(dat$NewID)
+    return(dat)
+}
+
+set.seed(20)
+tmp <- sampler(graphics_avgdeg_incorrect, "Demo.ResponseID", reps = 1000)
+bigdata <- cbind(tmp, graphics_avgdeg_incorrect[tmp$RowID, ])
+
+# sampler throws an error:
+# "Error in Ops.data.frame(dat[, clustervar], recid[i]) : ‘==’ only defined for equally-sized data frames"
+
+f <- fixef(graph.avgdeg.logit)
+r <- getME(graph.avgdeg.logit, "theta")
+
+cl <- makeCluster(4)
+clusterExport(cl, c("bigdata", "f", "r"))
+clusterEvalQ(cl, require(lme4))
+
+myboot <- function(i) {
+    object <- try(glmer(remission ~ IL6 + CRP + CancerStage + LengthofStay +
+        Experience + (1 | NewID), data = bigdata, subset = Replicate == i, family = binomial,
+        nAGQ = 1, start = list(fixef = f, theta = r)), silent = TRUE)
+    if (class(object) == "try-error")
+        return(object)
+    c(fixef(object), getME(object, "theta"))
+}
+
+start <- proc.time()
+res <- parLapplyLB(cl, X = levels(bigdata$Replicate), fun = myboot)
+end <- proc.time()
+
+# shut down the cluster
+stopCluster(cl)
+
+# calculate proportion of models that successfully converged
+success <- sapply(res, is.numeric)
+mean(success)
+
+# combine successful results
+bigres <- do.call(cbind, res[success])
+
+# calculate 2.5th and 97.5th percentiles for 95% CI
+(ci <- t(apply(bigres, 1, quantile, probs = c(0.025, 0.975))))
+
+# All results
+finaltable <- cbind(Est = c(f, r), SE = c(se, NA), BootMean = rowMeans(bigres),
+    ci)
+# round and print
+round(finaltable, 3)
+
+```
+
+```{r, eval=FALSE}
+
+# temporary data
+tmpdat <- graphics_avgdeg_incorrect %>% filter(!is.na(DatasetDuration))
+
+jvalues <- with(graphics_avgdeg_incorrect, seq(from = min(DatasetDuration), to = max(DatasetDuration), length.out = 100))
+
+# calculate predicted probabilities and store in a list
+pp <- lapply(jvalues, function(j) {
+    tmpdat$LengthofStay <- j
+    predict(m, newdata = tmpdat, type = "response")
+})
+
+
+```
+
+```{r, eval=FALSE}
+
+# OLD CODE, NOT MIXED EFFECTS
+
+graphics.est <- graphics_avgdeg %>% mutate(underest = ifelse(RawDifference<0,1,0)) 
+
+graphics.est$underest <- factor(graphics.est$underest, levels=c(1,0), labels = c("underestimated","overestimated"))
+
+graphics.est$Task <- factor(graphics.est$Task)
+
+xtabs(~underest + Task, data = graphics.est)
+
+# difference between family="binomial" and family=binomial(link='logit') ?
+
+#log.model <- glm(underest ~ Task, family=binomial(link='logit'), data=graphics.est)
+
+log.model <- glm(underest ~ Task, family="binomial", data=graphics.est)
+
+summary(log.model)
+# Interpretation of Estimate: compared to reference task (AvgDegree), each task changes
+# the log odds of underestimation by the estimate shown; negative estimates reduce
+# log odds of underestimation compared to AvgDegree
+
+## CIs using profiled log-likelihood
+confint(log.model)
+
+## CIs using standard errors
+confint.default(log.model)
+
+## Wald test for effect of Task, which is terms 2:8 in the model
+wald.test(b = coef(log.model), Sigma = vcov(log.model), Terms = 2:8)
+
+## test two specific tasks against each other (NumHighDegree and NumNodes)
+l <- cbind(0,0,0,0,0,1,0,-1)
+wald.test(b = coef(log.model), Sigma = vcov(log.model), L = l)
+# p = 0.015, so only marginally significant
+
+## odds ratios only
+exp(coef(log.model))
+
+## odds ratios and 95% CI
+exp(cbind(OR = coef(log.model), confint(log.model)))
+
+# https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-how-do-i-interpret-odds-ratios-in-logistic-regression/ 
+
+## testing fit
+
+# likelihood ratio test
+with(log.model, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
+# p-value is 0, so model with predictor definitely fits better than the null model
+
+# testing the quality of the variable, is this the best model we can get?
+
+# is this a good fitting model?  check % accuracy; split data into training test, check accuracy on test
+
+anova(log.model, test="Chisq")
+
+pR2(log.model)
+
+# don't know how to interpret; should be looking at McFadden as a sort of pseudo R^2?
+
+# https://stats.idre.ucla.edu/other/mult-pkg/faq/general/faq-what-are-pseudo-r-squareds/
+# "If comparing two models on the same data, McFadden’s would be higher for the model with the greater likelihood."
+
+```
+
+#### Negative binomial model for responses
+
+Responses are basically count data, so using a negative binomial distribution to model. Negative binomial is especially useful for over-dispersed data - data where the conditional variances exceed conditional means. 
+
+```{r, eval=FALSE}
+
+# https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/ for non-mixed version
+
+# Test for overdispersion
+
+with(graphics_avgdeg, tapply(Response, Condition, function(x) {
+    sprintf("M (SD) = %1.2f (%1.2f)", mean(x), sd(x))
+}))
+
+# variances in each condition are much larger than means in the conditions
+
+```
+
+```{r, cache=TRUE, eval=FALSE}
+
+
+
+graph.avgdeg.nb.null <- glmer.nb(Response ~ (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Condition + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p=0.4081), so Condition isn't a
+# significant predictor
+
+graph.avgdeg.nb.dataset <- glmer.nb(Response ~ Dataset + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.dataset)
+
+anova(graph.avgdeg.nb.dataset, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so Dataset is a
+# significant predictor
+
+graph.avgdeg.nb <- glmer.nb(Response ~ DatasetOrder + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 0.2556), so DatasetOrder is not a
+# significant predictor
+
+#graph.avgdeg.nb <- glmer.nb(Response ~ DatasetDuration + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+#summary(graph.avgdeg.nb)
+
+#anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# error trying to run model: 
+#"Error in pwrssUpdate(pp, resp, tol = tolPwrss, GQmat = GQmat, compDev = compDev, : pwrssUpdate did not converge in (maxit) iterations"
+
+graph.avgdeg.nb.taskorder <- glmer.nb(Response ~ TaskOrder + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.taskorder)
+
+anova(graph.avgdeg.nb.taskorder, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p = 0.01659), so TaskOrder is a
+# significant predictor
+
+#graph.avgdeg.nb <- glmer.nb(Response ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+#summary(graph.avgdeg.nb)
+
+#anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# error trying to run model:
+#"Error in pwrssUpdate(pp, resp, tol = tolPwrss, GQmat = GQmat, compDev = compDev, : (maxstephalfit) PIRLS step-halvings failed to reduce deviance in pwrssUpdate"
+
+graph.avgdeg.nb.correct <- glmer.nb(Response ~ CorrectAnswer + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.correct)
+
+anova(graph.avgdeg.nb.correct, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so CorrectAnswer is a
+# significant predictor
+
+#graph.avgdeg.nb <- glmer.nb(Response ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+#summary(graph.avgdeg.nb)
+
+#anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# error trying to run model:
+#"Error in pwrssUpdate(pp, resp, tol = tolPwrss, GQmat = GQmat, compDev = compDev, : pwrssUpdate did not converge in (maxit) iterations"
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 0.5602), so Stats.OperatingSystems is not a
+# significant predictor
+
+#graph.avgdeg.nb <- glmer.nb(Response ~ StatsNumPixels + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+#summary(graph.avgdeg.nb)
+
+#anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# error trying to run model:
+#"Error in pwrssUpdate(pp, resp, tol = tolPwrss, GQmat = GQmat, compDev = compDev, : Downdated VtV is not positive definite"
+
+# TO DO: try to fix errors? try different negative binomial model syntax?
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.age + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.age)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.age)
+
+summary(graph.avgdeg.nb.null.2)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# model is not significantly different from null model (p = 0.07795), so Demo.age is not a
+# significant predictor
+# also, model summary says "Model failed to converge with max|grad| = 0.00119421 (tol = 0.001, component 1)"
+
+# TO DO : keep going with predictors, try combinations of the significant ones? do some prediction to check how good model is?
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.gender + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.gender)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.gender)
+
+summary(graph.avgdeg.nb.null.2)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# model is not significantly different from null model (p = 0.7306), so Demo.gender is not a
+# significant predictor
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.lang + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.lang)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.lang)
+
+summary(graph.avgdeg.nb.null.2)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# null model failed to converge
+# "Model failed to converge with max|grad| = 0.0291884 (tol = 0.001, component 1)"
+
+# model is not significantly different from null model (p = 0.1938), so Demo.lang is not a
+# significant predictor
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.educ + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.educ)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.educ)
+
+summary(graph.avgdeg.nb.null.2)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# null model failed to converge
+
+# model is not significantly different from null model (p = 0.7197), so Demo.educ is not a
+# significant predictor
+
+# takes forever, not significant
+#graph.avgdeg.nb <- glmer.nb(Response ~ Demo.acfield + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.acfield)), verbose=TRUE)
+
+#summary(graph.avgdeg.nb)
+
+# no categories significant
+
+#graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.acfield)
+
+#summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+#anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+# TO DO : test acfield group
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.dailytech_Computer)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# not significant
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.dailytech_Computer)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.dailytech_Tablet)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# not significant
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.dailytech_Tablet)
+
+summary(graph.avgdeg.nb.null.2)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+graph.avgdeg.nb.sp <- glmer.nb(Response ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.dailytech_SmartPhone)), verbose=TRUE)
+
+summary(graph.avgdeg.nb.sp)
+
+# significant (p = 0.00253)
+
+graph.avgdeg.nb.null.sp <- update(graph.avgdeg.nb.sp, . ~ . - Demo.dailytech_SmartPhone)
+
+summary(graph.avgdeg.nb.null.sp)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb.sp, graph.avgdeg.nb.null.sp)
+
+# significant (p = 0.002548)
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.weeklygaming + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.weeklygaming)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# not significant
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.weeklygaming)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.expdataanal + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.expdataanal)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# not significant
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.expdataanal)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.expdatavis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.expdatavis)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# not significant
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.expdatavis)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# not significant
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.expreadnetvis)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# some categories significant; not sure what the reference category is though!
+# TO DO : set reference level to None?
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.expreadnetvis)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# just over significance (p = 0.06055)
+
+# TO DO : figure out which categories are significant and make some groups to increase
+# significance?
+
+
+graph.avgdeg.nb <- glmer.nb(Response ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=graphics_avgdeg %>% filter(!is.na(Demo.expcreatenetvis)), verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# one categories significant; not sure what the reference category is though!
+# TO DO : set reference level to None?
+
+graph.avgdeg.nb.null.2 <- update(graph.avgdeg.nb, . ~ . - Demo.expcreatenetvis)
+
+summary(graph.avgdeg.nb.null.2)
+
+# model failed to converge
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null.2)
+
+# just over significance (p = 0.05901)
+
+# TO DO : figure out which categories are significant and make some groups to increase
+# significance?
+
+graph.avgdeg.nb.avgdeg <- glmer.nb(Response ~ AvgDeg + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.avgdeg)
+
+anova(graph.avgdeg.nb.avgdeg, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so AvgDeg is a
+# significant predictor
+
+graph.avgdeg.nb.density <- glmer.nb(Response ~ Density + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.density)
+
+anova(graph.avgdeg.nb.density, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so Density is a
+# significant predictor
+
+graph.avgdeg.nb.largeclust <- glmer.nb(Response ~ LargeClust1 + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.largeclust)
+
+anova(graph.avgdeg.nb.largeclust, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so LargeClust1 is a
+# significant predictor
+
+graph.avgdeg.nb.mod <- glmer.nb(Response ~ Modularity + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.mod)
+
+anova(graph.avgdeg.nb.mod, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16), so Modularity is a
+# significant predictor
+
+graph.avgdeg.nb.numclust <- glmer.nb(Response ~ NumClust + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.numclust)
+
+anova(graph.avgdeg.nb.numclust, graph.avgdeg.nb.null)
+
+# model is significantly different from null model (p = 1.174e-12), so NumClust is a
+# significant predictor
+
+graph.avgdeg.nb <- glmer.nb(Response ~ NumHighDegree + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 0.2065), so NumHighDegree is not
+# a significant predictor
+
+graph.avgdeg.nb.numlinks <- glmer.nb(Response ~ NumLinks + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.numlinks)
+
+# Error:
+# Model failed to converge with max|grad| = 0.0063552 (tol = 0.001, component 1)
+# Model is nearly unidentifiable: very large eigenvalue
+# - Rescale variables?
+# Model is nearly unidentifiable: large eigenvalue ratio
+# - Rescale variables?
+
+anova(graph.avgdeg.nb.numlinks, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 1.875e-06), so NumLinks is 
+# a significant predictor
+
+graph.avgdeg.nb.numnodes <- glmer.nb(Response ~ NumNodes + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb.numnodes)
+
+# Error:
+#  failed to converge with max|grad| = 0.00178473 (tol = 0.001, component 1)
+# Model is nearly unidentifiable: very large eigenvalue
+#  - Rescale variables?
+
+anova(graph.avgdeg.nb.numnodes, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 0.0004385), so NumNodes is 
+# a significant predictor
+
+graph.avgdeg.nb <- glmer.nb(Response ~ NumNodesClust1 + (1|Demo.ResponseID), data=graphics_avgdeg, verbose=TRUE)
+
+summary(graph.avgdeg.nb)
+
+# Error:
+#Model failed to converge with max|grad| = 0.00187437 (tol = 0.001, component 1)
+# Model is nearly unidentifiable: very large eigenvalue
+# - Rescale variables?
+
+anova(graph.avgdeg.nb, graph.avgdeg.nb.null)
+
+# model is not significantly different from null model (p = 0.4105), so NumNodesClust1 is 
+# not a significant predictor
+
+#---------------------------------
+# Multiple predictors
+#---------------------------------
+
+temp <- graphics_avgdeg %>% drop_na(Response, Dataset, TaskOrder, CorrectAnswer, Demo.dailytech_SmartPhone, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumLinks, NumNodes)
+
+graph.avgdeg.nb.full <- glmer.nb(Response ~ Dataset + TaskOrder + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), 
+                            data=temp, verbose=TRUE)
+
+summary(graph.avgdeg.nb.full)
+# still significant - Dataset, TaskOrder, SmartPhone
+
+graph.avgdeg.nb.full.2 <- glmer.nb(Response ~ TaskOrder + CorrectAnswer + Demo.dailytech_SmartPhone + LargeClust1 + Modularity + NumNodes + (1|Demo.ResponseID), 
+                            data=temp, verbose=TRUE)
+
+summary(graph.avgdeg.nb.full.2)
+# still significant: TaskOrder, CorrectAnswer, SmartPhone, LargeClust1, Modularity, NumNodes
+
+# Error:
+# Model failed to converge with max|grad| = 0.00841304 (tol = 0.001, component 1)
+# Model is nearly unidentifiable: very large eigenvalue
+#  - Rescale variables?
+# Model is nearly unidentifiable: large eigenvalue ratio
+#  - Rescale variables?
+
+anova(graph.avgdeg.nb.full, graph.avgdeg.nb.full.2)
+# two models not significantly different
+
+graph.avgdeg.nb.full.3 <- glmer.nb(Response ~ TaskOrder + CorrectAnswer + Demo.dailytech_SmartPhone + LargeClust1 + (1|Demo.ResponseID), 
+                            data=temp, verbose=TRUE)
+
+summary(graph.avgdeg.nb.full.3)
+# still significant: TaskOrder, CorrectAnswer, SmartPhone, LargeClust1
+
+# Model is nearly unidentifiable: very large eigenvalue
+#  - Rescale variables?
+
+anova(graph.avgdeg.nb.full, graph.avgdeg.nb.full.3)
+
+# model is not significantly different from original full model, so probably just keep graph.avgdeg.nb.full
+
+#---------------------------------
+# Interactions
+#---------------------------------
+
+graph.avgdeg.nb.full.int <- glmer.nb(Response ~ Dataset + 
+                                       TaskOrder + Demo.dailytech_SmartPhone + 
+                                       Dataset:TaskOrder + 
+                                       TaskOrder:Demo.dailytech_SmartPhone + 
+                                       Dataset:Demo.dailytech_SmartPhone +
+                                       (1|Demo.ResponseID), 
+                            data=temp, verbose=TRUE)
+
+summary(graph.avgdeg.nb.full.int)
+
+anova(graph.avgdeg.nb.full, graph.avgdeg.nb.full.int)
+# yes, interaction is significantly different from just main effects
+
+# TO DO : check lmer results again after factoring
+
+
+```
+
+```{r, eval=FALSE}
+
+graph.avgdeg.nb.full.f <- fortify(graph.avgdeg.nb.full)
+
+ggplot(graph.avgdeg.nb.full.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  geom_hline(yintercept=0)
+
+ggplot(graph.avgdeg.nb.full.f, aes(.fitted,Response)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10()
+
+ggplot(graph.avgdeg.nb.full.f, aes(.fitted,Response, color=Dataset)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10()
+
+ggplot(graph.avgdeg.nb.full.f, aes(.fitted,Response)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10() +
+  facet_wrap(~Dataset)
+
+graph.avgdeg.nb.full.int.f <- fortify(graph.avgdeg.nb.full.int)
+
+ggplot(graph.avgdeg.nb.full.int.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  geom_hline(yintercept=0)
+
+ggplot(graph.avgdeg.nb.full.int.f, aes(.fitted,Response)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10()
+
+
+```
+
+
+
+```{r, eval=FALSE}
+
+# is negative binomial different from poisson?  if so, indicates over-dispersion is true
+# and negative binomial is necessary
+
+graph.avgdeg.pois <- glmer(Response ~ Dataset + 
+                                       TaskOrder + Demo.dailytech_SmartPhone + 
+                                       Dataset:TaskOrder + 
+                                       TaskOrder:Demo.dailytech_SmartPhone + 
+                                       Dataset:Demo.dailytech_SmartPhone +
+                                       (1|Demo.ResponseID), data=temp, family="poisson")
+
+pchisq(2 * (logLik(graph.avgdeg.nb.full.int) - logLik(graph.avgdeg.pois)), df=1, lower.tail = FALSE)
+
+# value = 0, so keep the negative binomial
+
+```
+
+```{r, eval = FALSE}
+
+# To fit a negative binomial model with known overdispersion parameter (e.g. as part of a model
+#comparison exercise), use glmer with the negative.binomial family from the MASS package, e.g.
+#glmer(...,family=MASS::negative.binomial(theta=1.75)).
+
+graph.avgdeg.nb2 <- glmer(Response ~ Condition + (1|Demo.ResponseID), data=graphics_avgdeg, family=MASS::negative.binomial(theta=1.75))
+
+graph.avgdeg.nb3 <- glmer(Response ~ Condition + (1|Demo.ResponseID), data=graphics_avgdeg, family=negative.binomial(2))
+
+
+#graph.avgdeg.nb
+
+summary(graph.avgdeg.nb2)
+summary(graph.avgdeg.nb3)
+
+```
+
+```{r, eval=FALSE}
+# run without mixed effects to validate
+
+m.glm <- glm.nb(Response ~ Dataset + TaskOrder + Demo.dailytech_SmartPhone + 
+                                       Dataset:TaskOrder + 
+                                       TaskOrder:Demo.dailytech_SmartPhone + 
+                                       Dataset:Demo.dailytech_SmartPhone, data=temp, trace=TRUE)
+summary(m.glm)
+
+## The neg.binomial theta parameter:
+getME(graph.avgdeg.nb.full.int, "glmer.nb.theta")
+
+#1.567446
+
+## mixed model has 1 additional parameter (RE variance)
+stopifnot(attr(logLik(graph.avgdeg.nb.full.int),"df")==attr(logLik(m.glm),"df")+1) # not sure what this does
+
+anova(graph.avgdeg.nb.full.int,m.glm) # can I use anova to compare mixed and fixed effects?
+# p < 2.2e-16, so definitely random effects
+
+plot(graph.avgdeg.nb.full.int, resid(.) ~ Response)# works, as long as data 'dd' is found
+
+
+# TO DO : check if this is all right
+
+```
+
+```{r, eval=FALSE}
+
+par(mfrow=c(2,2))
+qqnorm(resid(graph.avgdeg.nb.full.int), main="normal qq-plot, residuals")
+qqline(resid(graph.avgdeg.nb.full.int))
+
+qqnorm(ranef(graph.avgdeg.nb.full.int)$Demo.ResponseID[,1])
+qqline(ranef(graph.avgdeg.nb.full.int)$Demo.ResponseID[,1])
+
+
+plot(fitted(graph.avgdeg.nb.full.int), resid(graph.avgdeg.nb.full.int)) #residuals vs fitted
+abline(h=0)
+
+#graph.avgdeg.nb2.f <- fortify(graph.avgdeg.nb2)
+
+#ggplot(graph.avgdeg.nb2.f, aes(.fitted,.resid)) + 
+#  geom_point() +
+#  geom_hline(yintercept=0)
+
+#temp <- graphics_avgdeg
+
+temp$fitted <- fitted(graph.avgdeg.nb.full.int) 
+plot(temp$fitted, jitter(temp$Response,0.1)) #fitted vs observed
+abline(0,1)
+
+#ggplot(graph.avgdeg.nb2.f, aes(.fitted,Response)) + 
+#  geom_point() +
+#  geom_abline(aes(slope = 1, intercept = 0))
+
+
+```
+
+```{r, cache=TRUE, eval=FALSE}
+
+# Confidence Intervals, using coefficients
+
+(est <- cbind(Estimate = coef(graph.avgdeg.nb.full.int), confint(graph.avgdeg.nb.full.int)))
+
+# exponentiate model to look at incident rate ratios instead of coefficients
+
+exp(est)
+
+```
+
+```{r, eval=FALSE}
+
+# predictions
+
+# model: Response ~ Dataset + TaskOrder + Demo.dailytech_SmartPhone + Dataset:TaskOrder + TaskOrder:Demo.dailytech_SmartPhone + Dataset:Demo.dailytech_SmartPhone + (1 | Demo.ResponseID)
+
+newdata1 <- data.frame(Demo.dailytech_SmartPhone = rep(mean(temp$Demo.dailytech_SmartPhone),54), 
+                       Dataset = factor(rep(c(1,3,5,7,8,9),9), levels = levels(temp$Dataset),ordered = TRUE),
+                       TaskOrder = rep(1:9,6),
+                       Demo.ResponseID = sample(temp$Demo.ResponseID,54))
+newdata1$phat <- predict(graph.avgdeg.nb.full.int, newdata1, type = "response")
+#newdata1
+
+newdata2 <- data.frame(
+  Demo.dailytech_SmartPhone = rep(seq(from = min(temp$Demo.dailytech_SmartPhone), to = max(temp$Demo.dailytech_SmartPhone), length.out = 100), 6),
+  Dataset = factor(rep(c(1,3,5,7,8,9), each = 100), levels = levels(temp$Dataset),ordered = TRUE),
+  TaskOrder = rep(1:9,len=600),
+  Demo.ResponseID = sample(temp$Demo.ResponseID,600)
+  )
+
+#predict(graph.avgdeg.nb.full.int, newdata2, type = "link", se.fit=TRUE)
+newdata2 <- cbind(newdata2, predict(graph.avgdeg.nb.full.int, newdata2, type = "link", se.fit=TRUE))
+
+# not sure about this; asking for "fit", but that's not recognized. should the new column be called "fit"? what about se.fit?
+
+#newdata2 <- within(newdata2, {
+#  Response <- exp(fit)
+#  LL <- exp(fit - 1.96 * se.fit)
+#  UL <- exp(fit + 1.96 * se.fit)
+#})
+
+#ggplot(newdata2, aes(math, DaysAbsent)) +
+#  geom_ribbon(aes(ymin = LL, ymax = UL, fill = prog), alpha = .25) +
+#  geom_line(aes(colour = prog), size = 2) +
+#  labs(x = "Math Score", y = "Predicted Days Absent")
+
+# note on negative binomial:
+
+# TO DO : If the data generating process does not allow for any 0s (such as the number of days spent in the hospital), then a zero-truncated model may be more appropriate.
+
+# TO DO : Count data often have an exposure variable, which indicates the number of times the event could have happened (i.e. a max). This variable should be incorporated into your negative binomial regression model with the use of the offset option. See the glm documentation for details.  (so, that would make sense for click data???)
+
+# other info:
+# Cameron, A. C. and Trivedi, P. K. 1998. Regression Analysis of Count Data. New York: Cambridge Press.
+# Dupont, W. D. 2002. Statistical Modeling for Biomedical Researchers: A Simple Introduction to the Analysis of Complex Data. New York: Cambridge Press.
+
+```
+
+#### brms/tidybayes
+
+```{r, eval=FALSE}
+
+# graph.avgdeg.lmer.full <- lmer(LogError ~ Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
+
+#library(rstan)
+
+theme_set(theme_grey())
+
+#avgd.fit <- brm(LogError~Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data = temp, REML=T)
+avgd.fit <- brm(LogError~Underestimated + Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data = temp)
+
+summary(avgd.fit, waic = TRUE) 
+
+#plot(avgd.fit)
+
+avgd.fit$formula
+
+#avgd.fit %<>% recover_types(temp)
+
+#tidybayes::parameters(avgd.fit)
+
+
+```
+
+```{r, eval=FALSE}
+
+#plot(fit, ask=FALSE) 
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),points=TRUE, ask=FALSE)
+#plot(marginal_effects(fit, probs = c(0.05, 0.95)),ask=FALSE)
+plot(marginal_effects(avgd.fit, effects="Underestimated", probs = c(0.05, 0.95)),ask=FALSE)
+
+```
+
+
+```{r, eval=FALSE}
+
+# all pairs
+
+avgd.hyp <- c("Underestimatedunder = 0")
+
+(avgd.hyp.res <- hypothesis(avgd.fit, avgd.hyp))
+
+#plot(avgd.hyp.res, chars = NULL, ask=FALSE)
+
+avgd.hyp.res.df <- avgd.hyp.res$hypothesis
+
+avgd.hyp.res.df$contrast <- c("under-over")
+
+avgd.hyp.res.df$contrast <- factor(avgd.hyp.res.df$contrast,
+                                    levels=avgd.hyp.res.df %>% arrange(desc(Estimate)) %>%
+                                      dplyr::select(contrast) %>% unlist())
+
+ggplot(avgd.hyp.res.df, aes(contrast,Estimate)) + 
+  geom_errorbar(aes(ymin=`l-95% CI`,ymax=`u-95% CI`)) +
+  geom_point(aes(fill=Star=="*"), size=7, shape=21) +
+  #geom_hline(yintercept = 0) +
+  scale_fill_manual(values=star.colors,name="Outside 95% CI") +
+  coord_flip()
+
+```
+
+```{r, eval=FALSE}
+
+hyp.pairs.2.res.df <- hyp.pairs.2.res.df %>% separate(contrast, c("From", "To"), sep="[-]", remove=FALSE)
+
+copy <- hyp.pairs.2.res.df %>% rename(From=To,To=From) %>% 
+  mutate(Estimate=-Estimate,
+         `l-95% CI`=-`l-95% CI`,
+         `u-95% CI`=-`u-95% CI`)
+
+pairs.compl <- bind_rows(hyp.pairs.2.res.df, copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+pairs.compl$From <- factor(pairs.compl$From, levels=c(9,8,7,5,3,1))
+pairs.compl$To <- factor(pairs.compl$To, levels=c(1,3,5,7,8,9))
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+pairs.compl %>% arrange(Estimate)
+
+# can't get color to go the right direction
+ggplot(pairs.compl %>% filter(Estimate >= 0)) +
+  geom_tile(aes(x=To,y=From,fill=Estimate), color="black") +
+  scale_fill_distiller(palette="Greys", direction=1) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Star=="*"),shape=21, color="black") +
+  scale_fill_manual(values=star.colors, name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+hyp.pairs.2.res.df$From <- factor(hyp.pairs.2.res.df$From, levels=c(9,8,7,5,3,1))
+hyp.pairs.2.res.df$To <- factor(hyp.pairs.2.res.df$To, levels=c(1,3,5,7,8,9))
+
+
+ggplot(hyp.pairs.2.res.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=Star=="*"), shape=21,stroke=1) +
+  scale_fill_distiller(type="div", palette=4, limits=c(-max(abs(pairs.compl$Estimate)),max(abs(pairs.compl$Estimate)))) +
+  scale_color_manual(values=c("grey90","black"), name="Outside 95% CI") +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+
+
+```
+
+
+#### Least Squares Means-numlinks
+
+Do for each categorical predictor. 
+Final model: LogError ~ Underestimated + Demo.dailytech_SmartPhone + (1 | Demo.ResponseID)
+
+##### Underestimated
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.avgdeg.emm.under <- emmeans(graph.avgdeg.lmer.full, "Underestimated", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.avgdeg.emm.under
+
+graph.avgdeg.emm.under.df <- dplyr::as_data_frame(graph.avgdeg.emm.under)
+
+graph.avgdeg.emm.under.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.avgdeg.emm.under.cld <- cld(graph.avgdeg.emm.under,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.avgdeg.emm.under.cld.df <- graph.avgdeg.emm.under.cld$emmeans
+
+graph.avgdeg.emm.under.cld.df %>% dplyr::select(Underestimated,.group)
+
+graph.avgdeg.emm.under.cld.df
+
+graph.avgdeg.emm.under.cld.df$Underestimated <- factor(graph.avgdeg.emm.under.cld.df$Underestimated, levels=graph.avgdeg.emm.under.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Underestimated) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.avgdeg.emm.under, ~Underestimated, CIs = TRUE)
+plot(graph.avgdeg.emm.under)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.avgdeg.emm.under.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.avgdeg.emm.under.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Underestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Underestimated,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.avgdeg.emm.under.pairs <- dplyr::as_data_frame(pairs(graph.avgdeg.emm.under)) 
+graph.avgdeg.emm.under.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.avgdeg.emm.under))
+
+graph.avgdeg.emm.under.pairs <- full_join(graph.avgdeg.emm.under.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.avgdeg.emm.under))
+plot(pairs(graph.avgdeg.emm.under), comparisons = TRUE)
+
+graph.avgdeg.emm.under.pairs$sig.levels <- 
+  case_when(graph.avgdeg.emm.under.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.avgdeg.emm.under.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.avgdeg.emm.under.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.avgdeg.emm.under.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.avgdeg.emm.under.pairs$sig.levels <- factor(graph.avgdeg.emm.under.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.avgdeg.emm.under.pairs$contrast <- factor(graph.avgdeg.emm.under.pairs$contrast, levels=graph.avgdeg.emm.under.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.avgdeg.emm.under.pairs <- graph.avgdeg.emm.under.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.avgdeg.emm.under.pairs %>% arrange(estimate)
+
+ggplot(graph.avgdeg.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.avgdeg.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+copy <- graph.avgdeg.emm.under.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.avgdeg.emm.under.pairs.compl <- bind_rows(graph.avgdeg.emm.under.pairs, copy)
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.avgdeg.emm.under.pairs.compl$From <- factor(graph.avgdeg.emm.under.pairs.compl$From, levels=rev(unique(graph.avgdeg.emm.under.pairs.compl$From)))
+#graph.avgdeg.emm.under.pairs.compl$To <- factor(graph.avgdeg.emm.under.pairs.compl$To, levels=cond.lev)
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.avgdeg.emm.under.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.avgdeg.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.avgdeg.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.avgdeg.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.avgdeg.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+###### networks
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.avgdeg.emm.under.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*50
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r, eval=FALSE}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.avgdeg.emm.under.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+
+
+##### Demo.dailytech_SmartPhone - not a factor
+
+###### emmeans
+
+```{r, eval=FALSE}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.avgdeg.emm.SP <- emmeans(graph.avgdeg.lmer.full, "Demo.dailytech_SmartPhone", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.avgdeg.emm.SP
+
+graph.avgdeg.emm.SP.df <- dplyr::as_data_frame(graph.avgdeg.emm.SP)
+
+graph.avgdeg.emm.SP.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.avgdeg.emm.SP.cld <- cld(graph.avgdeg.emm.SP,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.avgdeg.emm.SP.cld.df <- graph.avgdeg.emm.SP.cld$emmeans
+
+graph.avgdeg.emm.SP.cld.df %>% dplyr::select(Demo.dailytech_SmartPhone,.group)
+
+graph.avgdeg.emm.SP.cld.df
+
+graph.avgdeg.emm.SP.cld.df$Demo.dailytech_SmartPhone <- factor(graph.avgdeg.emm.SP.cld.df$Demo.dailytech_SmartPhone, levels=graph.avgdeg.emm.SP.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Demo.dailytech_SmartPhone) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.avgdeg.emm.SP, ~Demo.dailytech_SmartPhone, CIs = TRUE)
+plot(graph.avgdeg.emm.SP)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.avgdeg.emm.SP.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.avgdeg.emm.SP.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.dailytech_SmartPhone,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Demo.dailytech_SmartPhone,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r, eval=FALSE}
+
+graph.numlinks.emm.data.pairs <- dplyr::as_data_frame(pairs(graph.numlinks.emm.data)) 
+graph.numlinks.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numlinks.emm.data))
+
+graph.numlinks.emm.data.pairs <- full_join(graph.numlinks.emm.data.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numlinks.emm.data))
+plot(pairs(graph.numlinks.emm.data), comparisons = TRUE)
+
+graph.numlinks.emm.data.pairs$sig.levels <- 
+  case_when(graph.numlinks.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numlinks.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numlinks.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numlinks.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numlinks.emm.data.pairs$sig.levels <- factor(graph.numlinks.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numlinks.emm.data.pairs$contrast <- factor(graph.numlinks.emm.data.pairs$contrast, levels=graph.numlinks.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numlinks.emm.data.pairs <- graph.numlinks.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numlinks.emm.data.pairs %>% arrange(estimate)
+
+ggplot(graph.numlinks.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numlinks.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r, eval=FALSE}
+
+data.copy <- graph.numlinks.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numlinks.emm.data.pairs.compl <- bind_rows(graph.numlinks.emm.data.pairs, data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numlinks.emm.data.pairs.compl$From <- factor(graph.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#graph.numlinks.emm.data.pairs.compl$To <- factor(graph.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+graph.numlinks.emm.data.pairs.compl$From <- factor(graph.numlinks.emm.data.pairs.compl$From, levels=rev(unique(graph.numlinks.emm.data.pairs.compl$From)))
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numlinks.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numlinks.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numlinks.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numlinks.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numlinks.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+

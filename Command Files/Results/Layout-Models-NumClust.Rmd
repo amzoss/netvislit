@@ -1,0 +1,1219 @@
+---
+title: "Analysis for Number of Clusters task, Layout conditions"
+author: "Angela Zoss"
+date: "March 25, 2018"
+output: github_document
+---
+
+```{r layout-setup-numclust}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r layout-load-environment-numclust, message=FALSE}
+
+source('LayoutSetup.R')
+
+```
+
+#### lme4
+
+```{r, cache=TRUE}
+
+# Individual fixed effects
+
+layout.numclust.lmer <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer) # Color significantly different from Control
+
+anova(layout.numclust.lmer)
+
+# Condition is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = layouts_numclust, REML = T)
+
+lmsum <- summary(layout.numclust.lmer)
+lmsum
+#names(lmsum)
+
+anova(layout.numclust.lmer)
+
+# Dataset is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# DatasetOrder is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# DatasetDuration is not significant; trying DatasetStartTime
+
+layout.numclust.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+layout.numclust.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+layout.numclust.lmer <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# CorrectAnswer is highly significant (p = 5.251e-07); trying Underestimated
+
+layout.numclust.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.underest)
+
+anova(layout.numclust.lmer.underest)
+
+# Underestimated is highly significant (p = 9.548e-15)
+
+layout.numclust.lmer.underestdum <- lmer(LogError ~ UnderestDummy + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.underestdum)
+
+anova(layout.numclust.lmer.underestdum)
+
+# UnderestDummy is highly significant (p = 6.179e-10)
+
+layout.numclust.lmer.overest <- lmer(LogError ~ Overestimated + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.overest)
+
+anova(layout.numclust.lmer.overest)
+
+# Overestimated is highly significant (p = 3.109e-15)
+
+layout.numclust.lmer.conf <- lmer(LogError ~ ClustConf + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.conf)
+
+anova(layout.numclust.lmer.conf)
+
+# ClustConf is significant (p=0.02515)
+
+#layout.numclust.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+layouts_numclust.BC <- layouts_numclust %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=layouts_numclust.BC, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.dataset_count is not significant; trying Stats.OperatingSystem
+
+layout.numclust.lmer.OS <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.OS)
+
+# Various significant categories:
+# *: Android 6.0.1, CrOS x86_64 9592.96.0, Linux x86_64, Ubuntu, Windows NT 10.0
+#    Windows NT 5.1, Windows NT 6.0, Windows NT 6.1
+
+anova(layout.numclust.lmer.OS)
+
+# Stats.OperatingSystem is significant (p=6.251e-06)
+
+layout.numclust.lmer.OSC <- lmer(LogError ~ Stats.OperatingSystemCombined + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.OSC) # no significant categories
+
+anova(layout.numclust.lmer.OSC)
+
+# Stats.OperatingSystemCombined is significant (p=0.01947)
+
+layout.numclust.lmer.OSC2 <- lmer(LogError ~ Stats.OperatingSystemCombined2 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.OSC2)
+
+anova(layout.numclust.lmer.OSC2)
+
+# Stats.OperatingSystemCombined2 is significant (p=0.02083)
+
+layout.numclust.lmer.OSC3 <- lmer(LogError ~ Stats.OperatingSystemCombined3 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.OSC3) # Windows almost significantly different from Macintosh (0.0888)
+
+anova(layout.numclust.lmer.OSC3)
+
+# Stats.OperatingSystemCombined3 is significant (p=0.01584)
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined4 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.OperatingSystemCombined4 is not significant; trying Stats.OperatingSystemCombined5
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined5 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.OperatingSystemCombined5 is not significant; trying Stats.OperatingSystemWindows
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemWindows + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.OperatingSystemWindows is not quite significant; trying Stats.OperatingSystemMacintosh
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemMacintosh + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.OperatingSystemMacintosh is not quite significant
+
+layout.numclust.lmer.OShighsig <- lmer(LogError ~ Stats.OperatingSystemNumClust + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.OShighsig)
+
+anova(layout.numclust.lmer.OShighsig)
+
+# Stats.OperatingSystemNumClust is not significant
+
+layouts_numclust.BC <- layouts_numclust %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+layout.numclust.lmer <- lmer(LogError ~ StatsNumPixels + (1|Demo.ResponseID), data=layouts_numclust.BC, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# StatsNumPixels is significant (p=0.02508); trying Demo.age
+
+layout.numclust.lmer.age <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(layout.numclust.lmer.age)
+
+anova(layout.numclust.lmer.age)
+
+# Demo.age is significant (p=0.02985)
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.gender is not significant; trying Demo.lang
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.lang is not significant; trying Demo.educ
+
+layout.numclust.lmer.educ <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(layout.numclust.lmer.educ)
+
+anova(layout.numclust.lmer.educ)
+
+# Demo.educ is significant (p=0.01034)
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(layout.numclust.lmer) # no significant categories
+
+anova(layout.numclust.lmer)
+
+# Demo.acfield is not significant; trying Demo.acfieldGrouped
+
+layout.numclust.lmer.acfieldgr <- lmer(LogError ~ Demo.acfieldGrouped + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.acfieldGrouped))), REML = T)
+
+summary(layout.numclust.lmer.acfieldgr)
+
+anova(layout.numclust.lmer.acfieldgr)
+
+# Demo.acfieldGrouped is significant (p=0.005559)
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.dailytech_Computer is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.dailytech_Tablet is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.dailytech_SmartPhone is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.weeklygaming is not quite significant
+
+layout.numclust.lmer.dataanal <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(layout.numclust.lmer.dataanal)
+
+anova(layout.numclust.lmer.dataanal)
+
+# Demo.expdataanal is significant (p=0.01963)
+
+layout.numclust.lmer.datavis <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(layout.numclust.lmer.datavis)
+
+anova(layout.numclust.lmer.datavis)
+
+# Demo.expdatavis is significant (p=0.008997)
+
+layout.numclust.lmer.ERNV <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(layout.numclust.lmer.ERNV) # no levels significant
+
+anova(layout.numclust.lmer.ERNV)
+
+# Demo.expreadnetvis is barely significant (p=0.04577); trying Demo.expreadnetvis.alot
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.expreadnetvis.alot is not significant
+
+layout.numclust.lmer.ERNVno <- lmer(LogError ~ Demo.expreadnetvis.none + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expreadnetvis.none))), REML = T)
+
+summary(layout.numclust.lmer.ERNVno)
+
+anova(layout.numclust.lmer.ERNVno)
+
+# Demo.expreadnetvis.none is significant (p=0.003088)
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.expreadnetvis.three + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expreadnetvis.three))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.expreadnetvis.three is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(layout.numclust.lmer) 
+
+anova(layout.numclust.lmer)
+
+# Demo.expcreatenetvis is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Demo.expcreatenetvis.alot + (1|Demo.ResponseID), data=layouts_numclust %>% filter(!(is.na(Demo.expcreatenetvis.alot))), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Demo.expcreatenetvis.alot is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# AvgDeg is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Density is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# LargeClust1 is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Modularity is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# NumClust is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# NumHighDegree is not significant; trying NumLinks
+
+layout.numclust.lmer <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# NumLinks is not significant; trying NumNodes
+
+layout.numclust.lmer <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# NumNodes is not significant
+
+layout.numclust.lmer <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# NumNodesClust1 is not significant 
+
+
+layout.numclust.lmer.file <- lmer(LogError ~ filename + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.file)
+
+anova(layout.numclust.lmer.file)
+
+# filename is significant (p=9e-04)
+
+layout.numclust.lmer.netvis <- lmer(LogError ~ NetVisExperience + (1|Demo.ResponseID), data=layouts_numclust, REML = T)
+
+summary(layout.numclust.lmer.netvis)
+
+anova(layout.numclust.lmer.netvis)
+
+# NetVisExperience is significant (p=5.253e-05)
+
+layout.numclust.lmer <- lmer(LogError ~ Stats.CompensationCondition + (1|Demo.ResponseID), data=layouts_numclust %>% filter(filename=="FacultyGrad"), REML = T)
+
+summary(layout.numclust.lmer)
+
+anova(layout.numclust.lmer)
+
+# Stats.CompensationCondition is not significant
+
+```
+
+```{r}
+
+# combining individual predictors
+
+temp.numclust <- layouts_numclust %>% 
+  dplyr::select(Demo.ResponseID, LogError, CorrectAnswer, Underestimated, UnderestDummy, Overestimated, ClustConf, Stats.OperatingSystem, Stats.OperatingSystemCombined, Stats.OperatingSystemCombined2, Stats.OperatingSystemCombined3, StatsNumPixels, Demo.age, Demo.educ, Demo.acfieldGrouped, Demo.expdataanal, Demo.expdatavis, Demo.expreadnetvis, Demo.expreadnetvis.none, filename, NetVisExperience) %>% 
+  drop_na() %>%
+  mutate(StatsNumPixels=scale(StatsNumPixels))
+
+layout.numclust.lmer.full <- lmer(LogError ~ 
+                                    #CorrectAnswer + 
+                                    Overestimated + 
+                                    #ClustConf +
+                                    Stats.OperatingSystem + 
+                                    #StatsNumPixels +
+                                    Demo.age +
+                                    #Demo.educ +
+                                    #Demo.acfieldGrouped +
+                                    Demo.expdataanal +
+                                    #Demo.expdatavis +
+                                    #Demo.expreadnetvis +
+                                    #Demo.expreadnetvis.none +
+                                    #filename +
+                                    #NetVisExperience +
+                                    (1|Demo.ResponseID), data=temp.numclust, REML = T)
+
+summary(layout.numclust.lmer.full)
+
+anova(layout.numclust.lmer.full)
+
+```
+
+```{r}
+
+# adding interactions
+
+layout.numclust.lmer.full.int <- lmer(LogError ~ 
+                                        Overestimated + 
+                                        Stats.OperatingSystem + 
+                                        Demo.age +
+                                        Demo.expdataanal + 
+                                        Overestimated:Demo.age +
+                                        (1 | Demo.ResponseID), data=temp.numclust, REML = T)
+
+summary(layout.numclust.lmer.full.int)
+
+anova(layout.numclust.lmer.full.int)
+
+anova(layout.numclust.lmer.full,layout.numclust.lmer.full.int)
+#keep interaction
+
+
+
+layout.numclust.lmer.full.int.2 <- lmer(LogError ~ 
+                                        Overestimated + 
+                                        Stats.OperatingSystem + 
+                                        Demo.age +
+                                        Demo.expdataanal + 
+                                        Overestimated:Demo.age +
+                                          Overestimated:Demo.expdataanal +
+                                        (1 | Demo.ResponseID), data=temp.numclust, REML = T)
+
+summary(layout.numclust.lmer.full.int.2)
+
+anova(layout.numclust.lmer.full.int.2)
+
+anova(layout.numclust.lmer.full.int.2, layout.numclust.lmer.full.int)
+
+# keep int.2
+
+layout.numclust.lmer.full.int.3 <- lmer(LogError ~ 
+                                        Overestimated + 
+                                        Stats.OperatingSystem + 
+                                        Demo.age +
+                                        Demo.expdataanal + 
+                                        Overestimated:Demo.age +
+                                          Overestimated:Demo.expdataanal +
+                                          Stats.OperatingSystem:Demo.expdataanal +
+                                        (1 | Demo.ResponseID), data=temp.numclust, REML = T)
+
+summary(layout.numclust.lmer.full.int.3)
+
+anova(layout.numclust.lmer.full.int.3)
+
+anova(layout.numclust.lmer.full.int.2,layout.numclust.lmer.full.int.3)
+
+# keep int.3
+
+layout.numclust.lmer.full.int.4 <- lmer(LogError ~ 
+                                        Stats.OperatingSystem + 
+                                        Demo.age +
+                                        Overestimated:Demo.age +
+                                          Overestimated:Demo.expdataanal +
+                                          Stats.OperatingSystem:Demo.expdataanal +
+                                        (1 | Demo.ResponseID), data=temp.numclust, REML = T)
+
+summary(layout.numclust.lmer.full.int.4)
+
+anova(layout.numclust.lmer.full.int.4)
+
+anova(layout.numclust.lmer.full.int.3,layout.numclust.lmer.full.int)
+
+# going to use first int because Demo.expdataanal has too few observations in some buckets
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(layout.numclust.lmer.full.int, 
+     file = file.path(analysisDataDir,"fits/layout_numclust_lmer_int.RData"))
+
+```
+
+
+```{r, cache=TRUE}
+
+rand(layout.numclust.lmer.full.int)
+
+# result shows that random effects of participant are not significant
+
+#ranef(layout.avgdeg.lmer.SP)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+ggplot(layouts_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters task,\nlayout conditions")
+
+(r2nsj = r2beta(layout.numclust.lmer.full.int, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+
+```
+
+```{r}
+
+plot(layout.numclust.lmer.full.int)
+
+plot(layout.numclust.lmer.full.int, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(layout.numclust.lmer.full.int, resid(.) ~ fitted(.) | Overestimated, abline = 0)
+
+plot(layout.numclust.lmer.full.int, resid(., scaled=TRUE) ~ fitted(.) | Overestimated, abline = 0)
+
+plot(layout.numclust.lmer.full.int, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+layout.numclust.lmer.full.int.f <- fortify(layout.numclust.lmer.full.int)
+
+ggplot(layout.numclust.lmer.full.int.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(layout.numclust.lmer.full.int.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.numclust.lmer.full.int.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+labs(title="Real vs. Predicted LogError values for Number of Clusters task,\nlayout conditions")
+
+
+
+```
+
+```{r, eval=FALSE}
+
+# TO DO: check out interpretation for these plots??
+
+library(lattice)
+
+prof <-  profile(layout.numclust.lmer.full.int.6, optimizer="Nelder_Mead", which="beta_")
+
+prof.CI <- confint(prof)
+
+#CI2 <- confint(layout.avgdeg.lmer.SP, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+#### Least Squares Means
+
+Do for each categorical predictor. 
+Final model (layout.numclust.lmer.full.int):  LogError ~ Overestimated + Stats.OperatingSystem + Demo.age +  
+    Demo.expdataanal + Overestimated:Demo.age + (1 | Demo.ResponseID)
+
+##### Overestimated
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numclust.lmer.full.int.3) @ grid; .wgt. is number of observations
+
+layout.numclust.emm.over <- emmeans(layout.numclust.lmer.full.int, "Overestimated", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numclust.emm.over
+
+layout.numclust.emm.over.df <- dplyr::as_data_frame(layout.numclust.emm.over)
+
+layout.numclust.emm.over.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numclust.emm.over.cld <- cld(layout.numclust.emm.over,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.numclust.emm.over.cld.df <- layout.numclust.emm.over.cld$emmeans
+
+layout.numclust.emm.over.cld.df %>% dplyr::select(Overestimated,.group)
+
+layout.numclust.emm.over.cld.df
+
+layout.numclust.emm.over.cld.df$Overestimated <- factor(layout.numclust.emm.over.cld.df$Overestimated, levels=layout.numclust.emm.over.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Overestimated) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.numclust.emm.over, ~Overestimated, CIs = TRUE)
+plot(layout.numclust.emm.over)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.numclust.emm.over.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numclust.emm.over.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numclust.emm.over.cld.df) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Overestimated for Number of Clusters task,\nlayout conditions")
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.numclust.emm.over.pairs <- dplyr::as_data_frame(pairs(layout.numclust.emm.over)) 
+layout.numclust.emm.over.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.numclust.emm.over))
+
+layout.numclust.emm.over.pairs <- full_join(layout.numclust.emm.over.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numclust.emm.over))
+plot(pairs(layout.numclust.emm.over), comparisons = TRUE)
+
+layout.numclust.emm.over.pairs$sig.levels <- 
+  case_when(layout.numclust.emm.over.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numclust.emm.over.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numclust.emm.over.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numclust.emm.over.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numclust.emm.over.pairs$sig.levels <- factor(layout.numclust.emm.over.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.numclust.emm.over.pairs$contrast <- factor(layout.numclust.emm.over.pairs$contrast, levels=layout.numclust.emm.over.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numclust.emm.over.pairs <- layout.numclust.emm.over.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numclust.emm.over.pairs %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.over.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numclust.emm.over.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+over.copy <- layout.numclust.emm.over.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numclust.emm.over.pairs.compl <- bind_rows(layout.numclust.emm.over.pairs, over.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numlinks.emm.data.pairs.compl$From <- factor(layout.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#layout.numlinks.emm.data.pairs.compl$To <- factor(layout.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+layout.numclust.emm.over.pairs.compl$From <- factor(layout.numclust.emm.over.pairs.compl$From, levels=rev(unique(layout.numclust.emm.over.pairs.compl$From)))
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.numclust.emm.over.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.over.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.over.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.over.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.over.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Stats.OperatingSystem
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.numclust.emm.OS <- emmeans(layout.numclust.lmer.full.int, "Stats.OperatingSystem", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numclust.emm.OS
+
+layout.numclust.emm.OS.df <- dplyr::as_data_frame(layout.numclust.emm.OS)
+
+layout.numclust.emm.OS.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numclust.emm.OS.cld <- cld(layout.numclust.emm.OS,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.numclust.emm.OS.cld.df <- layout.numclust.emm.OS.cld$emmeans
+
+layout.numclust.emm.OS.cld.df %>% dplyr::select(Stats.OperatingSystem,.group)
+
+layout.numclust.emm.OS.cld.df
+
+layout.numclust.emm.OS.cld.df$Stats.OperatingSystem <- factor(layout.numclust.emm.OS.cld.df$Stats.OperatingSystem, levels=layout.numclust.emm.OS.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Stats.OperatingSystem) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.numclust.emm.OS, ~Stats.OperatingSystem, CIs = TRUE)
+plot(layout.numclust.emm.OS)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.numclust.emm.OS.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numclust.emm.OS.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Stats.OperatingSystem,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Stats.OperatingSystem,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.numclust.emm.OS.pairs <- dplyr::as_data_frame(pairs(layout.numclust.emm.OS)) 
+layout.numclust.emm.OS.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.numclust.emm.OS))
+
+layout.numclust.emm.OS.pairs <- full_join(layout.numclust.emm.OS.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numclust.emm.OS))
+#plot(pairs(layout.numclust.emm.OS), comparisons = TRUE)
+
+layout.numclust.emm.OS.pairs$sig.levels <- 
+  case_when(layout.numclust.emm.OS.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numclust.emm.OS.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numclust.emm.OS.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numclust.emm.OS.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numclust.emm.OS.pairs$sig.levels <- factor(layout.numclust.emm.OS.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.numclust.emm.OS.pairs$contrast <- factor(layout.numclust.emm.OS.pairs$contrast, levels=layout.numclust.emm.OS.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numclust.emm.OS.pairs <- layout.numclust.emm.OS.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numclust.emm.OS.pairs %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.OS.pairs %>% filter(sig.levels!="NS")) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numclust.emm.OS.pairs %>% filter(sig.levels!="NS")) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+OS.copy <- layout.numclust.emm.OS.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numclust.emm.OS.pairs.compl <- bind_rows(layout.numclust.emm.OS.pairs, OS.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numlinks.emm.data.pairs.compl$From <- factor(layout.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#layout.numlinks.emm.data.pairs.compl$To <- factor(layout.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+layout.numclust.emm.OS.pairs.compl$From <- factor(layout.numclust.emm.OS.pairs.compl$From, levels=rev(unique(layout.numclust.emm.OS.pairs.compl$From)))
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.numclust.emm.OS.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.OS.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.OS.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.OS.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.OS.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Demo.age
+
+not a factor
+
+##### Demo.expdataanal
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.numclust.emm.dataanal <- emmeans(layout.numclust.lmer.full.int, "Demo.expdataanal", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numclust.emm.dataanal
+
+layout.numclust.emm.dataanal.df <- dplyr::as_data_frame(layout.numclust.emm.dataanal)
+
+layout.numclust.emm.dataanal.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numclust.emm.dataanal.cld <- cld(layout.numclust.emm.dataanal,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.numclust.emm.dataanal.cld.df <- layout.numclust.emm.dataanal.cld$emmeans
+
+layout.numclust.emm.dataanal.cld.df %>% dplyr::select(Demo.expdataanal,.group)
+
+layout.numclust.emm.dataanal.cld.df
+
+#layout.numclust.emm.dataanal.cld.df$Demo.expdataanal <- factor(layout.numclust.emm.dataanal.cld.df$Demo.expdataanal, levels=layout.numclust.emm.dataanal.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Demo.expdataanal) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.numclust.emm.dataanal, ~Demo.expdataanal, CIs = TRUE)
+plot(layout.numclust.emm.dataanal)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.numclust.emm.dataanal.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numclust.emm.dataanal.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=ordered(Demo.expdataanal,levels=rev(freq4)),ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Demo.expdataanal,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.numclust.emm.dataanal.pairs <- dplyr::as_data_frame(pairs(layout.numclust.emm.dataanal)) 
+layout.numclust.emm.dataanal.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.numclust.emm.dataanal))
+
+layout.numclust.emm.dataanal.pairs <- full_join(layout.numclust.emm.dataanal.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numclust.emm.dataanal))
+plot(pairs(layout.numclust.emm.dataanal), comparisons = TRUE)
+
+layout.numclust.emm.dataanal.pairs$sig.levels <- 
+  case_when(layout.numclust.emm.dataanal.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numclust.emm.dataanal.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numclust.emm.dataanal.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numclust.emm.dataanal.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numclust.emm.dataanal.pairs$sig.levels <- factor(layout.numclust.emm.dataanal.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.numclust.emm.dataanal.pairs$contrast <- factor(layout.numclust.emm.dataanal.pairs$contrast, levels=layout.numclust.emm.dataanal.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numclust.emm.dataanal.pairs <- layout.numclust.emm.dataanal.pairs %>% separate(contrast, c("From","To"), sep="[-]", remove=FALSE) %>% mutate(From=str_trim(From),To=str_trim(To))
+
+layout.numclust.emm.dataanal.pairs %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.dataanal.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numclust.emm.dataanal.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+data.copy <- layout.numclust.emm.dataanal.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numclust.emm.dataanal.pairs.compl <- bind_rows(layout.numclust.emm.dataanal.pairs, data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numlinks.emm.data.pairs.compl$From <- factor(layout.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#layout.numlinks.emm.data.pairs.compl$To <- factor(layout.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+layout.numclust.emm.dataanal.pairs.compl$From <- factor(layout.numclust.emm.dataanal.pairs.compl$From, levels=rev(freq4))
+layout.numclust.emm.dataanal.pairs.compl$To <- factor(layout.numclust.emm.dataanal.pairs.compl$To, levels=freq4)
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.numclust.emm.dataanal.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numclust.emm.dataanal.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.dataanal.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.dataanal.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numclust.emm.dataanal.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Overestimated:Demo.age
+
+Demo.age is not a factor
+
+```{r}
+
+ggplot(temp.numclust) +
+  geom_point(aes(Demo.age, LogError, color=Overestimated))+
+  geom_smooth(aes(Demo.age, LogError, color=Overestimated), method="lm")
+
+ggplot(temp.numclust) +
+  geom_point(aes(Demo.age, LogError))+
+  geom_smooth(aes(Demo.age, LogError), method="lm") +
+  facet_grid(~Overestimated)
+
+temp.numclust.2 <- temp.numclust %>% mutate(LogError=ifelse(Overestimated=="2-CorrectOrUnder",-LogError,LogError))
+
+ggplot(temp.numclust.2) +
+  geom_point(aes(Demo.age, LogError,color=Overestimated))
+
+```
+

@@ -1,0 +1,99 @@
+---
+title: "Graphics Models for All Tasks"
+author: "Angela Zoss"
+date: "March 23, 2018"
+output: github_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r load-environment, message=FALSE}
+
+source('GraphicsSetup.R')
+
+```
+
+## Mixed Models
+
+```{r}
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of LogError for Numerical Response Tasks,\ngraphics conditions")
+
+ggsave(file.path(figureDir, "logerrortasksgraphics.pdf"), width=10, height=6)
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Dataset, Percentage)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of Percentage for Numerical Response Tasks,\ngraphics conditions") +
+  facet_wrap(~Task) + scale_y_log10()
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Dataset, abs(Response - CorrectAnswer)/CorrectAnswer)) + geom_violin() + #scale_y_log10() +
+  labs(title="Error as Percentage of Correct Answer for Numerical Response Tasks,\ngraphics conditions") +
+  facet_wrap(~Task) + scale_y_log10(breaks=c(.1,10,1000),labels=c("10%","1,000%","100,000%")) +
+  geom_hline(yintercept = 1)
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>%
+ggplot() + geom_violin(aes(Dataset,Response)) + geom_point(data=graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% group_by(Task, Dataset) %>% summarise(Correct=mean(CorrectAnswer)), aes(Dataset,Correct)) +
+facet_grid(.~Task) + scale_y_log10()
+
+graphics %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>%
+    ggplot() + geom_boxplot(aes(Dataset,LogError)) +
+    facet_grid(.~Task) + labs(title="LogError distributions by Task and Dataset, graphics conditions")
+
+ggsave(file.path(figureDir, "logerrortasksdatasetsgraphics.pdf"), width=10, height=6)
+
+ggplot(graphics_bc) +
+  geom_bar(aes(NodeRank)) +
+  #coord_flip() +
+  labs(title="Rank of Selected Node for Betweenness Centrality Task by Dataset",
+       x="Rank of selected node", y="Number of times selected") +
+  facet_wrap(~Dataset, scales="free_x")
+
+```
+
+### Average Degree
+
+```{r avgdeg, child = 'Graphic-Models-AvgDeg.Rmd'}
+```
+
+### Betweenness Centrality
+
+```{r bc, child = 'Graphic-Models-BC.Rmd'}
+```
+
+### Select Highest Degree Node
+
+```{r clickhd, child = 'Graphic-Models-ClickHD.Rmd'}
+```
+
+### Percentage of Nodes in Largest Cluster
+
+```{r lgclust, child = 'Graphic-Models-LgClust.Rmd'}
+```
+
+### Number of Clusters
+
+```{r numclust, child = 'Graphic-Models-NumClust.Rmd'}
+```
+
+### Degree of Highest Degree Node
+
+```{r numhd, child = 'Graphic-Models-NumHD.Rmd'}
+```
+
+### Number of Links
+
+```{r numlinks, child = 'Graphic-Models-NumLinks.Rmd'}
+```
+
+### Number of Nodes
+
+```{r numnodes, child = 'Graphic-Models-NumNodes.Rmd'}
+```
+
+
+

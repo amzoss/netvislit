@@ -1,0 +1,1378 @@
+---
+title: "Analysis for Highest Degree Node task, Graphics conditions"
+author: "Angela Zoss"
+date: "March 23, 2018"
+output: github_document
+---
+
+#### Negative binomial model for click questions Node Rank
+
+Ranks are like count data, in that they are nonnegative integers, so using a negative binomial distribution to model. Negative binomial is especially useful for over-dispersed data - data where the conditional variances exceed conditional means. 
+
+```{r}
+
+# https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/ for non-mixed version
+
+# Test for overdispersion
+
+with(graphics_clickhighdeg, tapply(NodeRank, Condition, function(x) {
+    sprintf("M (SD) = %1.2f (%1.2f)", mean(x), sd(x))
+}))
+
+# variances in each condition (except Control) are larger than means in the conditions
+
+```
+
+
+```{r, cache=TRUE, eval=FALSE}
+
+
+
+graph.clickhd.nb.null <- glmer.nb(NodeRank ~ (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Condition + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# model is not significantly different from null model (p=0.5654), so Condition isn't a
+# significant predictor
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ factor(Ctrl_dummy) + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Ctrl_dummy is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ ConditionPhrasing + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# ConditionPhrasing is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ ConditionPhrasing + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(Condition %in% c("Ctrl","Phr")), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - ConditionPhrasing)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# ConditionPhrasing is not significant
+
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ ConditionGraphics + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# ConditionGraphics is not significant
+
+
+graph.clickhd.nb.dataset <- glmer.nb(NodeRank ~ Dataset + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb.dataset)
+
+anova(graph.clickhd.nb.dataset, graph.clickhd.nb.null)
+
+# model is significantly different from null model (p < 2.2e-16)
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ DatasetOrder + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# DatasetOrder is not significant
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ DatasetDuration + (1|Demo.ResponseID), data=graphics_clickhighdeg %>% filter(!is.na(DatasetDuration)), verbose=TRUE)
+
+# major error: PIRLS step-halvings failed to reduce deviance in pwrssUpdate; rescale data
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(DatasetDuration=scale(DatasetDuration))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ DatasetDuration + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS %>% filter(!is.na(DatasetDuration)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb, . ~ . - DatasetDuration)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null2)
+
+# DatasetDuration is not significant 
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ TaskOrder + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# TaskOrder is not significant
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+# warnings about rescaling variables
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(QuestionOrder=scale(QuestionOrder))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ QuestionOrder + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb, . ~ . - QuestionOrder)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null2)
+
+# QuestionOrder is not significant
+
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ CorrectAnswer + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+# error about rescaling
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(CorrectAnswer=scale(CorrectAnswer))
+
+graph.clickhd.nb.correct <- glmer.nb(NodeRank ~ CorrectAnswer + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb.correct)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb.correct, . ~ . - CorrectAnswer)
+
+anova(graph.clickhd.nb.correct, graph.clickhd.nb.null2)
+
+# CorrectAnswer is significant (p=4.931e-13)
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+# warnings about rescaling variables
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_clickhighdeg.CS, verbose=TRUE, control=glmerControl(optimizer = "nlminbw"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb, . ~ . - Stats.Q_TotalDuration)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null2)
+
+# Stats.Q_TotalDuration is not significant
+
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+# very slooooooow, but no errors
+
+summary(graph.clickhd.nb) # nothing significant
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystems is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemCombined + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb) # nothing significant
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemCombined is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemCombined2 + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemCombined2 is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemCombined3 + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemCombined3 is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemCombined4 + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemCombined4 is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemCombined5 + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemCombined5 is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemWindows + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemWindows is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemMacintosh + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemMacintosh is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemAndroid + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemAndroid is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Stats.OperatingSystemiPhone + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE, control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Stats.OperatingSystemiPhone is not significant
+
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ StatsNumPixels + (1|Demo.ResponseID), data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ StatsNumPixels + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE, 
+                        control=glmerControl(optimizer = "nlminbw"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb, . ~ . - StatsNumPixels)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null2)
+
+# StatsNumPixels not significant
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.age + (1|Demo.ResponseID), data=graphics_clickhighdeg %>% filter(!is.na(Demo.age)), verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(Demo.age=scale(Demo.age))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.age + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS %>% filter(!is.na(Demo.age)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null2 <- update(graph.clickhd.nb, . ~ . - Demo.age)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null2)
+
+# Demo.age is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.gender + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.gender)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.gender)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# Demo.gender is not significant 
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.lang + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.lang)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.lang)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# Demo.lang is not a significant predictor
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.educ + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.educ)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.educ)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# Demo.educ is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.acfield + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.acfield)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+# tons of categories, very slow
+
+summary(graph.clickhd.nb)
+
+# many categories significantly different from Anthropology:
+# ***: Business
+# **: Arts, Computer sciences, Economics, Information science, Law, Linguistics, 
+#     Medicine, Other, Political science, Skipped, Sociology
+# *: Architecture and design, Biology, Education, Engineering, History, Journalism, 
+#    media studies and communication, Languages, Library and museum studies, Literature, 
+#    Mathematics, Philosophy, Psychology, Public administration
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.acfield)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.acfieldGrouped + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.acfieldGrouped)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.acfieldGrouped)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# Demo.acfieldGrouped is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.acfieldGrouped2 + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.acfieldGrouped2)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.acfieldGrouped2)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# Demo.acfieldGrouped2 is not significant
+
+graph.clickhd.nb.acfield3 <- glmer.nb(NodeRank ~ Demo.acfieldGrouped3 + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.acfieldGrouped3)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb.acfield3)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb.acfield3, . ~ . - Demo.acfieldGrouped3)
+
+anova(graph.clickhd.nb.acfield3, graph.clickhd.nb.null.2)
+
+# Demo.acfieldGrouped3 (made up of ** and *** fields from clickhd.nb - Demo.acfield) is significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.dailytech_Computer + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.dailytech_Computer)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+# almost significant
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.dailytech_Computer)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.dailytech_Tablet)), verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.dailytech_Tablet)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# almost significant (p=0.06001)
+
+graph.clickhd.nb.SP <- glmer.nb(NodeRank ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.dailytech_SmartPhone)), verbose=TRUE)
+
+summary(graph.clickhd.nb.SP)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb.SP, . ~ . - Demo.dailytech_SmartPhone)
+
+anova(graph.clickhd.nb.SP, graph.clickhd.nb.null.2)
+
+# significant (p = 0.008337)
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.weeklygaming + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.weeklygaming)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.weeklygaming)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.expdataanal + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.expdataanal)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.expdataanal)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.expdatavis + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.expdatavis)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.expdatavis)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.expreadnetvis + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.expreadnetvis)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.expreadnetvis)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Demo.expcreatenetvis + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg %>% filter(!is.na(Demo.expcreatenetvis)), verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - Demo.expcreatenetvis)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# not significant
+
+graph.clickhd.nb.avgdeg <- glmer.nb(NodeRank ~ AvgDeg + (1|Demo.ResponseID), 
+                               data=graphics_clickhighdeg, verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb.avgdeg)
+
+anova(graph.clickhd.nb.avgdeg, graph.clickhd.nb.null)
+
+# AvgDeg is marginally significant (p < 0.02327)
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Density + (1|Demo.ResponseID), 
+                                data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Density is not significant
+
+#graph.clickhd.nb.largeclust <- glmer.nb(NodeRank ~ LargeClust1 + (1|Demo.ResponseID), 
+#                                   data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(LargeClust1=scale(LargeClust1))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ LargeClust1 + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - LargeClust1)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# LargeClust1 is not significant
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ Modularity + (1|Demo.ResponseID), 
+                            data=graphics_clickhighdeg, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null)
+
+# Modularity is not significant
+
+graph.clickhd.nb.numclust <- glmer.nb(NodeRank ~ NumClust + (1|Demo.ResponseID), 
+                                 data=graphics_clickhighdeg, verbose=TRUE, 
+                        control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb.numclust)
+
+anova(graph.clickhd.nb.numclust, graph.clickhd.nb.null)
+
+# NumClust is significant (p = 0.0008861)
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ NumHighDegree + (1|Demo.ResponseID), 
+#                        data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(NumHighDegree=scale(NumHighDegree))
+
+graph.clickhd.nb.numhighdeg <- glmer.nb(NodeRank ~ NumHighDegree + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb.numhighdeg)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb.numhighdeg, . ~ . - NumHighDegree)
+
+anova(graph.clickhd.nb.numhighdeg, graph.clickhd.nb.null.2)
+
+# NumHighDegree is significant (p=4.931e-13)
+
+#graph.clickhd.nb.numlinks <- glmer.nb(NodeRank ~ NumLinks + (1|Demo.ResponseID), 
+#                                 data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(NumLinks=scale(NumLinks))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ NumLinks + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - NumLinks)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# NumLinks is barely not significant (p=0.05679)
+
+#graph.clickhd.nb.numnodes <- glmer.nb(NodeRank ~ NumNodes + (1|Demo.ResponseID), 
+#                                 data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(NumNodes=scale(NumNodes))
+
+graph.clickhd.nb <- glmer.nb(NodeRank ~ NumNodes + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb, . ~ . - NumNodes)
+
+anova(graph.clickhd.nb, graph.clickhd.nb.null.2)
+
+# NumNodes is barely not significant (p=0.07374)
+
+#graph.clickhd.nb <- glmer.nb(NodeRank ~ NumNodesClust1 + (1|Demo.ResponseID), 
+#                        data=graphics_clickhighdeg, verbose=TRUE)
+
+# need to rescale
+
+graphics_clickhighdeg.CS <- graphics_clickhighdeg %>% mutate(NumNodesClust1=scale(NumNodesClust1))
+
+graph.clickhd.nb.numnodesclust1 <- glmer.nb(NodeRank ~ NumNodesClust1 + (1|Demo.ResponseID), 
+                        data=graphics_clickhighdeg.CS, verbose=TRUE)
+
+summary(graph.clickhd.nb.numnodesclust1)
+
+graph.clickhd.nb.null.2 <- update(graph.clickhd.nb.numnodesclust1, . ~ . - NumNodesClust1)
+
+anova(graph.clickhd.nb.numnodesclust1, graph.clickhd.nb.null.2)
+
+# NumNodesClust1 is significant (p=0.008985)
+```
+
+```{r}
+
+#---------------------------------
+# Multiple predictors
+#---------------------------------
+
+temp <- graphics_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Dataset, CorrectAnswer, Demo.acfieldGrouped3, Demo.dailytech_SmartPhone, AvgDeg, NumClust, NumHighDegree, NumNodesClust1) %>% drop_na()
+
+#temp <- temp %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+graph.clickhd.nb.full <- glmer.nb(NodeRank ~ Dataset +
+                                    Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone +
+                                    (1|Demo.ResponseID),
+                                  data=temp, verbose=TRUE,
+                                  control=glmerControl(optimizer = "bobyqa"))
+
+# not every dataset is significant; should i be combining? TO DO
+
+summary(graph.clickhd.nb.full)
+# still significant - Dataset, Demo.acfieldGrouped3, Demo.dailytech_SmartPhone
+```
+
+```{r, eval=FALSE}
+#---------------------------------
+# Interactions
+#---------------------------------
+
+graph.clickhd.nb.full.int <- glmer.nb(NodeRank ~ Dataset +
+                                        Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone +
+                                        Demo.acfieldGrouped3:Demo.dailytech_SmartPhone +
+                                        (1|Demo.ResponseID),
+                                      data=temp, verbose=TRUE,
+                                      control=glmerControl(optimizer = "bobyqa"))
+
+summary(graph.clickhd.nb.full.int)
+
+anova(graph.clickhd.nb.full, graph.clickhd.nb.full.int)
+
+# no significant interactions
+
+```
+
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.clickhd.nb.full, file = file.path(analysisDataDir,"fits/graph_clickhd_nb_full.RData"))
+
+```
+
+
+```{r}
+
+graph.clickhd.nb.full.f <- fortify(graph.clickhd.nb.full)
+
+ggplot(graph.clickhd.nb.full.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  geom_hline(yintercept=0)
+
+ggplot(graph.clickhd.nb.full.f, aes(.resid)) +
+  geom_histogram()
+
+# not *quite* normally distributed...  but not too skewed?
+
+ggplot(graph.clickhd.nb.full.f, aes(.fitted,NodeRank)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10()
+
+ggplot(graph.clickhd.nb.full.f, aes(.fitted,NodeRank, color=Dataset)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10() +
+  scale_color_brewer(palette = "Dark2")
+
+ggplot(graph.clickhd.nb.full.f, aes(.fitted,NodeRank)) + 
+  geom_point() +
+  geom_hline(yintercept=0) +
+  scale_y_log10() +
+  facet_wrap(~Dataset)
+
+#(r2nsj = r2beta(graph.clickhd.nb.full, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_clickhighdeg) + geom_histogram(aes(NodeRank), binwidth=1) +
+labs(title="Distribution of NodeRank values for\nHighest Degree Node task, graphics conditions")
+
+ggplot(graph.clickhd.nb.full.f, aes(NodeRank,.fitted)) +
+geom_bin2d() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted NodeRank values for\nHighest Degree Node task, graphics conditions")
+
+
+
+```
+
+
+
+```{r, eval=FALSE}
+
+# is negative binomial different from poisson?  if so, indicates over-dispersion is true
+# and negative binomial is necessary
+
+graph.clickhd.pois <- glmer(NodeRank ~ Dataset + Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone +
+                                   (1|Demo.ResponseID), data=temp, family="poisson")
+
+pchisq(2 * (logLik(graph.clickhd.nb.full) - logLik(graph.clickhd.pois)), df=1, lower.tail = FALSE)
+
+# value = 2.926157e-08, so keep the negative binomial
+
+```
+
+```{r, eval=FALSE}
+# run without mixed effects to validate
+
+m.glm <- glm.nb(NodeRank ~ Dataset + Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone, 
+                data=temp, trace=TRUE)
+summary(m.glm)
+
+## The neg.binomial theta parameter:
+getME(graph.clickhd.nb.full, "glmer.nb.theta")
+
+#11.58727
+
+## mixed model has 1 additional parameter (RE variance)
+stopifnot(attr(logLik(graph.clickhd.nb.full),"df")==attr(logLik(m.glm),"df")+1) # not sure what this does
+
+anova(graph.clickhd.nb.full,m.glm) # can I use anova to compare mixed and fixed effects?
+# p < 5.213e-09, so definitely random effects
+
+plot(graph.clickhd.nb.full, resid(.) ~ NodeRank)# works, as long as data 'dd' is found
+
+
+# TO DO : check if this is all right
+
+```
+
+```{r, eval=FALSE}
+
+par(mfrow=c(2,2))
+qqnorm(resid(graph.clickhd.nb.full), main="normal qq-plot, residuals")
+qqline(resid(graph.clickhd.nb.full))
+
+qqnorm(ranef(graph.clickhd.nb.full)$Demo.ResponseID[,1])
+qqline(ranef(graph.clickhd.nb.full)$Demo.ResponseID[,1])
+
+
+plot(fitted(graph.clickhd.nb.full), resid(graph.clickhd.nb.full)) #residuals vs fitted
+abline(h=0)
+
+#graph.avgdeg.nb2.f <- fortify(graph.avgdeg.nb2)
+
+#ggplot(graph.avgdeg.nb2.f, aes(.fitted,.resid)) + 
+#  geom_point() +
+#  geom_hline(yintercept=0)
+
+#temp <- graphics_avgdeg
+
+temp$fitted <- fitted(graph.clickhd.nb.full) 
+plot(temp$fitted, jitter(temp$NodeRank,0.1)) #fitted vs observed
+abline(0,1)
+
+#ggplot(graph.avgdeg.nb2.f, aes(.fitted,Response)) + 
+#  geom_point() +
+#  geom_abline(aes(slope = 1, intercept = 0))
+
+
+```
+
+```{r, cache=TRUE, eval=FALSE}
+
+# Confidence Intervals, using coefficients
+
+(est <- cbind(Estimate = coef(graph.avgdeg.nb.full.int), confint(graph.avgdeg.nb.full.int)))
+
+# exponentiate model to look at incident rate ratios instead of coefficients
+
+exp(est)
+
+```
+
+```{r, eval=FALSE}
+
+# predictions
+
+# model: Response ~ Dataset + TaskOrder + Demo.dailytech_SmartPhone + Dataset:TaskOrder + TaskOrder:Demo.dailytech_SmartPhone + Dataset:Demo.dailytech_SmartPhone + (1 | Demo.ResponseID)
+
+newdata1 <- data.frame(Demo.dailytech_SmartPhone = rep(mean(temp$Demo.dailytech_SmartPhone),54), 
+                       Dataset = factor(rep(c(1,3,5,7,8,9),9), levels = levels(temp$Dataset),ordered = TRUE),
+                       TaskOrder = rep(1:9,6),
+                       Demo.ResponseID = sample(temp$Demo.ResponseID,54))
+newdata1$phat <- predict(graph.avgdeg.nb.full.int, newdata1, type = "response")
+#newdata1
+
+newdata2 <- data.frame(
+  Demo.dailytech_SmartPhone = rep(seq(from = min(temp$Demo.dailytech_SmartPhone), to = max(temp$Demo.dailytech_SmartPhone), length.out = 100), 6),
+  Dataset = factor(rep(c(1,3,5,7,8,9), each = 100), levels = levels(temp$Dataset),ordered = TRUE),
+  TaskOrder = rep(1:9,len=600),
+  Demo.ResponseID = sample(temp$Demo.ResponseID,600)
+  )
+
+#predict(graph.avgdeg.nb.full.int, newdata2, type = "link", se.fit=TRUE)
+newdata2 <- cbind(newdata2, predict(graph.avgdeg.nb.full.int, newdata2, type = "link", se.fit=TRUE))
+
+# not sure about this; asking for "fit", but that's not recognized. should the new column be called "fit"? what about se.fit?
+
+#newdata2 <- within(newdata2, {
+#  Response <- exp(fit)
+#  LL <- exp(fit - 1.96 * se.fit)
+#  UL <- exp(fit + 1.96 * se.fit)
+#})
+
+#ggplot(newdata2, aes(math, DaysAbsent)) +
+#  geom_ribbon(aes(ymin = LL, ymax = UL, fill = prog), alpha = .25) +
+#  geom_line(aes(colour = prog), size = 2) +
+#  labs(x = "Math Score", y = "Predicted Days Absent")
+
+# note on negative binomial:
+
+# TO DO : If the data generating process does not allow for any 0s (such as the number of days spent in the hospital), then a zero-truncated model may be more appropriate.
+
+# TO DO : Count data often have an exposure variable, which indicates the number of times the event could have happened (i.e. a max). This variable should be incorporated into your negative binomial regression model with the use of the offset option. See the glm documentation for details.  (so, that would make sense for click data???)
+
+# other info:
+# Cameron, A. C. and Trivedi, P. K. 1998. Regression Analysis of Count Data. New York: Cambridge Press.
+# Dupont, W. D. 2002. Statistical Modeling for Biomedical Researchers: A Simple Introduction to the Analysis of Complex Data. New York: Cambridge Press.
+
+```
+
+
+
+#### Least Squares
+
+Full model (graph.clickhd.nb.full):
+NodeRank ~ Dataset + Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone + (1|Demo.ResponseID)
+
+##### Dataset
+
+###### broom
+
+```{r}
+
+graph.clickhd.broom.tidy <- tidy(graph.clickhd.nb.full, conf.int=TRUE)
+graph.clickhd.broom.aug <- augment(graph.clickhd.nb.full, temp)
+graph.clickhd.broom.ci <- confint_tidy(graph.clickhd.nb.full)
+graph.clickhd.broom.tidyci <- bind_cols(graph.clickhd.broom.tidy %>% arrange(group), graph.clickhd.broom.ci)
+
+graph.clickhd.broom.tidyci$term <- factor(graph.clickhd.broom.tidyci$term,
+                                          levels=graph.clickhd.broom.tidyci %>% arrange(estimate) %>%
+                                            dplyr::select(term) %>% unlist())
+
+ggplot(graph.clickhd.broom.tidyci, aes(term, estimate)) + 
+  geom_point() + 
+  coord_flip()
+
+ggplot(graph.clickhd.broom.aug %>% group_by(Dataset) %>% summarize(est=mean(.fitted))) +
+  geom_point(aes(Dataset,est)) +
+  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+  coord_flip()
+
+plot(emmeans(graph.clickhd.nb.full, "Dataset"))
+
+ggplot(graph.clickhd.broom.aug) +
+  geom_violin(aes(Dataset,.fitted)) +
+  scale_y_continuous(limits = c(-.06,1.2), breaks=c(0,.3,.6,.9,1.2)) +
+  coord_flip()
+
+
+```
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.clickhd.emm.data <- emmeans(graph.clickhd.nb.full, "Dataset", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.clickhd.emm.data
+
+graph.clickhd.emm.data.df <- dplyr::as_data_frame(graph.clickhd.emm.data)
+
+graph.clickhd.emm.data.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.clickhd.emm.data.cld <- cld(graph.clickhd.emm.data,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.clickhd.emm.data.cld.df <- graph.clickhd.emm.data.cld$emmeans
+
+graph.clickhd.emm.data.cld.df %>% dplyr::select(Dataset,.group)
+
+graph.clickhd.emm.data.cld.df
+
+graph.clickhd.emm.data.cld.df$Dataset <- factor(graph.clickhd.emm.data.cld.df$Dataset, levels=graph.clickhd.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.clickhd.emm.data, ~Dataset, CIs = TRUE)
+plot(graph.clickhd.emm.data)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.clickhd.emm.data.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.clickhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.clickhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for\nHighest Degree Node task, graphics conditions")
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.clickhd.emm.data.pairs <- dplyr::as_data_frame(pairs(graph.clickhd.emm.data)) 
+graph.clickhd.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.clickhd.emm.data))
+
+graph.clickhd.emm.data.pairs <- full_join(graph.clickhd.emm.data.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.clickhd.emm.data))
+plot(pairs(graph.clickhd.emm.data), comparisons = TRUE)
+
+graph.clickhd.emm.data.pairs$sig.levels <- 
+  case_when(graph.clickhd.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.clickhd.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.clickhd.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.clickhd.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.clickhd.emm.data.pairs$sig.levels <- factor(graph.clickhd.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.clickhd.emm.data.pairs$contrast <- factor(graph.clickhd.emm.data.pairs$contrast, levels=graph.clickhd.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.clickhd.emm.data.pairs <- graph.clickhd.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.clickhd.emm.data.pairs %>% arrange(estimate)
+
+ggplot(graph.clickhd.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=asymp.UCL,ymin=asymp.LCL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.clickhd.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=asymp.UCL,ymin=asymp.LCL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+
+copy <- graph.clickhd.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         z.ratio=-z.ratio,
+         asymp.LCL=-asymp.LCL,
+         asymp.UCL=-asymp.UCL)
+
+graph.clickhd.emm.data.pairs.compl <- bind_rows(graph.clickhd.emm.data.pairs, copy)
+
+copy$From <- factor(copy$From, levels=rev(unique(copy$From)))
+#graph.bc.emm.data.pairs$To <- factor(graph.bc.emm.data.pairs$To, levels=cond.lev)
+#graph.bc.emm.data.pairs$From <- factor(graph.bc.emm.data.pairs$From, levels=rev(cond.lev))
+
+highest<-max(abs(copy$estimate))
+
+ggplot(copy, aes(x=To,y=From)) +
+  geom_tile(aes(fill=estimate)) +
+  geom_text(aes(label=paste0(format(estimate, digits=2, nsmall=2),"\n(",sig.levels,")"))) +
+    scale_fill_distiller(type="div", palette=4, limits=c(-highest,highest)) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+```{r}
+
+graph.clickhd.emm.data.pairs.compl$From <- factor(graph.clickhd.emm.data.pairs.compl$From, levels=rev(unique(graph.clickhd.emm.data.pairs.compl$From)))
+#graph.bc.emm.data.pairs.compl$To <- factor(graph.bc.emm.data.pairs.compl$To, levels=cond.lev)
+#graph.bc.emm.data.pairs.compl$From <- factor(graph.bc.emm.data.pairs.compl$From, levels=rev(cond.lev))
+
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.clickhd.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.clickhd.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.clickhd.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.clickhd.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.clickhd.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+###### networks
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.clickhd.emm.data.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*10
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r, eval=FALSE}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.clickhd.emm.data.pairs %>% dplyr::select(-contrast) %>% filter(sig.levels != "NS"), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  #scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  #scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+
+
+
+##### Demo.acfieldGrouped3
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.bc.emm.acfield3 <- emmeans(graph.clickhd.nb.full, "Demo.acfieldGrouped3", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.bc.emm.acfield3
+
+graph.bc.emm.acfield3.df <- dplyr::as_data_frame(graph.bc.emm.acfield3)
+
+graph.bc.emm.acfield3.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.bc.emm.acfield3.cld <- cld(graph.bc.emm.acfield3,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.bc.emm.acfield3.cld.df <- graph.bc.emm.acfield3.cld$emmeans
+
+graph.bc.emm.acfield3.cld.df %>% dplyr::select(Demo.acfieldGrouped3,.group)
+
+graph.bc.emm.acfield3.cld.df
+
+graph.bc.emm.acfield3.cld.df$Demo.acfieldGrouped3 <- factor(graph.bc.emm.acfield3.cld.df$Demo.acfieldGrouped3, levels=graph.bc.emm.acfield3.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Demo.acfieldGrouped3) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.bc.emm.acfield3, ~Demo.acfieldGrouped3, CIs = TRUE)
+plot(graph.bc.emm.acfield3)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.bc.emm.acfield3.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.bc.emm.acfield3.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped3,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped3,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.bc.emm.acfield3.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped3,ymax=asymp.UCL,ymin=asymp.LCL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped3,y=emmean), size=7) +
+  scale_x_discrete(labels=c("High Error Group","Low Error Group"),name="Academic Field") +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Academic Field for\nHighest Degree Node task, graphics conditions")
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.bc.emm.acfield3.pairs <- dplyr::as_data_frame(pairs(graph.bc.emm.acfield3)) 
+graph.bc.emm.acfield3.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.bc.emm.acfield3))
+
+graph.bc.emm.acfield3.pairs <- full_join(graph.bc.emm.acfield3.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.bc.emm.acfield3))
+#plot(pairs(graph.bc.emm.acfield2), comparisons = TRUE)
+
+graph.bc.emm.acfield3.pairs$sig.levels <- 
+  case_when(graph.bc.emm.acfield3.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.bc.emm.acfield3.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.bc.emm.acfield3.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.bc.emm.acfield3.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.bc.emm.acfield3.pairs$sig.levels <- factor(graph.bc.emm.acfield3.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.bc.emm.acfield3.pairs$contrast <- factor(graph.bc.emm.acfield3.pairs$contrast, levels=graph.bc.emm.acfield3.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.bc.emm.acfield3.pairs <- graph.bc.emm.acfield3.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.bc.emm.acfield3.pairs %>% arrange(estimate)
+
+ggplot(graph.bc.emm.acfield3.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=asymp.UCL,ymin=asymp.LCL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.bc.emm.acfield3.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=asymp.UCL,ymin=asymp.LCL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+
+copy <- graph.bc.emm.acfield3.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         z.ratio=-z.ratio,
+         asymp.LCL=-asymp.LCL,
+         asymp.UCL=-asymp.UCL)
+
+graph.bc.emm.acfield3.pairs.compl <- bind_rows(graph.bc.emm.acfield3.pairs, copy)
+
+copy$From <- factor(copy$From, levels=rev(unique(copy$From)))
+#graph.bc.emm.data.pairs$To <- factor(graph.bc.emm.data.pairs$To, levels=cond.lev)
+#graph.bc.emm.data.pairs$From <- factor(graph.bc.emm.data.pairs$From, levels=rev(cond.lev))
+
+highest<-max(abs(copy$estimate))
+
+ggplot(copy, aes(x=To,y=From)) +
+  geom_tile(aes(fill=estimate)) +
+  geom_text(aes(label=paste0(format(estimate, digits=2, nsmall=2),"\n(",sig.levels,")"))) +
+    scale_fill_distiller(type="div", palette=4, limits=c(-highest,highest)) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+```{r}
+
+graph.bc.emm.acfield3.pairs.compl$From <- factor(graph.bc.emm.acfield3.pairs.compl$From, levels=rev(unique(graph.bc.emm.acfield3.pairs.compl$From)))
+#graph.bc.emm.data.pairs.compl$To <- factor(graph.bc.emm.data.pairs.compl$To, levels=cond.lev)
+#graph.bc.emm.data.pairs.compl$From <- factor(graph.bc.emm.data.pairs.compl$From, levels=rev(cond.lev))
+
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.bc.emm.acfield3.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.bc.emm.acfield3.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.bc.emm.acfield3.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.bc.emm.acfield3.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.bc.emm.acfield3.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+###### networks
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.bc.emm.acfield3.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*10
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r, eval=FALSE}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.bc.emm.acfield3.pairs %>% dplyr::select(-contrast) %>% filter(sig.levels != "NS"), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  #scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  #scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+
+
+
+
+
+##### Demo.dailytech_SmartPhone
+
+```{r}
+
+ggplot(graphics_clickhighdeg, aes(Demo.dailytech_SmartPhone, NodeRank)) +
+  geom_bin2d() +
+  geom_smooth(method="lm") +
+  labs(title="Smart Phone Usage vs. NodeRank for\nHighest Degree Node task, graphics conditions",
+x="Average Daily Time Using Smart Phone (hours)")
+
+
+```
+
