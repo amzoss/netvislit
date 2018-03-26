@@ -1,0 +1,882 @@
+---
+title: "Analysis for Average Degree task, Layout conditions"
+author: "Angela Zoss"
+date: "March 25, 2018"
+output: github_document
+---
+
+```{r layout-setup-avgdeg}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r layout-load-environment-avgdeg, message=FALSE}
+
+source('LayoutSetup.R')
+
+```
+
+#### lme4
+
+```{r, cache=TRUE, eval=FALSE}
+
+# Condition
+
+layout.avgdeg.lmer <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Condition is not significant; trying Ctrl_dummy
+
+layout.avgdeg.lmer <- lmer(LogError ~ Ctrl_dummy + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Ctrl_dummy is not significant; trying Dataset
+
+layout.avgdeg.lmer.data <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.data)
+
+anova(layout.avgdeg.lmer.data)
+
+# Dataset is barely significant (p=0.02879)
+
+#layout.avgdeg.lmer <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+layouts_avgdeg.CS <- layouts_avgdeg %>% mutate(QuestionOrder=scale(QuestionOrder))
+
+layout.avgdeg.lmer <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=layouts_avgdeg.CS, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# QuestionOrder is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# DatasetOrder is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# DatasetDuration is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+layout.avgdeg.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+layout.avgdeg.lmer.correct <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.correct)
+
+anova(layout.avgdeg.lmer.correct)
+
+# CorrectAnswer is barely significant (p=0.03933)
+
+layout.avgdeg.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.underest)
+
+anova(layout.avgdeg.lmer.underest)
+
+# Underestimated is highly significant (p = 1.432e-12)
+
+layout.avgdeg.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+layout.avgdeg.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Stats.dataset_count is not significant; trying Stats.OperatingSystem
+
+layout.avgdeg.lmer <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Stats.OperatingSystem is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Stats.OperatingSystemCombined is not significant
+
+layouts_avgdeg.CS <- layouts_avgdeg %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+layout.avgdeg.lmer <- lmer(LogError ~ StatsNumPixels + (1|Demo.ResponseID), data=layouts_avgdeg.CS, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# StatsNumPixels is not significant; trying Demo.age
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.age is not significant; trying Demo.gender
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.gender is not signficant; trying Demo.lang
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.lang is not signficant; trying Demo.educ
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.educ is not signficant; trying Demo.acfield
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.acfield is not signficant overall; trying Demo.acfieldGrouped
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.acfieldGrouped is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped2 + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped2))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.acfieldGrouped2 is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.acfieldGrouped3 + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.acfieldGrouped3))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.acfieldGrouped3 is not significant
+
+layout.avgdeg.lmer.comp <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(layout.avgdeg.lmer.comp)
+
+anova(layout.avgdeg.lmer.comp)
+
+# Demo.dailytech_Computer is significant (p=0.006587); trying Demo.dailytech_Tablet
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.dailytech_Computer is not significant
+
+layout.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(layout.avgdeg.lmer.SP)
+
+anova(layout.avgdeg.lmer.SP)
+
+# Demo.dailytech_SmartPhone is barely significant (p=0.03045)
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.weeklygaming is not significant; trying Demo.expdataanal
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.expdataanal is not significant; trying Demo.expdatavis
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.expdatavis is not significant; trying Demo.expreadnetvis
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.expreadnetvis is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Demo.expcreatenetvis is not significant; trying AvgDeg
+
+layout.avgdeg.lmer.avgdeg <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.avgdeg)
+
+anova(layout.avgdeg.lmer.avgdeg)
+
+# AvgDeg is significant (p=0.03933)
+
+layout.avgdeg.lmer <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Density is barely not significant (p=0.05856)
+
+layout.avgdeg.lmer.lgclust <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.lgclust)
+
+anova(layout.avgdeg.lmer.lgclust)
+
+# LargeClust1 is barely significant (p=0.04142)
+
+layout.avgdeg.lmer.mod <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.mod)
+
+anova(layout.avgdeg.lmer.mod)
+
+# Modularity is barely significant (p=0.03925)
+
+layout.avgdeg.lmer.nclust <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.nclust)
+
+anova(layout.avgdeg.lmer.nclust)
+
+# NumClust is significant (p=0.00886)
+
+layout.avgdeg.lmer <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# NumHighDegree is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# NumLinks is barely not significant
+
+layout.avgdeg.lmer.numnodes <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.numnodes)
+
+anova(layout.avgdeg.lmer.numnodes)
+
+# NumNodes is barely significant (p=0.01815)
+
+layout.avgdeg.lmer.numnodesclust1 <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.numnodesclust1)
+
+anova(layout.avgdeg.lmer.numnodesclust1)
+
+# NumNodesClust1 is barely significant (p=0.04227)
+
+layout.avgdeg.lmer <- lmer(LogError ~ filename + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# filename is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ NetVisExperience + (1|Demo.ResponseID), data=layouts_avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# NetVisExperience is not significant
+
+layout.avgdeg.lmer <- lmer(LogError ~ Stats.CompensationCondition + (1|Demo.ResponseID), data=layouts_avgdeg %>% filter(filename=="FacultyGrad"), REML = T)
+
+summary(layout.avgdeg.lmer)
+
+anova(layout.avgdeg.lmer)
+
+# Stats.CompensationCondition is not significant
+
+
+```
+
+
+```{r}
+
+temp.avgdeg <- layouts_avgdeg %>% dplyr::select(Demo.ResponseID, LogError, Dataset, CorrectAnswer, Underestimated, Demo.dailytech_Computer, Demo.dailytech_SmartPhone, AvgDeg, LargeClust1, Modularity, NumClust, NumNodes, NumNodesClust1) %>% drop_na()
+
+layout.avgdeg.lmer.full <- lmer(LogError ~ Dataset + Underestimated + Demo.dailytech_Computer + (1|Demo.ResponseID), data=temp.avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.full)
+
+anova(layout.avgdeg.lmer.full)
+
+layout.avgdeg.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=temp.avgdeg, REML = T)
+
+anova(layout.avgdeg.lmer.full, layout.avgdeg.lmer.underest)
+# keep full
+```
+
+```{r}
+layout.avgdeg.lmer.int <- lmer(LogError ~ Dataset + 
+                                 Underestimated + 
+                                 Demo.dailytech_Computer + 
+                                 Dataset:Demo.dailytech_Computer +
+                                 (1|Demo.ResponseID), data=temp.avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.int)
+
+anova(layout.avgdeg.lmer.int)
+
+anova(layout.avgdeg.lmer.full, layout.avgdeg.lmer.int)
+# interaction barely significantly better
+
+layout.avgdeg.lmer.int.2 <- lmer(LogError ~ Dataset + 
+                                 Underestimated + 
+                                 Demo.dailytech_Computer + 
+                                 Dataset:Demo.dailytech_Computer +
+                                   Underestimated:Demo.dailytech_Computer +
+                                 (1|Demo.ResponseID), data=temp.avgdeg, REML = T)
+
+summary(layout.avgdeg.lmer.int.2)
+
+anova(layout.avgdeg.lmer.int.2)
+
+anova(layout.avgdeg.lmer.full, layout.avgdeg.lmer.int.2) # definitely better than full
+anova(layout.avgdeg.lmer.int, layout.avgdeg.lmer.int.2) # also better than previous interaction
+
+#keep 2
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(layout.avgdeg.lmer.int.2, file = file.path(analysisDataDir,"fits/layout_avgdeg_lmer_int.RData"))
+
+```
+
+```{r, cache=TRUE}
+
+rand(layout.avgdeg.lmer.int.2)
+
+# result shows that random effects of participant are significant (p=2e-10)
+
+anova(layout.avgdeg.lmer.int.2)
+
+#ranef(layout.avgdeg.lmer.full)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+ggplot(layouts_avgdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Average Degree task,\nlayout conditions")
+
+(r2nsj = r2beta(layout.avgdeg.lmer.int.2, method = 'nsj', partial = TRUE))
+(r2nsj = r2beta(layout.avgdeg.lmer.int.2, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+
+
+```
+
+```{r, eval=FALSE}
+
+plot(layout.avgdeg.lmer.int.2)
+
+plot(layout.avgdeg.lmer.int.2, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(layout.avgdeg.lmer.int.2, resid(.) ~ fitted(.) | Underestimated, abline = 0)
+
+plot(layout.avgdeg.lmer.int.2, resid(., scaled=TRUE) ~ fitted(.) | Underestimated, abline = 0)
+
+plot(layout.avgdeg.lmer.int.2, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+layout.avgdeg.lmer.int.2.f <- fortify(layout.avgdeg.lmer.int.2)
+
+ggplot(layout.avgdeg.lmer.int.2.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(layout.avgdeg.lmer.int.2.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.avgdeg.lmer.int.2.f, aes(LogError,.fitted)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0)) +
+  #scale_y_continuous(limits=c(0,0.3)) +
+  labs(title="Real vs. Predicted LogError values for Average Degree task,\nlayout conditions")
+
+
+
+```
+
+
+#### Least Squares Means
+
+Do for each categorical predictor. 
+Final model: 
+layout.avgdeg.lmer.int.2 <- lmer(LogError ~ Dataset + 
+                                 Underestimated + 
+                                 Demo.dailytech_Computer + 
+                                 Dataset:Demo.dailytech_Computer +
+                                 Underestimated:Demo.dailytech_Computer +
+                                 (1|Demo.ResponseID), data=temp.avgdeg, REML = T)
+
+##### Dataset
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.avgdeg.emm.data <- emmeans(layout.avgdeg.lmer.int.2, "Dataset", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.avgdeg.emm.data
+
+layout.avgdeg.emm.data.df <- dplyr::as_data_frame(layout.avgdeg.emm.data)
+
+layout.avgdeg.emm.data.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.avgdeg.emm.data.cld <- cld(layout.avgdeg.emm.data,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.avgdeg.emm.data.cld.df <- layout.avgdeg.emm.data.cld$emmeans
+
+layout.avgdeg.emm.data.cld.df %>% dplyr::select(Dataset,.group)
+
+layout.avgdeg.emm.data.cld.df
+
+layout.avgdeg.emm.data.cld.df$Dataset <- factor(layout.avgdeg.emm.data.cld.df$Dataset, levels=layout.avgdeg.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.avgdeg.emm.data, ~Dataset, CIs = TRUE)
+plot(layout.avgdeg.emm.data)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.avgdeg.emm.data.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.avgdeg.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.avgdeg.emm.data.pairs <- dplyr::as_data_frame(pairs(layout.avgdeg.emm.data)) 
+layout.avgdeg.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.avgdeg.emm.data))
+
+layout.avgdeg.emm.data.pairs <- full_join(layout.avgdeg.emm.data.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.avgdeg.emm.data))
+plot(pairs(layout.avgdeg.emm.data), comparisons = TRUE)
+
+layout.avgdeg.emm.data.pairs$sig.levels <- 
+  case_when(layout.avgdeg.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.avgdeg.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.avgdeg.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.avgdeg.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.avgdeg.emm.data.pairs$sig.levels <- factor(layout.avgdeg.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.avgdeg.emm.data.pairs$contrast <- factor(layout.avgdeg.emm.data.pairs$contrast, levels=layout.avgdeg.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.avgdeg.emm.data.pairs <- layout.avgdeg.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.avgdeg.emm.data.pairs %>% arrange(estimate)
+
+ggplot(layout.avgdeg.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.avgdeg.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+copy <- layout.avgdeg.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.avgdeg.emm.data.pairs.compl <- bind_rows(layout.avgdeg.emm.data.pairs, copy)
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+layout.avgdeg.emm.data.pairs.compl$From <- factor(layout.avgdeg.emm.data.pairs.compl$From, levels=rev(unique(layout.avgdeg.emm.data.pairs.compl$From)))
+#layout.avgdeg.emm.under.pairs.compl$To <- factor(layout.avgdeg.emm.under.pairs.compl$To, levels=cond.lev)
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.avgdeg.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.avgdeg.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Underestimated
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.avgdeg.emm.under <- emmeans(layout.avgdeg.lmer.int.2, "Underestimated", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.avgdeg.emm.under
+
+layout.avgdeg.emm.under.df <- dplyr::as_data_frame(layout.avgdeg.emm.under)
+
+layout.avgdeg.emm.under.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.avgdeg.emm.under.cld <- cld(layout.avgdeg.emm.under,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.avgdeg.emm.under.cld.df <- layout.avgdeg.emm.under.cld$emmeans
+
+layout.avgdeg.emm.under.cld.df %>% dplyr::select(Underestimated,.group)
+
+layout.avgdeg.emm.under.cld.df
+
+layout.avgdeg.emm.under.cld.df$Underestimated <- factor(layout.avgdeg.emm.under.cld.df$Underestimated, levels=layout.avgdeg.emm.under.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Underestimated) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.avgdeg.emm.under, ~Underestimated, CIs = TRUE)
+plot(layout.avgdeg.emm.under)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.avgdeg.emm.under.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.avgdeg.emm.under.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Underestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Underestimated,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.avgdeg.emm.under.pairs <- dplyr::as_data_frame(pairs(layout.avgdeg.emm.under)) 
+layout.avgdeg.emm.under.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.avgdeg.emm.under))
+
+layout.avgdeg.emm.under.pairs <- full_join(layout.avgdeg.emm.under.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.avgdeg.emm.under))
+plot(pairs(layout.avgdeg.emm.under), comparisons = TRUE)
+
+layout.avgdeg.emm.under.pairs$sig.levels <- 
+  case_when(layout.avgdeg.emm.under.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.avgdeg.emm.under.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.avgdeg.emm.under.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.avgdeg.emm.under.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.avgdeg.emm.under.pairs$sig.levels <- factor(layout.avgdeg.emm.under.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.avgdeg.emm.under.pairs$contrast <- factor(layout.avgdeg.emm.under.pairs$contrast, levels=layout.avgdeg.emm.under.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.avgdeg.emm.under.pairs <- layout.avgdeg.emm.under.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.avgdeg.emm.under.pairs %>% arrange(estimate)
+
+ggplot(layout.avgdeg.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.avgdeg.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+copy <- layout.avgdeg.emm.under.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.avgdeg.emm.under.pairs.compl <- bind_rows(layout.avgdeg.emm.under.pairs, copy)
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+layout.avgdeg.emm.under.pairs.compl$From <- factor(layout.avgdeg.emm.under.pairs.compl$From, levels=rev(unique(layout.avgdeg.emm.under.pairs.compl$From)))
+#layout.avgdeg.emm.under.pairs.compl$To <- factor(layout.avgdeg.emm.under.pairs.compl$To, levels=cond.lev)
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.avgdeg.emm.under.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.avgdeg.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.avgdeg.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+
+##### Demo.dailytech_Computer - not a factor
+
+```{r}
+
+ggplot(temp.avgdeg) +
+  geom_point(aes(Demo.dailytech_Computer,LogError)) +
+  geom_smooth(aes(Demo.dailytech_Computer,LogError), method="lm")
+
+```
+
+##### Dataset:Demo.dailytech_Computer
+
+
+```{r}
+
+ggplot(temp.avgdeg) +
+  geom_point(aes(Demo.dailytech_Computer,LogError)) +
+  geom_smooth(aes(Demo.dailytech_Computer,LogError), method="lm") +
+  facet_grid(.~Dataset)
+
+```
+
+##### Underestimated:Demo.dailytech_Computer
+
+```{r}
+
+ggplot(temp.avgdeg) +
+  geom_point(aes(Demo.dailytech_Computer,LogError)) +
+  geom_smooth(aes(Demo.dailytech_Computer,LogError), method="lm") +
+  facet_grid(.~Underestimated)
+
+```
+

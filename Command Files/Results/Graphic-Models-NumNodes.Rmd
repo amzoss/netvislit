@@ -1,0 +1,1981 @@
+---
+title: "Analysis for Number of Nodes task, Graphics conditions"
+author: "Angela Zoss"
+date: "March 23, 2018"
+output: github_document
+---
+
+
+```{r load-environment-numnodes, message=FALSE, eval=FALSE}
+
+source('GraphicsSetup.R')
+
+```
+
+
+Extra figures
+
+```{r}
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(Response,CorrectAnswer) %>% ggplot() + geom_histogram(aes(Response),binwidth = 5) + geom_vline(aes(xintercept=CorrectAnswer))
+
+ggsave(file.path(figureDir, "resp3hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(NormResponse,NormCorrectAnswer) %>% ggplot() + geom_histogram(aes(NormResponse),binwidth = .05) + geom_vline(aes(xintercept=NormCorrectAnswer))
+
+ggsave(file.path(figureDir, "normresp3hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==3, Condition=="Ctrl") %>% dplyr::select(LogError) %>% ggplot() + geom_histogram(aes(LogError),binwidth = .01) + scale_x_continuous(limits = c(0,.3)) + scale_y_continuous(limits=c(0,10))
+
+ggsave(file.path(figureDir, "logerror3hist.pdf"), width=6, height=3)
+
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(Response,CorrectAnswer) %>% ggplot() + geom_histogram(aes(Response),binwidth = 50) + geom_vline(aes(xintercept=CorrectAnswer))
+
+ggsave(file.path(figureDir, "resp9hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(NormResponse,NormCorrectAnswer) %>% ggplot() + geom_histogram(aes(NormResponse),binwidth = .05) + geom_vline(aes(xintercept=NormCorrectAnswer))
+
+ggsave(file.path(figureDir, "normresp9hist.pdf"), width=6, height=3)
+
+graphics_numnodes %>% filter(Dataset==9, Condition=="Ctrl") %>% dplyr::select(LogError) %>% ggplot() + geom_histogram(aes(LogError),binwidth = .01) + scale_x_continuous(limits = c(0,.3)) + scale_y_continuous(limits=c(0,10))
+
+ggsave(file.path(figureDir, "logerror9hist.pdf"), width=6, height=3)
+
+
+```
+
+#### lme4
+
+```{r, cache=TRUE}
+
+# Condition
+
+graph.numnodes.lmer.cond <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.cond)
+
+anova(graph.numnodes.lmer.cond)
+
+# Condition is significant (p<2.2e-16); trying Ctrl_dummy
+
+graph.numnodes.lmer.ctrldum <- lmer(LogError ~ Ctrl_dummy + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.ctrldum)
+
+anova(graph.numnodes.lmer.ctrldum)
+
+# Ctrl_dummy is significant (p=6.466e-08); trying ConditionPhrasing
+
+graph.numnodes.lmer.condphr <- lmer(LogError ~ ConditionPhrasing + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.condphr)
+
+anova(graph.numnodes.lmer.condphr)
+
+# ConditionPhrasing is significant (p=0.000114); 
+
+graph.numnodes.lmer.condgr <- lmer(LogError ~ ConditionGraphics + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.condgr)
+
+anova(graph.numnodes.lmer.condgr)
+
+# ConditionGraphics is significant (p=7.639e-10)
+
+graph.numnodes.lmer.condcol <- lmer(LogError ~ ConditionColor + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.condcol)
+
+anova(graph.numnodes.lmer.condcol)
+
+# ConditionColor is significant (p=5.3e-09)
+
+# trying Dataset
+
+graph.numnodes.lmer.dataset <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = graphics_numnodes, REML = T)
+
+lmsum <- summary(graph.numnodes.lmer.dataset)
+lmsum
+#names(lmsum)
+
+anova(graph.numnodes.lmer.dataset)
+
+# Dataset is significant (p < 2.2e-16); trying QuestionOrder
+
+graph.numnodes.lmer.qorder <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.qorder)
+
+anova(graph.numnodes.lmer.qorder)
+
+# QuestionOrder is significant (p=0.0225); trying DatasetOrder
+
+graph.numnodes.lmer.dorder <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.dorder)
+
+anova(graph.numnodes.lmer.dorder)
+
+# DatasetOrder is significant (p=0.03128); trying DatasetDuration
+
+graph.numnodes.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# DatasetDuration is not significant; trying DatasetStartTime
+
+graph.numnodes.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+graph.numnodes.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+graph.numnodes.lmer.correct <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.correct)
+
+anova(graph.numnodes.lmer.correct)
+
+# CorrectAnswer is highly significant (p < 2.2e-16); trying Underestimated
+
+graph.numnodes.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.underest)
+
+anova(graph.numnodes.lmer.underest)
+
+# Underestimated is highly significant (p < 2.2e-16); trying Overestimated
+
+graph.numnodes.lmer.overest <- lmer(LogError ~ Overestimated + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.overest)
+
+anova(graph.numnodes.lmer.overest)
+
+# Overestimated is somewhat significant (p = 0.01932); 
+
+graph.numnodes.lmer.underdum <- lmer(LogError ~ UnderestDummy + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.underdum)
+
+anova(graph.numnodes.lmer.underdum)
+
+# UnderestDummy is highly significant (p < 2.2e-16); trying Stats.Q_TotalDuration
+
+graph.numnodes.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+graph.numnodes.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Stats.dataset_count is not signficant; trying Stats.OperatingSystem
+
+graph.numnodes.lmer <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Stats.OperatingSystem is not signficant; skipping combined
+
+graphics_numnodes.CS <- graphics_numnodes %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+graph.numnodes.lmer <- lmer(LogError ~ StatsNumPixels + (1|Demo.ResponseID), data=graphics_numnodes.CS, REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# StatsNumPixels is not signficant; trying Demo.age
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.age is not signficant; trying Demo.gender
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.gender is not signficant; trying Demo.lang
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.lang is not signficant; trying Demo.educ
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.educ is not signficant; trying Demo.acfield
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.acfield is not signficant overall; trying Demo.acfieldGrouped
+
+graph.numnodes.lmer.acfieldgr <- lmer(LogError ~ Demo.acfieldGrouped + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.acfieldGrouped))), REML = T)
+
+summary(graph.numnodes.lmer.acfieldgr)
+
+anova(graph.numnodes.lmer.acfieldgr)
+
+# Demo.acfieldGrouped is slightly signficant (p=0.02863)
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.acfieldGrouped2 + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.acfieldGrouped2))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.acfieldGrouped2 is not signficant
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.acfieldGrouped3 + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.acfieldGrouped3))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.acfieldGrouped3 is not signficant
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.dailytech_Computer is not significant; trying Demo.dailytech_Tablet
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.dailytech_Computer is not significant (p=0.08993)
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.dailytech_SmartPhone is not significant; trying Demo.weeklygaming
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.weeklygaming is not significant; trying Demo.expdataanal
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expdataanal is not significant; trying Demo.expdatavis
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expdatavis is not significant; trying Demo.expreadnetvis
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expreadnetvis is not significant; trying Demo.expreadnetvis.alot
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expreadnetvis.alot is not significant; trying Demo.expcreatenetvis
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expcreatenetvis is not significant; trying Demo.expcreatenetvis.alot
+
+graph.numnodes.lmer <- lmer(LogError ~ Demo.expcreatenetvis.alot + (1|Demo.ResponseID), data=graphics_numnodes %>% filter(!(is.na(Demo.expcreatenetvis.alot))), REML = T)
+
+summary(graph.numnodes.lmer)
+
+anova(graph.numnodes.lmer)
+
+# Demo.expcreatenetvis.alot is not significant; trying AvgDeg
+
+graph.numnodes.lmer.avgdeg <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.avgdeg)
+
+anova(graph.numnodes.lmer.avgdeg)
+
+# AvgDeg is significant (p < 2.2e-16); trying Density
+
+graph.numnodes.lmer.dens <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.dens)
+
+anova(graph.numnodes.lmer.dens)
+
+# Density is significant (p < 2.2e-16); trying LargeClust1
+
+graph.numnodes.lmer.lgclust <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.lgclust)
+
+anova(graph.numnodes.lmer.lgclust)
+
+# LargeClust1 is significant (p < 2.2e-16); trying Modularity
+
+graph.numnodes.lmer.mod <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.mod)
+
+anova(graph.numnodes.lmer.mod)
+
+# Modularity is significant (p < 2.2e-16); trying NumClust
+
+graph.numnodes.lmer.numclust <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.numclust)
+
+anova(graph.numnodes.lmer.numclust)
+
+# NumClust is significant (p < 2.2e-16); trying NumHighDegree
+
+graph.numnodes.lmer.numhighdeg <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.numhighdeg)
+
+anova(graph.numnodes.lmer.numhighdeg)
+
+# NumHighDegree is significant (p=1.098e-07); trying NumLinks
+
+graph.numnodes.lmer.numlinks <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.numlinks)
+
+anova(graph.numnodes.lmer.numlinks)
+
+# NumLinks is significant (p=0.0136); trying NumNodes
+
+graph.numnodes.lmer.numnodes <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.numnodes)
+
+anova(graph.numnodes.lmer.numnodes)
+
+# NumNodes is significant (p < 2.2e-16); trying NumNodesClust1
+
+graph.numnodes.lmer.sizeclust1 <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=graphics_numnodes, REML = T)
+
+summary(graph.numnodes.lmer.sizeclust1)
+
+anova(graph.numnodes.lmer.sizeclust1)
+
+# NumNodesClust1 is significant (p < 2.2e-16); 
+
+
+```
+
+```{r}
+
+temp.numnodes <- graphics_numnodes %>% dplyr::select(Demo.ResponseID, LogError, Condition, Ctrl_dummy, ConditionPhrasing, ConditionGraphics, ConditionColor, Dataset, QuestionOrder, DatasetOrder, CorrectAnswer, Underestimated, Overestimated, UnderestDummy, Demo.acfieldGrouped, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(QuestionOrderSc=scale(QuestionOrder))
+
+graph.numnodes.lmer.full <- lmer(LogError ~ Condition + Dataset +
+                                   QuestionOrderSc +
+                                   DatasetOrder +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.full)
+
+anova(graph.numnodes.lmer.full)
+
+
+```
+
+```{r}
+
+graph.numnodes.lmer.int <- lmer(LogError ~ Condition + Dataset +
+                                  Condition:Dataset +
+                                   QuestionOrderSc +
+                                   DatasetOrder +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.int)
+
+anova(graph.numnodes.lmer.int)
+
+anova(graph.numnodes.lmer.full, graph.numnodes.lmer.int)
+
+graph.numnodes.lmer.int.2 <- lmer(LogError ~ Condition + Dataset +
+                                  Condition:Dataset +
+                                   QuestionOrderSc +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.int.2)
+
+anova(graph.numnodes.lmer.int.2)
+
+anova(graph.numnodes.lmer.int, graph.numnodes.lmer.int.2) 
+# not a significant difference; maybe keep the simpler one (2)
+
+graph.numnodes.lmer.int.3 <- lmer(LogError ~ Condition + Dataset +
+                                   QuestionOrderSc +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                  Condition:Dataset +
+                                    Condition:UnderestDummy + 
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.int.3)
+
+anova(graph.numnodes.lmer.int.3)
+
+anova(graph.numnodes.lmer.int.2, graph.numnodes.lmer.int.3) 
+# keep 3
+
+graph.numnodes.lmer.int.4 <- lmer(LogError ~ Condition + Dataset +
+                                   QuestionOrderSc +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                  Condition:Dataset +
+                                    Condition:UnderestDummy + 
+                                    Dataset:UnderestDummy +
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.int.4)
+
+anova(graph.numnodes.lmer.int.4)
+
+anova(graph.numnodes.lmer.int.3, graph.numnodes.lmer.int.4) 
+
+# keep 3
+
+graph.numnodes.lmer.int.5 <- lmer(LogError ~ Condition + Dataset +
+                                   UnderestDummy +
+                                   Demo.acfieldGrouped +
+                                  Condition:Dataset +
+                                    Condition:UnderestDummy + 
+                                   (1|Demo.ResponseID), data=temp.numnodes, REML = T)
+
+summary(graph.numnodes.lmer.int.5)
+
+anova(graph.numnodes.lmer.int.5)
+
+anova(graph.numnodes.lmer.int.3,graph.numnodes.lmer.int.5)
+
+# keep 3
+
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numnodes.lmer.int.3, 
+     file = file.path(analysisDataDir,"fits/graph_numnodes_lmer_int.RData"))
+
+```
+
+```{r, cache=TRUE}
+
+rand(graph.numnodes.lmer.int.3)
+
+# result shows that random effects of participant are significant (p<2e-16)
+
+anova(graph.numnodes.lmer.int.3)
+
+# SmartPhone significant, < 0.01
+
+#ranef(graph.avgdeg.lmer.SP)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+(r2nsj = r2beta(graph.numnodes.lmer.int.3, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numnodes) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Nodes task,\ngraphics conditions")
+
+
+```
+
+```{r}
+
+plot(graph.numnodes.lmer.int.3)
+
+plot(graph.numnodes.lmer.int.3, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(graph.numnodes.lmer.int.3, resid(.) ~ fitted(.) | Condition, abline = 0)
+
+plot(graph.numnodes.lmer.int.3, resid(., scaled=TRUE) ~ fitted(.) | Condition, abline = 0)
+
+plot(graph.numnodes.lmer.int.3, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+graph.numnodes.lmer.int.3.f <- fortify(graph.numnodes.lmer.int.3)
+
+ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(graph.numnodes.lmer.int.3.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+#scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of Nodes task,\ngraphics conditions")
+
+
+```
+
+```{r, eval=FALSE}
+
+# TO DO: check out interpretation for these plots??
+
+library(lattice)
+
+prof <-  profile(graph.numnodes.lmer.int.3, optimizer="Nelder_Mead", which="beta_")
+
+prof.CI <- confint(prof)
+
+#CI2 <- confint(graph.numnodes.lmer.int.3, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+
+#### Least Squares Means
+
+Do for each categorical predictor and interaction. 
+Final model: LogError ~ Condition + Dataset + QuestionOrderSc + UnderestDummy +  
+    Demo.acfieldGrouped + Condition:Dataset + Condition:UnderestDummy + (1 | Demo.ResponseID)
+
+##### Condition
+
+###### lsmeans
+
+```{r}
+
+# trying lmerTest::lsmeansLT
+
+# note = lmerTest::lsmeans will only report lsmeans for factor variables and is deprecated
+
+#graph.numnodes.lsmlt.cond <- lsmeansLT(graph.numnodes.lmer.int.3, test.effs = "Condition")
+#Error in eval(predvars, data, env) : object 'QuestionOrderSc' not found
+
+graph.numnodes.lsmlt.cond <- lsmeansLT(graph.numnodes.lmer.int.5, test.effs = "Condition")
+
+# model 3 not working, some problem with QuestionOrderSc
+
+plot(graph.numnodes.lmer.int.5) 
+
+graph.numnodes.lsmlt.cond.df <- dplyr::as_data_frame(graph.numnodes.lsmlt.cond$lsmeans.table)
+
+graph.numnodes.lsmlt.cond.df
+
+graph.numnodes.lsmlt.cond.df$Condition <- factor(graph.numnodes.lsmlt.cond.df$Condition, levels=graph.numnodes.lsmlt.cond.df %>% arrange(desc(Estimate)) %>% dplyr::select(Condition) %>% unlist())
+
+graph.numnodes.lsmlt.cond.df %>% arrange(desc(Estimate))
+
+graph.numnodes.lsmlt.cond.df <- graph.numnodes.lsmlt.cond.df %>% 
+  mutate(sig.levels = factor(case_when(
+    `p-value` < .0001 ~ sig.level.names[1],
+    `p-value` < .001 ~ sig.level.names[2],
+    `p-value` < .01 ~ sig.level.names[3],
+    `p-value` < .05 ~ sig.level.names[4],
+    TRUE ~ sig.level.names[5]
+    )
+  ,levels=sig.level.names,ordered=TRUE))
+
+graph.numnodes.lsmlt.cond.df
+
+ggplot(graph.numnodes.lsmlt.cond.df) +
+  geom_errorbar(aes(x=Condition,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
+  geom_point(aes(x=Condition,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+# LSMeans Difference data
+
+#graph.numnodes.difflsmlt.cond <- difflsmeans(graph.numnodes.lmer.int.3, test.effs = "Condition")
+#Error in eval(predvars, data, env) : object 'QuestionOrderSc' not found
+graph.numnodes.difflsmlt.cond <- difflsmeans(graph.numnodes.lmer.int.5, test.effs = "Condition")
+
+plot(graph.numnodes.difflsmlt.cond)
+
+graph.numnodes.difflsmlt.cond.df <- dplyr::as_data_frame(graph.numnodes.difflsmlt.cond$diffs.lsmeans.table, rownames="Pair")
+
+graph.numnodes.difflsmlt.cond.df <- graph.numnodes.difflsmlt.cond.df %>% mutate(Pair=sub("Condition ","",Pair)) %>% separate(Pair, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.difflsmlt.cond.df$sig.levels <- 
+  case_when(graph.numnodes.difflsmlt.cond.df$`p-value` < .0001 ~ sig.level.names[1],
+            graph.numnodes.difflsmlt.cond.df$`p-value` < .001 ~ sig.level.names[2],
+            graph.numnodes.difflsmlt.cond.df$`p-value` < .01 ~ sig.level.names[3],
+            graph.numnodes.difflsmlt.cond.df$`p-value` < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.difflsmlt.cond.df$sig.levels <- factor(graph.numnodes.difflsmlt.cond.df$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+graph.numnodes.difflsmlt.cond.df$Pair <- factor(graph.numnodes.difflsmlt.cond.df$Pair, levels=graph.numnodes.difflsmlt.cond.df %>% arrange(desc(Estimate)) %>% dplyr::select(Pair) %>% distinct() %>% unlist())
+
+#graph.numnodes.difflsmlt.cond.df %>% arrange(desc(Estimate))
+graph.numnodes.difflsmlt.cond.df %>% arrange(Estimate)
+
+ggplot(graph.numnodes.difflsmlt.cond.df) +
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_point(aes(x=Pair,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.difflsmlt.cond.df) +
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_point(aes(x=Pair,y=Estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+
+
+
+copy <- graph.numnodes.difflsmlt.cond.df %>% rename(From=To,To=From) %>% 
+  mutate(Estimate=-Estimate,
+         `t-value`=-`t-value`,
+         `Lower CI`=-`Lower CI`,
+         `Upper CI`=-`Upper CI`)
+
+graph.numnodes.difflsmlt.cond.df.full <- bind_rows(graph.numnodes.difflsmlt.cond.df,copy)
+
+cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.numnodes.difflsmlt.cond.df.full$From <- factor(graph.numnodes.difflsmlt.cond.df.full$From, levels=cond.lev)
+graph.numnodes.difflsmlt.cond.df.full$To <- factor(graph.numnodes.difflsmlt.cond.df.full$To, levels=cond.lev)
+
+
+ggplot(graph.numnodes.difflsmlt.cond.df.full) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.difflsmlt.cond.df.full) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(Estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+  
+```
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numnodes.emm.cond
+
+graph.numnodes.emm.cond.df <- dplyr::as_data_frame(graph.numnodes.emm.cond)
+
+graph.numnodes.emm.cond.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+full.cld <- cld(graph.numnodes.emm.cond,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+graph.numnodes.emm.cond.cld <- full.cld$emmeans
+
+graph.numnodes.emm.cond.cld %>% dplyr::select(Condition,.group)
+
+graph.numnodes.emm.cond.cld
+
+graph.numnodes.emm.cond.cld$Condition <- factor(graph.numnodes.emm.cond.cld$Condition, levels=graph.numnodes.emm.cond.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(graph.numnodes.emm.cond, ~Condition, CIs = TRUE)
+plot(graph.numnodes.emm.cond)
+#plot(graph.numnodes.emm.cond, comparisons = TRUE)
+
+graph.numnodes.emm.cond.cld %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.cond.cld) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.cond.cld) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Number of Nodes task,\ngraphics conditions")
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+
+```
+
+```{r}
+
+graph.numnodes.emm.cond.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.cond)) 
+graph.numnodes.emm.cond.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numnodes.emm.cond))
+
+graph.numnodes.emm.cond.pairs <- full_join(graph.numnodes.emm.cond.pairs, pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.cond))
+plot(pairs(graph.numnodes.emm.cond), comparisons = TRUE)
+
+graph.numnodes.emm.cond.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.cond.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.cond.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.cond.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.cond.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.cond.pairs$sig.levels <- factor(graph.numnodes.emm.cond.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numnodes.emm.cond.pairs$contrast <- factor(graph.numnodes.emm.cond.pairs$contrast, levels=graph.numnodes.emm.cond.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numnodes.emm.cond.pairs <- graph.numnodes.emm.cond.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.emm.cond.pairs %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+
+```{r}
+
+copy <- graph.numnodes.emm.cond.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.cond.pairs.compl <- bind_rows(graph.numnodes.emm.cond.pairs,copy)
+
+
+cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.numnodes.emm.cond.pairs.compl$From <- factor(graph.numnodes.emm.cond.pairs.compl$From, levels=cond.lev)
+graph.numnodes.emm.cond.pairs.compl$To <- factor(graph.numnodes.emm.cond.pairs.compl$To, levels=cond.lev)
+
+#graph.numnodes.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.cond.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(graph.numnodes.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+
+
+```
+
+###### Networks
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.numnodes.emm.cond.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*50
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.numnodes.emm.cond.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+##### Dataset
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+graph.numnodes.emm.data <- emmeans(graph.numnodes.lmer.int.3, "Dataset", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numnodes.emm.data
+
+graph.numnodes.emm.data.df <- dplyr::as_data_frame(graph.numnodes.emm.data)
+
+graph.numnodes.emm.data.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numnodes.emm.data)
+
+graph.numnodes.emm.data.cld <- cld(graph.numnodes.emm.data,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+graph.numnodes.emm.data.cld.df <- graph.numnodes.emm.data.cld$emmeans
+
+graph.numnodes.emm.data.cld.df %>% dplyr::select(Dataset,.group)
+
+graph.numnodes.emm.data.cld.df
+
+graph.numnodes.emm.data.cld.df$Dataset <- factor(graph.numnodes.emm.data.cld.df$Dataset, levels=graph.numnodes.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Dataset, CIs = TRUE)
+emmip(graph.numnodes.emm.data, ~Dataset, CIs = TRUE)
+plot(graph.numnodes.emm.data)
+#plot(graph.numnodes.emm.data, comparisons = TRUE)
+
+graph.numnodes.emm.data.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.data.cld.df) +
+  #geom_point(aes(x=Dataset,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Nodes task,\ngraphics conditions")
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
+# try to figure this out? maybe only works on the interaction?
+
+```
+
+```{r}
+
+graph.numnodes.emm.data.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.data)) 
+graph.numnodes.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+data.pairs.CI <- confint(pairs(graph.numnodes.emm.data))
+
+graph.numnodes.emm.data.pairs <- full_join(graph.numnodes.emm.data.pairs, data.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.data))
+plot(pairs(graph.numnodes.emm.data), comparisons = TRUE)
+
+graph.numnodes.emm.data.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.data.pairs$sig.levels <- factor(graph.numnodes.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numnodes.emm.data.pairs$contrast <- factor(graph.numnodes.emm.data.pairs$contrast, levels=graph.numnodes.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numnodes.emm.data.pairs <- graph.numnodes.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.emm.data.pairs %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+
+```{r}
+
+data.copy <- graph.numnodes.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.data.pairs.compl <- bind_rows(graph.numnodes.emm.data.pairs,data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.cond.pairs.compl$From <- factor(graph.numnodes.emm.cond.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.cond.pairs.compl$To <- factor(graph.numnodes.emm.cond.pairs.compl$To, levels=cond.lev)
+
+graph.numnodes.emm.data.pairs.compl$From <- factor(graph.numnodes.emm.data.pairs.compl$From, levels=c(9,8,7,5,3,1))
+
+#graph.numnodes.emm.data.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(graph.numnodes.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+
+
+```
+
+##### QuestionOrderSc
+
+This is continuous; just plot against the estimate?
+
+```{r}
+
+#graph.numnodes.lmer.int.3.f <- fortify(graph.numnodes.lmer.int.3)
+
+#graph.numnodes.lmer.int.3.f %>% View()
+
+ggplot(graph.numnodes.lmer.int.3.f, aes(.fitted,QuestionOrder)) + 
+  geom_bin2d()
+
+ggplot(temp.numnodes) + geom_point(aes(QuestionOrderSc, LogError))
+
+ggplot(temp.numnodes) + geom_point(aes(QuestionOrderSc, LogError)) + geom_smooth(aes(QuestionOrderSc, LogError),method="lm") + labs(title="Overall Question Order (scaled) vs. LogError for\nNumber of Nodes task, graphics conditions", x="Overall Question Order (scaled)")
+
+```
+
+##### UnderestDummy
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+graph.numnodes.emm.underest <- emmeans(graph.numnodes.lmer.int.3, "UnderestDummy", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numnodes.emm.underest
+
+graph.numnodes.emm.underest.df <- dplyr::as_data_frame(graph.numnodes.emm.underest)
+
+graph.numnodes.emm.underest.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numnodes.emm.data)
+
+graph.numnodes.emm.underest.cld <- cld(graph.numnodes.emm.underest,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+graph.numnodes.emm.underest.cld.df <- graph.numnodes.emm.underest.cld$emmeans
+
+graph.numnodes.emm.underest.cld.df %>% dplyr::select(UnderestDummy,.group)
+
+graph.numnodes.emm.underest.cld.df
+
+graph.numnodes.emm.underest.cld.df$UnderestDummy <- factor(graph.numnodes.emm.underest.cld.df$UnderestDummy, levels=graph.numnodes.emm.underest.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(UnderestDummy) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~UnderestDummy, CIs = TRUE)
+emmip(graph.numnodes.emm.underest, ~UnderestDummy, CIs = TRUE)
+plot(graph.numnodes.emm.underest)
+#plot(graph.numnodes.emm.underest, comparisons = TRUE)
+
+graph.numnodes.emm.underest.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.underest.cld.df) +
+  #geom_point(aes(x=UnderestDummy,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=UnderestDummy,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=UnderestDummy,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.underest.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=UnderestDummy,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=UnderestDummy,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Underestimated","Correct or\nOverestimated")) + 
+labs(title="Estimated Marginal Means for Underestimated for Number of Nodes task,\ngraphics conditions",
+     x="Underestimated") +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
+# try to figure this out? maybe only works on the interaction?
+
+```
+
+```{r}
+
+graph.numnodes.emm.underest.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.underest)) 
+graph.numnodes.emm.underest.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+underest.pairs.CI <- confint(pairs(graph.numnodes.emm.underest))
+
+graph.numnodes.emm.underest.pairs <- full_join(graph.numnodes.emm.underest.pairs, underest.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.underest))
+plot(pairs(graph.numnodes.emm.underest), comparisons = TRUE)
+
+graph.numnodes.emm.underest.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.underest.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.underest.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.underest.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.underest.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.underest.pairs$sig.levels <- factor(graph.numnodes.emm.underest.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numnodes.emm.underest.pairs$contrast <- factor(graph.numnodes.emm.underest.pairs$contrast, levels=graph.numnodes.emm.underest.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numnodes.emm.underest.pairs <- graph.numnodes.emm.underest.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.emm.underest.pairs %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.underest.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.underest.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+
+```{r}
+
+underest.copy <- graph.numnodes.emm.underest.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.underest.pairs.compl <- bind_rows(graph.numnodes.emm.underest.pairs, underest.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.cond.pairs.compl$From <- factor(graph.numnodes.emm.cond.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.cond.pairs.compl$To <- factor(graph.numnodes.emm.cond.pairs.compl$To, levels=cond.lev)
+
+#graph.numnodes.emm.data.pairs.compl$From <- factor(graph.numnodes.emm.data.pairs.compl$From, levels=c(9,8,7,5,3,1))
+
+#graph.numnodes.emm.underest.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.underest.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.underest.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.underest.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.underest.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(graph.numnodes.emm.underest.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+
+
+```
+
+##### Demo.acfieldGrouped
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+graph.numnodes.emm.acfieldgr <- emmeans(graph.numnodes.lmer.int.3, "Demo.acfieldGrouped", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numnodes.emm.acfieldgr
+
+graph.numnodes.emm.acfieldgr.df <- dplyr::as_data_frame(graph.numnodes.emm.acfieldgr)
+
+graph.numnodes.emm.acfieldgr.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numnodes.emm.data)
+
+graph.numnodes.emm.acfieldgr.cld <- cld(graph.numnodes.emm.acfieldgr,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+graph.numnodes.emm.acfieldgr.cld.df <- graph.numnodes.emm.acfieldgr.cld$emmeans
+
+graph.numnodes.emm.acfieldgr.cld.df %>% dplyr::select(Demo.acfieldGrouped,.group)
+
+graph.numnodes.emm.acfieldgr.cld.df
+
+graph.numnodes.emm.acfieldgr.cld.df$Demo.acfieldGrouped <- 
+  factor(graph.numnodes.emm.acfieldgr.cld.df$Demo.acfieldGrouped, 
+         levels=graph.numnodes.emm.acfieldgr.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Demo.acfieldGrouped) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Demo.acfieldGrouped, CIs = TRUE)
+emmip(graph.numnodes.emm.acfieldgr, ~Demo.acfieldGrouped, CIs = TRUE)
+plot(graph.numnodes.emm.acfieldgr)
+#plot(graph.numnodes.emm.acfieldgr, comparisons = TRUE)
+
+graph.numnodes.emm.acfieldgr.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.acfieldgr.cld.df) +
+  #geom_point(aes(x=Demo.acfieldGrouped,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.acfieldgr.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Demo.acfieldGrouped,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Demo.acfieldGrouped,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Academic Field for Number of Nodes task,\ngraphics conditions",x="Academic Field")
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Dataset") 
+# try to figure this out? maybe only works on the interaction?
+
+```
+
+```{r}
+
+graph.numnodes.emm.acfieldgr.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.acfieldgr)) 
+graph.numnodes.emm.acfieldgr.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+underest.pairs.CI <- confint(pairs(graph.numnodes.emm.acfieldgr))
+
+graph.numnodes.emm.acfieldgr.pairs <- full_join(graph.numnodes.emm.acfieldgr.pairs, underest.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.acfieldgr))
+plot(pairs(graph.numnodes.emm.acfieldgr), comparisons = TRUE)
+
+graph.numnodes.emm.acfieldgr.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.acfieldgr.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.acfieldgr.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.acfieldgr.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.acfieldgr.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.acfieldgr.pairs$sig.levels <- factor(graph.numnodes.emm.acfieldgr.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numnodes.emm.acfieldgr.pairs$contrast <- 
+  factor(graph.numnodes.emm.acfieldgr.pairs$contrast, 
+         levels=graph.numnodes.emm.acfieldgr.pairs %>% 
+           arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+#graph.numnodes.emm.acfieldgr.pairs <- graph.numnodes.emm.acfieldgr.pairs %>% separate(contrast, c("From", "del", "To"), sep="[-]", remove=FALSE) %>% dplyr::select(-del)
+graph.numnodes.emm.acfieldgr.pairs <- graph.numnodes.emm.acfieldgr.pairs %>% separate(contrast, c("From", "To"), sep="[-]", remove=FALSE) %>% mutate(From=str_trim(From),To=str_trim(To))
+
+graph.numnodes.emm.acfieldgr.pairs %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+
+```{r}
+
+underest.copy <- graph.numnodes.emm.acfieldgr.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.acfieldgr.pairs.compl <- bind_rows(graph.numnodes.emm.acfieldgr.pairs,underest.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.cond.pairs.compl$From <- factor(graph.numnodes.emm.cond.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.cond.pairs.compl$To <- factor(graph.numnodes.emm.cond.pairs.compl$To, levels=cond.lev)
+
+graph.numnodes.emm.acfieldgr.pairs.compl$From <- factor(graph.numnodes.emm.acfieldgr.pairs.compl$From, levels=rev(unique(graph.numnodes.emm.acfieldgr.pairs.compl$From)))
+
+#graph.numnodes.emm.acfieldgr.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.acfieldgr.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numnodes.emm.acfieldgr.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Condition:Dataset
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
+graph.numnodes.emm.conddata <- emmeans(graph.numnodes.lmer.int.3, ~ Dataset | Condition, nesting = NULL)
+graph.numnodes.emm.conddata.2 <- emmeans(graph.numnodes.lmer.int.3, ~ Condition | Dataset, nesting = NULL)
+
+graph.numnodes.emm.conddata
+
+#graph.numnodes.diffemm.conddata <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#graph.numnodes.diffemm.conddata
+
+graph.numnodes.diffemm.conddata.df <- dplyr::as_data_frame(graph.numnodes.emm.conddata)
+
+#graph.numnodes.diffemm.conddata.df %>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numnodes.emm.conddata.cld <- cld(graph.numnodes.emm.conddata,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+
+graph.numnodes.emm.conddata.cld[["emmeans"]]
+
+
+graph.numnodes.emm.conddata.cld.df <- graph.numnodes.emm.conddata.cld[["emmeans"]]
+
+graph.numnodes.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
+cld(graph.numnodes.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(graph.numnodes.emm.conddata, ~Condition|Dataset, CIs = TRUE)
+plot(graph.numnodes.emm.conddata)
+#plot(graph.numnodes.emm.conddata, comparisons = TRUE)
+
+graph.numnodes.emm.conddata.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Dataset) + 
+  coord_flip()
+
+ggplot(graph.numnodes.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nNumber of Nodes task, graphics conditions")
+
+
+```
+
+```{r}
+
+graph.numnodes.emm.conddata.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.conddata)) 
+#graph.numnodes.emm.conddata.pairs %>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+conddata.pairs.CI <- confint(pairs(graph.numnodes.emm.conddata))
+
+graph.numnodes.emm.conddata.pairs <- full_join(graph.numnodes.emm.conddata.pairs, conddata.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.conddata))
+plot(pairs(graph.numnodes.emm.conddata), comparisons = TRUE)
+
+graph.numnodes.emm.conddata.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.conddata.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.conddata.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.conddata.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.conddata.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.conddata.pairs$sig.levels <- factor(graph.numnodes.emm.conddata.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+graph.numnodes.emm.conddata.pairs$contrast.cond <- paste0(graph.numnodes.emm.conddata.pairs$contrast,graph.numnodes.emm.conddata.pairs$Condition)
+
+graph.numnodes.emm.conddata.pairs$contrast.cond <- factor(graph.numnodes.emm.conddata.pairs$contrast.cond, levels=graph.numnodes.emm.conddata.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.cond) %>% distinct() %>% unlist())
+
+#graph.numnodes.emm.conddata.pairs %>% View()
+
+graph.numnodes.emm.conddata.pairs$contrast <- 
+  factor(as.character(graph.numnodes.emm.conddata.pairs$contrast), 
+         levels=graph.numnodes.emm.conddata.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+graph.numnodes.emm.conddata.pairs <- graph.numnodes.emm.conddata.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.emm.conddata.pairs %>% arrange(estimate)
+#graph.numnodes.emm.conddata.pairs %>% View()
+
+ggplot(graph.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+
+ggplot(graph.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+
+```
+
+
+```{r}
+
+copy <- graph.numnodes.emm.conddata.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.conddata.pairs.compl <- bind_rows(graph.numnodes.emm.conddata.pairs,copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=c(9,8,7,5,3,1))
+
+
+#graph.numnodes.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.conddata.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(graph.numnodes.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(graph.numnodes.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(graph.numnodes.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+
+```
+
+
+
+##### Condition:UnderestDummy
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
+graph.numnodes.emm.condunder <- emmeans(graph.numnodes.lmer.int.3, ~ Condition | UnderestDummy, nesting = NULL)
+
+graph.numnodes.emm.condunder
+
+#graph.numnodes.diffemm.dataunder <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Dataset | Underestimated, nesting = NULL)
+
+#graph.numnodes.diffemm.dataunder
+
+graph.numnodes.emm.condunder.df <- dplyr::as_data_frame(graph.numnodes.emm.condunder)
+
+graph.numnodes.emm.condunder.df
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numnodes.emm.condunder.cld <- cld(graph.numnodes.emm.condunder,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+
+graph.numnodes.emm.condunder.cld[["emmeans"]]
+
+
+graph.numnodes.emm.condunder.cld.df <- graph.numnodes.emm.condunder.cld[["emmeans"]]
+
+graph.numnodes.emm.condunder.cld.df %>% dplyr::select(Condition,UnderestDummy,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#graph.numnodes.emm.dataunder.cld.df$Underestimated <- factor(graph.numnodes.emm.dataunder.cld.df$Underestimated, levels=graph.numnodes.emm.dataunder.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Underestimated) %>% unlist())
+
+#graph.numnodes.emm.condunder.cld.df$Condition <- factor(graph.numnodes.emm.condunder.cld.df$Condition, levels=graph.numnodes.emm.condunder.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Dataset, CIs = TRUE)
+emmip(graph.numnodes.emm.condunder, ~Condition|UnderestDummy, CIs = TRUE)
+plot(graph.numnodes.emm.condunder)
+#plot(graph.numnodes.emm.condunder, comparisons = TRUE)
+
+graph.numnodes.emm.condunder.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numnodes.emm.condunder.cld.df) +
+  #geom_point(aes(x=Underestimated,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~UnderestDummy) + 
+  coord_flip()
+
+ggplot(graph.numnodes.emm.condunder.cld.df) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL, color=UnderestDummy), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Condition,y=emmean, color=UnderestDummy), position=position_dodge(width=0.2)) +
+  #geom_line(aes(x=Condition,y=emmean, color=UnderestDummy, group=UnderestDummy), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  scale_color_discrete(labels=c("Underestimated","Correct or\nOverestimated"), name="Underestimated") +
+  labs(title="Estimated Marginal Means for Condition vs. Underestimated for\nNumber of Nodes task, graphics conditions")
+
+```
+
+```{r}
+
+graph.numnodes.emm.condunder.pairs <- dplyr::as_data_frame(pairs(graph.numnodes.emm.condunder)) 
+#graph.numnodes.emm.condunder.pairs %>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+condunder.pairs.CI <- confint(pairs(graph.numnodes.emm.condunder))
+
+graph.numnodes.emm.condunder.pairs <- full_join(graph.numnodes.emm.condunder.pairs, condunder.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numnodes.emm.condunder))
+plot(pairs(graph.numnodes.emm.condunder), comparisons = TRUE)
+
+graph.numnodes.emm.condunder.pairs$sig.levels <- 
+  case_when(graph.numnodes.emm.condunder.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numnodes.emm.condunder.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numnodes.emm.condunder.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numnodes.emm.condunder.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numnodes.emm.condunder.pairs$sig.levels <- factor(graph.numnodes.emm.condunder.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+graph.numnodes.emm.condunder.pairs$contrast.all <- paste0(graph.numnodes.emm.condunder.pairs$contrast,graph.numnodes.emm.condunder.pairs$UnderestDummy)
+
+graph.numnodes.emm.condunder.pairs$contrast.all <- factor(graph.numnodes.emm.condunder.pairs$contrast.all, levels=graph.numnodes.emm.condunder.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.all) %>% distinct() %>% unlist())
+
+#graph.numnodes.emm.conddata.pairs %>% View()
+
+graph.numnodes.emm.condunder.pairs$contrast <- 
+  factor(as.character(graph.numnodes.emm.condunder.pairs$contrast), 
+         levels=graph.numnodes.emm.condunder.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+graph.numnodes.emm.condunder.pairs <- graph.numnodes.emm.condunder.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numnodes.emm.condunder.pairs %>% arrange(estimate)
+#graph.numnodes.emm.condunder.pairs %>% View()
+
+ggplot(graph.numnodes.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~UnderestDummy, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~UnderestDummy, scales="free_y") +
+  coord_flip()
+
+
+ggplot(graph.numnodes.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~UnderestDummy, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numnodes.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~UnderestDummy, scales="free_y") +
+  coord_flip()
+
+
+```
+
+
+```{r}
+
+condunder.copy <- graph.numnodes.emm.condunder.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numnodes.emm.condunder.pairs.compl <- bind_rows(graph.numnodes.emm.condunder.pairs,condunder.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.numnodes.emm.condunder.pairs.compl$From <- factor(graph.numnodes.emm.condunder.pairs.compl$From, levels=rev(cond.lev))
+graph.numnodes.emm.condunder.pairs.compl$To <- factor(graph.numnodes.emm.condunder.pairs.compl$To, levels=cond.lev)
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=c(9,8,7,5,3,1))
+
+
+#graph.numnodes.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+graph.numnodes.emm.condunder.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numnodes.emm.condunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~UnderestDummy)
+
+ggplot(graph.numnodes.emm.condunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~UnderestDummy)
+
+ggplot(graph.numnodes.emm.condunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~UnderestDummy)
+
+ggplot(graph.numnodes.emm.condunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~UnderestDummy)
+
+
+```
+
+
+
+
+

@@ -1,0 +1,1985 @@
+---
+title: "Analysis for Number of Clusters task, Graphics conditions"
+author: "Angela Zoss"
+date: "March 23, 2018"
+output: github_document
+---
+
+#### lme4
+
+```{r, cache=TRUE}
+
+# Individual fixed effects
+
+graph.numclust.lmer.cond <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.cond) # Color significantly different from Control
+
+anova(graph.numclust.lmer.cond)
+
+# Condition is significant (p=5.234e-07)
+
+graph.numclust.lmer.phr <- lmer(LogError ~ ConditionPhrasing + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.phr)
+
+anova(graph.numclust.lmer.phr)
+
+# ConditionPhrasing is significant (p=0.003226)
+
+graph.numclust.lmer.gr <- lmer(LogError ~ ConditionGraphics + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.gr)
+
+anova(graph.numclust.lmer.gr)
+
+# ConditionGraphics is significant (p=1.653e-07)
+
+graph.numclust.lmer.col <- lmer(LogError ~ ConditionColor + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.col)
+
+anova(graph.numclust.lmer.col)
+
+# ConditionColor is significant (p=2.897e-08)
+
+graph.numclust.lmer <- lmer(LogError ~ Ctrl_dummy + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Ctrl_dummy not significant; trying Dataset
+
+graph.numclust.lmer.dataset <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = graphics_numclust, REML = T)
+
+lmsum <- summary(graph.numclust.lmer.dataset)
+lmsum
+#names(lmsum)
+
+anova(graph.numclust.lmer.dataset)
+
+# Dataset is significant (p < 2.2e-16); trying QuestionOrder
+
+graph.numclust.lmer <- lmer(LogError ~ QuestionOrder + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# QuestionOrder is not significant; trying DatasetOrder
+
+graph.numclust.lmer <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# DatasetOrder is barely not significant (p=0.0684); trying DatasetDuration
+
+graph.numclust.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# DatasetDuration is not significant; trying DatasetStartTime
+
+graph.numclust.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+graph.numclust.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+graph.numclust.lmer.correct <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.correct)
+
+anova(graph.numclust.lmer.correct)
+
+# CorrectAnswer is highly significant (p = 5.251e-07); trying Underestimated
+
+graph.numclust.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.underest)
+
+anova(graph.numclust.lmer.underest)
+
+# Underestimated is highly significant (p < 2.2e-16)
+
+graph.numclust.lmer.overest <- lmer(LogError ~ Overestimated + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.overest)
+
+anova(graph.numclust.lmer.overest)
+
+# Underestimated is highly significant (p < 2.2e-16)
+
+graph.numclust.lmer <- lmer(LogError ~ ClustConf + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# ClustConf is not significant
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.dataset_count is not significant; trying Stats.OperatingSystem
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+# Various significant categories:
+# *: Android 6.0.1, CrOS x86_64 9592.96.0, Linux x86_64, Ubuntu, Windows NT 10.0
+#    Windows NT 5.1, Windows NT 6.0, Windows NT 6.1
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystem is not quite significant; trying Stats.OperatingSystemCombined
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer) # no significant categories
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemCombined is not significant; trying Stats.OperatingSystemCombined2
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined2 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemCombined2 is not significant; trying Stats.OperatingSystemCombined3
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined3 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer) # Windows almost significantly different from Macintosh (0.0888)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemCombined3 is not significant; trying Stats.OperatingSystemCombined4
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined4 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemCombined4 is not significant; trying Stats.OperatingSystemCombined5
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemCombined5 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemCombined5 is not significant; trying Stats.OperatingSystemWindows
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemWindows + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemWindows is not significant; trying Stats.OperatingSystemMacintosh
+
+graph.numclust.lmer <- lmer(LogError ~ Stats.OperatingSystemMacintosh + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Stats.OperatingSystemMacintosh is not significant
+
+graph.numclust.lmer.OShighsig <- lmer(LogError ~ Stats.OperatingSystemNumClust + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.OShighsig)
+
+anova(graph.numclust.lmer.OShighsig)
+
+# Stats.OperatingSystemNumClust is significant (p=0.0002445); trying StatsNumPixels
+
+graph.numclust.lmer.pixels <- lmer(LogError ~ StatsNumPixels + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.pixels)
+
+anova(graph.numclust.lmer.pixels)
+
+# StatsNumPixels is significant (p=0.02508); trying Demo.age
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.age is not significant; trying Demo.gender
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.gender is not significant; trying Demo.lang
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.lang is not significant; trying Demo.educ
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.educ is not significant; trying Demo.acfield
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(graph.numclust.lmer) # no significant categories
+
+anova(graph.numclust.lmer)
+
+# Demo.acfield is not significant; trying Demo.acfieldGrouped
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.acfieldGrouped + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.acfieldGrouped))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.acfieldGrouped is not significant; trying Demo.dailytech_Computer
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.dailytech_Computer is not quite significant (p=0.0655); trying Demo.dailytech_Tablet
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.dailytech_Tablet is not significant; trying Demo.dailytech_SmartPhone
+
+graph.numclust.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(graph.numclust.lmer.SP)
+
+anova(graph.numclust.lmer.SP)
+
+# Demo.dailytech_SmartPhone is significant (p=0.01925); trying Demo.weeklygaming
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.weeklygaming is not significant; trying Demo.expdataanal
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.expdataanal is not significant; trying Demo.expdatavis
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.expdatavis is not significant; trying Demo.expreadnetvis
+
+graph.numclust.lmer.ERNV <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(graph.numclust.lmer.ERNV) # several levels significant
+
+anova(graph.numclust.lmer.ERNV)
+
+# Demo.expreadnetvis is significant (p=0.000261); trying Demo.expreadnetvis.alot
+
+graph.numclust.lmer.ERNVAL <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(graph.numclust.lmer.ERNVAL)
+
+anova(graph.numclust.lmer.ERNVAL)
+
+# Demo.expreadnetvis.alot is significant (p=4.177e-06)
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.expreadnetvis.none + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expreadnetvis.none))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.expreadnetvis.none is not significant
+
+graph.numclust.lmer <- lmer(LogError ~ Demo.expreadnetvis.three + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expreadnetvis.three))), REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# Demo.expreadnetvis.three is not significant
+
+graph.numclust.lmer.ECNV <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(graph.numclust.lmer.ECNV) # a couple significant differences
+
+anova(graph.numclust.lmer.ECNV)
+
+# Demo.expcreatenetvis is marginally significant (p=0.02167); trying Demo.expcreatenetvis.alot
+
+graph.numclust.lmer.ECNVAL <- lmer(LogError ~ Demo.expcreatenetvis.alot + (1|Demo.ResponseID), data=graphics_numclust %>% filter(!(is.na(Demo.expcreatenetvis.alot))), REML = T)
+
+summary(graph.numclust.lmer.ECNVAL)
+
+anova(graph.numclust.lmer.ECNVAL)
+
+# Demo.expcreatenetvis.alot is significant (p=0.002181); trying AvgDeg
+
+graph.numclust.lmer.avgdeg <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.avgdeg)
+
+anova(graph.numclust.lmer.avgdeg)
+
+# AvgDeg is significant (p=2.351e-10); trying Density
+
+graph.numclust.lmer.dens <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.dens)
+
+anova(graph.numclust.lmer.dens)
+
+# Density is significant (p=7.012e-08); trying LargeClust1
+
+graph.numclust.lmer.lgclust <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.lgclust)
+
+anova(graph.numclust.lmer.lgclust)
+
+# LargeClust1 is significant (p=6.648e-09); trying Modularity
+
+graph.numclust.lmer.mod <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.mod)
+
+anova(graph.numclust.lmer.mod)
+
+# Modularity is significant (p=6.408e-05); trying NumClust
+
+graph.numclust.lmer.numclust <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.numclust)
+
+anova(graph.numclust.lmer.numclust)
+
+# NumClust is significant (p=5.251e-07); trying NumHighDegree
+
+graph.numclust.lmer <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# NumHighDegree is not significant; trying NumLinks
+
+graph.numclust.lmer <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# NumLinks is not quite significant; trying NumNodes
+
+graph.numclust.lmer.numnodes <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer.numnodes)
+
+anova(graph.numclust.lmer.numnodes)
+
+# NumNodes is significant (p=0.0009575); trying NumNodesClust1
+
+graph.numclust.lmer <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=graphics_numclust, REML = T)
+
+summary(graph.numclust.lmer)
+
+anova(graph.numclust.lmer)
+
+# NumNodesClust1 is not significant 
+
+
+```
+
+```{r}
+
+# combining individual predictors
+
+temp <- graphics_numclust %>% dplyr::select(Demo.ResponseID, LogError, Condition, ConditionPhrasing, ConditionGraphics, ConditionColor, Dataset, CorrectAnswer, Underestimated, Overestimated, Stats.OperatingSystemNumClust, StatsNumPixels, Demo.dailytech_SmartPhone, Demo.expreadnetvis, Demo.expreadnetvis.alot, Demo.expcreatenetvis, Demo.expcreatenetvis.alot, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumNodes) %>% drop_na()
+
+#temp <- temp%>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+graph.numclust.lmer.full <- lmer(LogError ~ ConditionColor + Dataset + 
+                                   Overestimated + 
+                                   Stats.OperatingSystemNumClust + 
+                                   Demo.dailytech_SmartPhone +
+                                   Demo.expreadnetvis +
+                                   (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full)
+
+anova(graph.numclust.lmer.full)
+
+```
+
+```{r}
+
+# adding interactions
+
+graph.numclust.lmer.full.int <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int)
+
+anova(graph.numclust.lmer.full.int)
+
+
+
+
+graph.numclust.lmer.full.int.2 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       #Dataset:Overestimated + 
+                                        Dataset:Demo.expreadnetvis + 
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+# Note: Dataset5CorrectUnder is diff from Dataset1CorrectUnder?
+
+summary(graph.numclust.lmer.full.int.2)
+
+anova(graph.numclust.lmer.full.int.2)
+
+anova(graph.numclust.lmer.full.int.2,graph.numclust.lmer.full.int)
+
+# keep int.2
+
+graph.numclust.lmer.full.int.3 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       Dataset:Overestimated + 
+                                        Dataset:Demo.expreadnetvis + 
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int.3)
+
+anova(graph.numclust.lmer.full.int.3)
+
+anova(graph.numclust.lmer.full.int.2,graph.numclust.lmer.full.int.3)
+
+# barely significant, but can keep int.3
+
+graph.numclust.lmer.full.int.4 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       Overestimated:Stats.OperatingSystemNumClust + 
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int.4)
+
+anova(graph.numclust.lmer.full.int.4)
+
+anova(graph.numclust.lmer.full.int.3,graph.numclust.lmer.full.int.4)
+
+# keep int.3
+
+graph.numclust.lmer.full.int.5 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       Overestimated:Stats.OperatingSystemNumClust + 
+                                         Overestimated:Demo.expreadnetvis +
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int.5)
+
+anova(graph.numclust.lmer.full.int.5)
+
+anova(graph.numclust.lmer.full.int.3,graph.numclust.lmer.full.int.5)
+
+# keep int.5
+
+graph.numclust.lmer.full.int.6 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       Demo.expreadnetvis +
+                                       ConditionColor:Dataset +
+                                       Overestimated:Stats.OperatingSystemNumClust + 
+                                         Overestimated:Demo.expreadnetvis +
+                                         Stats.OperatingSystemNumClust:Demo.expreadnetvis +
+                                       (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int.6)
+
+anova(graph.numclust.lmer.full.int.6)
+
+anova(graph.numclust.lmer.full.int.5,graph.numclust.lmer.full.int.6)
+
+# keep int.6
+
+graph.numclust.lmer.full.int.7 <- lmer(LogError ~ ConditionColor + Dataset + 
+                                       Overestimated + 
+                                       Stats.OperatingSystemNumClust + 
+                                       ConditionColor:Dataset +
+                                       Overestimated:Stats.OperatingSystemNumClust + 
+                                      (1|Demo.ResponseID), data=temp, REML = T)
+
+summary(graph.numclust.lmer.full.int.7)
+
+anova(graph.numclust.lmer.full.int.7)
+
+anova(graph.numclust.lmer.full.int.7, graph.numclust.lmer.full.int.6)
+# 6 is better, but need to avoid Demo.expreadnetvis
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(graph.numclust.lmer.full.int.7, 
+     file = file.path(analysisDataDir,"fits/graph_numclust_lmer_int.RData"))
+
+```
+
+
+```{r, cache=TRUE}
+
+rand(graph.numclust.lmer.full.int.7)
+
+# result shows that random effects of participant are significant (p=8e-11)
+
+#ranef(graph.avgdeg.lmer.SP)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+(r2nsj = r2beta(graph.numclust.lmer.full.int.7, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(graphics_numclust) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Number of Clusters\ntask, graphics conditions")
+
+ggsave(file.path(figureDir, "logerrornumclustgraphics.pdf"), width=5, height=3)
+
+
+```
+
+```{r}
+
+plot(graph.numclust.lmer.full.int.7)
+
+plot(graph.numclust.lmer.full.int.7, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(graph.numclust.lmer.full.int.7, resid(.) ~ fitted(.) | ConditionColor, abline = 0)
+
+plot(graph.numclust.lmer.full.int.7, resid(., scaled=TRUE) ~ fitted(.) | Dataset, abline = 0)
+
+plot(graph.numclust.lmer.full.int.7, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+graph.numclust.lmer.full.int.7.f <- fortify(graph.numclust.lmer.full.int.7)
+
+ggplot(graph.numclust.lmer.full.int.7.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(graph.numclust.lmer.full.int.7.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(graph.numclust.lmer.full.int.7.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+scale_y_continuous(limits=c(0,0.3)) +
+labs(title="Real vs. Predicted LogError values for Number of\nClusters task, graphics conditions")
+
+ggsave(file.path(figureDir, "fittedpredictnumclustgraphics.pdf"), width=5, height=3)
+
+
+
+```
+
+```{r, eval=FALSE}
+
+# TO DO: check out interpretation for these plots??
+
+library(lattice)
+
+prof <-  profile(graph.numclust.lmer.full.int.6, optimizer="Nelder_Mead", which="beta_")
+
+prof.CI <- confint(prof)
+
+#CI2 <- confint(graph.avgdeg.lmer.SP, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+#### Least Squares Means
+
+Do for each categorical predictor. 
+Final model (graph.numclust.lmer.full.int.7): LogError ~ ConditionColor + Dataset + Overestimated + Stats.OperatingSystemNumClust + ConditionColor:Dataset + Overestimated:Stats.OperatingSystemNumClust + (1|Demo.ResponseID)
+
+##### ConditionColor
+
+###### lsmeans (old)
+
+```{r, eval=FALSE}
+
+# doesn't make sense for continuous predictor???
+
+lsm.condition <- lsmeansLT(graph.numclust.lmer.full.int.6, test.effs = "Condition")
+
+plot(lsm.condition)
+
+lsm.condition.df <- as_data_frame(lsm.condition$lsmeans.table)
+
+lsm.condition.df
+
+lsm.task.df$Task <- factor(lsm.task.df$Task, levels=lsm.task.df %>% arrange(desc(Estimate)) %>% select(Task) %>% unlist())
+
+lsm.task.df %>% arrange(desc(Estimate))
+
+
+ggplot(lsm.task.df) +
+  geom_point(aes(x=Task,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Task,ymax=`Upper CI`,ymin=`Lower CI`), width=.2) +
+  coord_flip()
+
+# TO DO: add a color scale so TRUE/FALSE values are always same color across all plots
+
+
+```
+
+
+
+```{r, eval=FALSE}
+# old code, used lmertest, but that is deprecated
+# doesn't make sense for continuous predictor???
+
+difflsm.task <- difflsmeans(graph.numclust.lmer.full.int.6, test.effs = "ConditionColor")
+
+plot(difflsm.task)
+
+difflsm.task.df <- as_data_frame(difflsm.task$diffs.lsmeans.table)
+
+difflsm.task.df
+
+difflsm.task.df <- difflsm.task.df %>% mutate(Pair=rownames(.)) %>% separate(Pair, c("del","Pair"), sep=5) %>% select(-del) %>% separate(Pair, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% select(-del)
+
+difflsm.task.df$Pair <- factor(difflsm.task.df$Pair, levels=difflsm.task.df %>% arrange(desc(Estimate)) %>% select(Pair) %>% unlist())
+
+difflsm.task.df %>% arrange(desc(Estimate))
+
+ggplot(difflsm.task.df) +
+  geom_point(aes(x=Pair,y=Estimate, color=`p-value`<.01)) +
+  geom_errorbar(aes(x=Pair,ymax=`Upper CI`,ymin=`Lower CI`), width=.5) +
+  geom_hline(aes(yintercept=0)) +
+  coord_flip()
+
+ggplot(difflsm.task.df) +
+  geom_tile(aes(x=To,y=From,fill=Estimate)) +
+    scale_fill_distiller(type="div", palette=4)
+
+ggplot(difflsm.task.df) +
+  geom_count(aes(x=To,y=From,size=abs(Estimate),fill=Estimate, color=`p-value`<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black"))
+  
+
+
+
+```
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.numclust.emm.cond <- emmeans(graph.numclust.lmer.full.int.7, "ConditionColor", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+#ref_grid(graph.numclust.lmer.full.int.7) @ grid
+
+graph.numclust.emm.cond
+
+graph.numclust.emm.cond.df <- dplyr::as_data_frame(graph.numclust.emm.cond)
+
+graph.numclust.emm.cond.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.cond.cld <- cld(graph.numclust.emm.cond,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.numclust.emm.cond.cld.df <- graph.numclust.emm.cond.cld$emmeans
+
+graph.numclust.emm.cond.cld.df %>% dplyr::select(ConditionColor,.group)
+
+graph.numclust.emm.cond.cld.df
+
+graph.numclust.emm.cond.cld.df$ConditionColor <- factor(graph.numclust.emm.cond.cld.df$ConditionColor, levels=graph.numclust.emm.cond.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(ConditionColor) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.cond, ~ConditionColor, CIs = TRUE)
+plot(graph.numclust.emm.cond)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.numclust.emm.cond.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=ConditionColor,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=ConditionColor,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(labels=c("Blue","Black")) +
+  coord_flip() +
+  labs(title="Estimated Marginal Means for Node Color for Number of Clusters task,\ngraphics conditions",
+       x="Node Color")
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.numclust.emm.cond.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.cond)) 
+graph.numclust.emm.cond.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numclust.emm.cond))
+
+graph.numclust.emm.cond.pairs <- full_join(graph.numclust.emm.cond.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numclust.emm.cond))
+plot(pairs(graph.numclust.emm.cond), comparisons = TRUE)
+
+graph.numclust.emm.cond.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.cond.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.cond.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.cond.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.cond.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.cond.pairs$sig.levels <- factor(graph.numclust.emm.cond.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numclust.emm.cond.pairs$contrast <- factor(graph.numclust.emm.cond.pairs$contrast, levels=graph.numclust.emm.cond.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numclust.emm.cond.pairs <- graph.numclust.emm.cond.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.cond.pairs %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numclust.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+copy <- graph.numclust.emm.cond.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.cond.pairs.compl <- bind_rows(graph.numclust.emm.cond.pairs,copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+graph.numclust.emm.cond.pairs.compl$From <- factor(graph.numclust.emm.cond.pairs.compl$From, 
+                                                   levels=rev(unique(graph.numclust.emm.cond.pairs.compl$From)))
+#graph.numclust.emm.cond.pairs.compl$To <- factor(graph.numclust.emm.cond.pairs.compl$To, levels=cond.lev)
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.cond.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+###### networks
+
+```{r, eval=FALSE}
+
+# try a network of the pairwise significance values?  bleh...
+# using igraph
+
+graph <- graph_from_data_frame(graph.numclust.emm.cond.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+E(graph)$width <- abs(E(graph)$estimate)*50
+E(graph)$edge.color <- sig.colors[E(graph)$sig.levels]
+
+graph
+
+plot(graph, 
+     edge.arrow.size=.5,
+     vertex.frame.color="#555555")
+
+```
+
+```{r, eval=FALSE}
+
+# using ggraph and tidygraph
+
+graph <- graph_from_data_frame(graph.numclust.emm.cond.pairs %>% dplyr::select(-contrast), directed=TRUE)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') +
+  geom_edge_link(aes(start_cap = label_rect(node1.name),
+                       end_cap = label_rect(node2.name),
+                     color=factor(sig.level.names[sig.levels]),
+                     edge_width=.5/sig.levels
+                     ), 
+                   arrow = arrow(length = unit(4, 'mm')))+
+  geom_node_text(label = vertex_attr(graph,"name")) +
+  scale_edge_color_manual("Significance Levels", values=sig.colors) +
+  scale_edge_width_continuous(labels=rev(sig.level.names)) +
+  theme_graph()
+
+```
+
+
+
+
+
+
+
+##### Dataset
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.numclust.emm.data <- emmeans(graph.numclust.lmer.full.int.7, "Dataset", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numclust.emm.data
+
+graph.numclust.emm.data.df <- dplyr::as_data_frame(graph.numclust.emm.data)
+
+graph.numclust.emm.data.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.data.cld <- cld(graph.numclust.emm.data,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.numclust.emm.data.cld.df <- graph.numclust.emm.data.cld$emmeans
+
+graph.numclust.emm.data.cld.df %>% dplyr::select(Dataset,.group)
+
+graph.numclust.emm.data.cld.df
+
+graph.numclust.emm.data.cld.df$Dataset <- factor(graph.numclust.emm.data.cld.df$Dataset, levels=graph.numclust.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.data, ~Dataset, CIs = TRUE)
+plot(graph.numclust.emm.data)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.numclust.emm.data.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Number of Clusters task,\ngraphics conditions")
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.numclust.emm.data.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.data)) 
+graph.numclust.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numclust.emm.data))
+
+graph.numclust.emm.data.pairs <- full_join(graph.numclust.emm.data.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numclust.emm.data))
+plot(pairs(graph.numclust.emm.data), comparisons = TRUE)
+
+graph.numclust.emm.data.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.data.pairs$sig.levels <- factor(graph.numclust.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numclust.emm.data.pairs$contrast <- factor(graph.numclust.emm.data.pairs$contrast, levels=graph.numclust.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numclust.emm.data.pairs <- graph.numclust.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.data.pairs %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numclust.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+data.copy <- graph.numclust.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.data.pairs.compl <- bind_rows(graph.numclust.emm.data.pairs, data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numlinks.emm.data.pairs.compl$From <- factor(graph.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#graph.numlinks.emm.data.pairs.compl$To <- factor(graph.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+graph.numclust.emm.data.pairs.compl$From <- factor(graph.numclust.emm.data.pairs.compl$From, levels=rev(unique(graph.numclust.emm.data.pairs.compl$From)))
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Overestimated
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.numclust.emm.over <- emmeans(graph.numclust.lmer.full.int.7, "Overestimated", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numclust.emm.over
+
+graph.numclust.emm.over.df <- dplyr::as_data_frame(graph.numclust.emm.over)
+
+graph.numclust.emm.over.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.over.cld <- cld(graph.numclust.emm.over,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.numclust.emm.over.cld.df <- graph.numclust.emm.over.cld$emmeans
+
+graph.numclust.emm.over.cld.df %>% dplyr::select(Overestimated,.group)
+
+graph.numclust.emm.over.cld.df
+
+graph.numclust.emm.over.cld.df$Overestimated <- factor(graph.numclust.emm.over.cld.df$Overestimated, levels=graph.numclust.emm.over.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Overestimated) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.over, ~Overestimated, CIs = TRUE)
+plot(graph.numclust.emm.over)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.numclust.emm.over.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.over.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Overestimated for Number of Clusters task,\ngraphics conditions")
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.numclust.emm.over.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.over)) 
+graph.numclust.emm.over.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numclust.emm.over))
+
+graph.numclust.emm.over.pairs <- full_join(graph.numclust.emm.over.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numclust.emm.over))
+plot(pairs(graph.numclust.emm.over), comparisons = TRUE)
+
+graph.numclust.emm.over.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.over.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.over.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.over.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.over.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.over.pairs$sig.levels <- factor(graph.numclust.emm.over.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numclust.emm.over.pairs$contrast <- factor(graph.numclust.emm.over.pairs$contrast, levels=graph.numclust.emm.over.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numclust.emm.over.pairs <- graph.numclust.emm.over.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.over.pairs %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.over.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numclust.emm.over.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+over.copy <- graph.numclust.emm.over.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.over.pairs.compl <- bind_rows(graph.numclust.emm.over.pairs, over.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numlinks.emm.data.pairs.compl$From <- factor(graph.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#graph.numlinks.emm.data.pairs.compl$To <- factor(graph.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+graph.numclust.emm.over.pairs.compl$From <- factor(graph.numclust.emm.over.pairs.compl$From, levels=rev(unique(graph.numclust.emm.over.pairs.compl$From)))
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.over.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.over.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.over.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.over.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.over.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Stats.OperatingSystemNumClust
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(graph.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+graph.numclust.emm.OS <- emmeans(graph.numclust.lmer.full.int.7, "Stats.OperatingSystemNumClust", nesting = NULL)
+#graph.numhd.emm.condition <- emmeans(graph.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+graph.numclust.emm.OS
+
+graph.numclust.emm.OS.df <- dplyr::as_data_frame(graph.numclust.emm.OS)
+
+graph.numclust.emm.OS.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.OS.cld <- cld(graph.numclust.emm.OS,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+graph.numclust.emm.OS.cld.df <- graph.numclust.emm.OS.cld$emmeans
+
+graph.numclust.emm.OS.cld.df %>% dplyr::select(Stats.OperatingSystemNumClust,.group)
+
+graph.numclust.emm.OS.cld.df
+
+graph.numclust.emm.OS.cld.df$Stats.OperatingSystemNumClust <- factor(graph.numclust.emm.OS.cld.df$Stats.OperatingSystemNumClust, levels=graph.numclust.emm.OS.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Stats.OperatingSystemNumClust) %>% unlist())
+
+
+#emmip(graph.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.OS, ~Stats.OperatingSystemNumClust, CIs = TRUE)
+plot(graph.numclust.emm.OS)
+#plot(graph.numlinks.emm.cond, comparisons = TRUE)
+
+graph.numclust.emm.OS.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.OS.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Stats.OperatingSystemNumClust,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Stats.OperatingSystemNumClust,y=emmean), size=7) +
+  scale_x_discrete(labels=c("High Error Group","Low Error Group")) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+    labs(title="Estimated Marginal Means for Operating Systems for Number of Clusters task,\ngraphics conditions",
+         x="Operating Systems")
+
+
+#plot(ref_grid(graph.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+graph.numclust.emm.OS.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.OS)) 
+graph.numclust.emm.OS.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(graph.numclust.emm.OS))
+
+graph.numclust.emm.OS.pairs <- full_join(graph.numclust.emm.OS.pairs, pairs.CI)
+
+#graph.numhd.diffemm.condition <- emmeans(graph.numhd.lmer.full.int.4, pairwise ~ Condition)
+#graph.numhd.diffemm.condition$contrasts
+#contrast(graph.numhd.emm.condition)
+#confint(graph.numhd.emm.condition)
+#pairs(graph.numhd.emm.condition, details=TRUE)
+#confint(contrast(graph.numhd.emm.condition))
+#confint(pairs(graph.numhd.emm.condition))
+#coef(pairs(graph.numhd.emm.condition))
+
+
+plot(pairs(graph.numclust.emm.OS))
+plot(pairs(graph.numclust.emm.OS), comparisons = TRUE)
+
+graph.numclust.emm.OS.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.OS.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.OS.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.OS.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.OS.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.OS.pairs$sig.levels <- factor(graph.numclust.emm.OS.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+graph.numclust.emm.OS.pairs$contrast <- factor(graph.numclust.emm.OS.pairs$contrast, levels=graph.numclust.emm.OS.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+graph.numclust.emm.OS.pairs <- graph.numclust.emm.OS.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.OS.pairs %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.OS.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(graph.numclust.emm.OS.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+OS.copy <- graph.numclust.emm.OS.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.OS.pairs.compl <- bind_rows(graph.numclust.emm.OS.pairs, OS.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numlinks.emm.data.pairs.compl$From <- factor(graph.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#graph.numlinks.emm.data.pairs.compl$To <- factor(graph.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+graph.numclust.emm.OS.pairs.compl$From <- factor(graph.numclust.emm.OS.pairs.compl$From, levels=rev(unique(graph.numclust.emm.OS.pairs.compl$From)))
+
+#graph.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.OS.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.OS.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.OS.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.OS.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(graph.numclust.emm.OS.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### ConditionColor:Dataset
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
+graph.numclust.emm.conddata <- emmeans(graph.numclust.lmer.full.int.7, ~ Dataset | ConditionColor, nesting = NULL)
+graph.numclust.emm.conddata.2 <- emmeans(graph.numclust.lmer.full.int.7, ~  ConditionColor | Dataset, nesting = NULL)
+
+graph.numclust.emm.conddata
+
+#graph.numnodes.diffemm.conddata <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#graph.numnodes.diffemm.conddata
+
+graph.numclust.emm.conddata.df <- dplyr::as_data_frame(graph.numclust.emm.conddata)
+
+graph.numclust.emm.conddata.df #%>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.conddata.cld <- cld(graph.numclust.emm.conddata,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+
+graph.numclust.emm.conddata.cld[["emmeans"]]
+
+
+graph.numclust.emm.conddata.cld.df <- graph.numclust.emm.conddata.cld[["emmeans"]]
+
+graph.numclust.emm.conddata.cld.df %>% dplyr::select(Dataset,ConditionColor,.group) %>% print()
+
+cld(graph.numclust.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,ConditionColor,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.conddata, ~ConditionColor|Dataset, CIs = TRUE)
+plot(graph.numclust.emm.conddata)
+#plot(graph.numnodes.emm.conddata, comparisons = TRUE)
+
+graph.numclust.emm.conddata.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=ConditionColor,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=ConditionColor,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Dataset) + 
+  coord_flip()
+
+ggplot(graph.numclust.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Dataset,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor)
+
+ggplot(graph.numclust.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=ConditionColor), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=ConditionColor), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=ConditionColor, group=ConditionColor), position=position_dodge(width=0.2)) +
+  scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  labs(title="Estimated Marginal Means for Node Color vs. Dataset for Number of Clusters\ntask, graphics conditions")
+
+ggsave(file.path(figureDir, "emmeanscolordatanumclustgraphics.pdf"), width=7, height=5)
+
+```
+
+```{r}
+
+graph.numclust.emm.conddata.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.conddata)) 
+graph.numclust.emm.conddata.pairs #%>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+conddata.pairs.CI <- confint(pairs(graph.numclust.emm.conddata))
+
+graph.numclust.emm.conddata.pairs <- full_join(graph.numclust.emm.conddata.pairs, conddata.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numclust.emm.conddata))
+plot(pairs(graph.numclust.emm.conddata), comparisons = TRUE)
+
+graph.numclust.emm.conddata.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.conddata.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.conddata.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.conddata.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.conddata.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.conddata.pairs$sig.levels <- factor(graph.numclust.emm.conddata.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+graph.numclust.emm.conddata.pairs$contrast.cond <- paste0(graph.numclust.emm.conddata.pairs$contrast,graph.numclust.emm.conddata.pairs$Condition)
+
+graph.numclust.emm.conddata.pairs$contrast.cond <- factor(graph.numclust.emm.conddata.pairs$contrast.cond, levels=graph.numclust.emm.conddata.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.cond) %>% distinct() %>% unlist())
+
+#graph.numnodes.emm.conddata.pairs %>% View()
+
+graph.numclust.emm.conddata.pairs$contrast <- 
+  factor(as.character(graph.numclust.emm.conddata.pairs$contrast), 
+         levels=graph.numclust.emm.conddata.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+graph.numclust.emm.conddata.pairs <- graph.numclust.emm.conddata.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.conddata.pairs %>% arrange(estimate)
+#graph.numlinks.emm.conddata.pairs %>% View()
+
+ggplot(graph.numclust.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numclust.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor, scales="free_y") +
+  coord_flip()
+
+
+ggplot(graph.numclust.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numclust.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~ConditionColor, scales="free_y") +
+  coord_flip()
+
+
+```
+
+
+```{r}
+
+conddata.copy <- graph.numclust.emm.conddata.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.conddata.pairs.compl <- bind_rows(graph.numclust.emm.conddata.pairs, conddata.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+graph.numclust.emm.conddata.pairs.compl$From <- factor(graph.numclust.emm.conddata.pairs.compl$From, levels=c(9,8,7,5,3,1))
+
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.conddata.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~ConditionColor)
+
+ggplot(graph.numclust.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~ConditionColor)
+
+ggplot(graph.numclust.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~ConditionColor)
+
+ggplot(graph.numclust.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~ConditionColor)
+
+
+```
+
+
+
+##### Overestimated:Stats.OperatingSystemNumClust
+
+###### emmeans 
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(graph.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(graphics_numnodes, table(Dataset,Underestimated))
+# ref_grid(graph.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#graph.numnodes.emm.cond <- emmeans(graph.numnodes.lmer.int.3, "Condition", nesting = NULL)
+graph.numclust.emm.overnclust <- emmeans(graph.numclust.lmer.full.int.7, ~ Overestimated | Stats.OperatingSystemNumClust, nesting = NULL)
+graph.numclust.emm.overnclust.2 <- emmeans(graph.numclust.lmer.full.int.7, ~ Stats.OperatingSystemNumClust | Overestimated, nesting = NULL)
+
+graph.numclust.emm.overnclust
+
+#graph.numnodes.diffemm.conddata <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#graph.numnodes.diffemm.conddata
+
+graph.numclust.emm.overnclust.df <- dplyr::as_data_frame(graph.numclust.emm.overnclust)
+
+graph.numclust.emm.overnclust.df #%>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the graph
+
+#xtable::xtable(graph.numhd.emm.condition)
+
+graph.numclust.emm.overnclust.cld <- cld(graph.numclust.emm.overnclust,
+           details=TRUE,
+           #alpha=0.01,
+           #by="Dataset",
+           #Letters="|||||||||||||||||||",
+           sort=TRUE
+           )
+
+graph.numclust.emm.overnclust.cld[["emmeans"]]
+
+
+graph.numclust.emm.overnclust.cld.df <- graph.numclust.emm.overnclust.cld[["emmeans"]]
+
+graph.numclust.emm.overnclust.cld.df %>% dplyr::select(Overestimated,Stats.OperatingSystemNumClust,.group) %>% print()
+
+cld(graph.numclust.emm.overnclust.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Overestimated,Stats.OperatingSystemNumClust,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#graph.numnodes.emm.conddata.cld.df$Condition <- factor(graph.numnodes.emm.conddata.cld.df$Condition, levels=graph.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(graph.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(graph.numclust.emm.overnclust, ~Overestimated|Stats.OperatingSystemNumClust, CIs = TRUE)
+plot(graph.numclust.emm.overnclust)
+#plot(graph.numnodes.emm.conddata, comparisons = TRUE)
+
+graph.numclust.emm.overnclust.cld.df %>% arrange(desc(emmean))
+
+ggplot(graph.numclust.emm.overnclust.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Overestimated,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Stats.OperatingSystemNumClust) + 
+  coord_flip()
+
+ggplot(graph.numclust.emm.overnclust.cld.df) +
+  geom_errorbar(aes(x=Overestimated,ymax=upper.CL,ymin=lower.CL, color=Stats.OperatingSystemNumClust), width=.2) +
+  geom_point(aes(x=Overestimated,y=emmean, color=Stats.OperatingSystemNumClust)) +
+  geom_line(aes(x=Overestimated,y=emmean, color=Stats.OperatingSystemNumClust, group=Stats.OperatingSystemNumClust)) +
+  scale_color_discrete(name="Operating\nSystems", labels=c("Low Error Group","High Error Group"))+
+  scale_x_discrete(labels=c("Overestimated","Correct or\nUnderestimated")) +
+labs(title="Estimated Marginal Means for Operating System vs. Overestimated for\nNumber of Clusters task, graphics conditions")
+
+```
+
+```{r}
+
+graph.numclust.emm.overnclust.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.overnclust)) 
+graph.numclust.emm.overnclust.pairs #%>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(graph.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+graph.numclust.emm.overnclust.2.pairs <- dplyr::as_data_frame(pairs(graph.numclust.emm.overnclust.2)) 
+graph.numclust.emm.overnclust.2.pairs #%>% View()
+
+
+overnclust.pairs.CI <- confint(pairs(graph.numclust.emm.overnclust))
+
+graph.numclust.emm.overnclust.pairs <- full_join(graph.numclust.emm.overnclust.pairs, overnclust.pairs.CI)
+
+#graph.numnodes.diffemm.cond <- emmeans(graph.numnodes.lmer.int.3, pairwise ~ Condition)
+#graph.numnodes.diffemm.cond$contrasts
+#contrast(graph.numnodes.emm.cond)
+#confint(graph.numnodes.emm.cond)
+#pairs(graph.numnodes.emm.cond, details=TRUE)
+#confint(contrast(graph.numnodes.emm.cond))
+#confint(pairs(graph.numnodes.emm.cond))
+#coef(pairs(graph.numnodes.emm.cond))
+
+plot(pairs(graph.numclust.emm.overnclust))
+plot(pairs(graph.numclust.emm.overnclust), comparisons = TRUE)
+
+graph.numclust.emm.overnclust.pairs$sig.levels <- 
+  case_when(graph.numclust.emm.overnclust.pairs$p.value < .0001 ~ sig.level.names[1],
+            graph.numclust.emm.overnclust.pairs$p.value < .001 ~ sig.level.names[2],
+            graph.numclust.emm.overnclust.pairs$p.value < .01 ~ sig.level.names[3],
+            graph.numclust.emm.overnclust.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+graph.numclust.emm.overnclust.pairs$sig.levels <- factor(graph.numclust.emm.overnclust.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+graph.numclust.emm.overnclust.pairs$contrast.cond <- paste0(graph.numclust.emm.overnclust.pairs$contrast,graph.numclust.emm.overnclust.pairs$Stats.OperatingSystemNumClust)
+
+graph.numclust.emm.overnclust.pairs$contrast.cond <- factor(graph.numclust.emm.overnclust.pairs$contrast.cond, levels=graph.numclust.emm.overnclust.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.cond) %>% distinct() %>% unlist())
+
+#graph.numnodes.emm.conddata.pairs %>% View()
+
+graph.numclust.emm.overnclust.pairs$contrast <- 
+  factor(as.character(graph.numclust.emm.overnclust.pairs$contrast), 
+         levels=graph.numclust.emm.overnclust.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+graph.numclust.emm.overnclust.pairs <- graph.numclust.emm.overnclust.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+graph.numclust.emm.overnclust.pairs %>% arrange(estimate)
+#graph.numlinks.emm.conddata.pairs %>% View()
+
+ggplot(graph.numclust.emm.overnclust.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Stats.OperatingSystemNumClust, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numclust.emm.overnclust.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Stats.OperatingSystemNumClust, scales="free_y") +
+  coord_flip()
+
+
+ggplot(graph.numclust.emm.overnclust.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Stats.OperatingSystemNumClust, scales="free_y") +
+  coord_flip()
+
+ggplot(graph.numclust.emm.overnclust.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Stats.OperatingSystemNumClust, scales="free_y") +
+  coord_flip()
+
+
+```
+
+
+```{r}
+
+overnclust.copy <- graph.numclust.emm.overnclust.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+graph.numclust.emm.overnclust.pairs.compl <- bind_rows(graph.numclust.emm.overnclust.pairs, overnclust.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#graph.numnodes.emm.conddata.pairs.compl$From <- factor(graph.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#graph.numnodes.emm.conddata.pairs.compl$To <- factor(graph.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+graph.numclust.emm.overnclust.pairs.compl$From <- factor(graph.numclust.emm.overnclust.pairs.compl$From, levels=rev(unique(graph.numclust.emm.overnclust.pairs.compl$From)))
+
+
+#graph.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+graph.numclust.emm.overnclust.pairs.compl %>% arrange(estimate)
+
+ggplot(graph.numclust.emm.overnclust.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Stats.OperatingSystemNumClust)
+
+ggplot(graph.numclust.emm.overnclust.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Stats.OperatingSystemNumClust)
+
+ggplot(graph.numclust.emm.overnclust.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Stats.OperatingSystemNumClust)
+
+ggplot(graph.numclust.emm.overnclust.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Stats.OperatingSystemNumClust)
+
+
+```
+
+
+

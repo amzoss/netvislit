@@ -1,0 +1,1777 @@
+---
+title: "Analysis for Degree of Highest Degree Node task, Layout conditions"
+author: "Angela Zoss"
+date: "March 25, 2018"
+output: github_document
+---
+
+```{r layout-setup-numhd}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r layout-load-environment-numhd, message=FALSE}
+
+source('LayoutSetup.R')
+
+```
+
+#### lme4
+
+```{r, cache=TRUE}
+
+# Condition
+
+layout.numhd.lmer.cond <- lmer(LogError ~ Condition + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.cond) # Color and Phrasing very significant, Size not at all
+
+anova(layout.numhd.lmer.cond)
+
+# Condition is significant (p < 2.2e-16);
+
+
+layout.numhd.lmer.dataset <- lmer(LogError ~ Dataset + (1|Demo.ResponseID), data = layouts_numhighdeg, REML = T)
+
+lmsum <- summary(layout.numhd.lmer.dataset)
+lmsum
+#names(lmsum)
+
+anova(layout.numhd.lmer.dataset)
+
+# Dataset is significant
+
+
+layout.numhd.lmer <- lmer(LogError ~ DatasetOrder + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# DatasetOrder is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ DatasetDuration + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# DatasetDuration is  not significant
+
+layout.numhd.lmer <- lmer(LogError ~ DatasetStartTime + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# DatasetStartTime is not significant; trying TaskOrder
+
+layout.numhd.lmer <- lmer(LogError ~ TaskOrder + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# TaskOrder is not significant; trying CorrectAnswer
+
+layout.numhd.lmer.correct <- lmer(LogError ~ CorrectAnswer + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.correct)
+
+anova(layout.numhd.lmer.correct)
+
+# CorrectAnswer is significant (p = 9.988e-09); trying Underestimated
+
+layout.numhd.lmer.underest <- lmer(LogError ~ Underestimated + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.underest)
+
+anova(layout.numhd.lmer.underest)
+
+# Underestimated is significant (p = 0.03106); trying Overestimated
+
+layout.numhd.lmer <- lmer(LogError ~ UnderestDummy + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# UnderestDummy is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ Overestimated + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Overestimated is not significant
+
+layouts_numhighdeg.CS <- layouts_numhighdeg %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+layout.numhd.lmer <- lmer(LogError ~ Stats.Q_TotalDuration + (1|Demo.ResponseID), data=layouts_numhighdeg.CS, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Stats.Q_TotalDuration is not significant; trying Stats.dataset_count
+
+layout.numhd.lmer <- lmer(LogError ~ Stats.dataset_count + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Stats.dataset_count is not significant; trying Stats.OperatingSystem
+
+layout.numhd.lmer <- lmer(LogError ~ Stats.OperatingSystem + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Stats.OperatingSystem is not significant (skipping combinations); trying StatsNumPixels
+
+layout.numhd.lmer <- lmer(LogError ~ scale(StatsNumPixels) + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# StatsNumPixels is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.age + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.age))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.age is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.gender + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.gender))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.gender is not significant; trying Demo.lang
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.lang + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.lang))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.lang is not significant; trying Demo.educ
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.educ + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.educ))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.educ is not significant; trying Demo.acfield
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.acfield + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.acfield))), REML = T)
+
+summary(layout.numhd.lmer) # hardly anything significant
+
+anova(layout.numhd.lmer)
+
+# Demo.acfield is not significant (skipping groups); trying Demo.dailytech_Computer
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.dailytech_Computer + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.dailytech_Computer))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.dailytech_Computer is not significant; trying Demo.dailytech_Tablet
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.dailytech_Tablet + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.dailytech_Tablet))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.dailytech_Computer is not significant; trying Demo.dailytech_SmartPhone
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.dailytech_SmartPhone))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.dailytech_SmartPhone is not significant; trying Demo.weeklygaming
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.weeklygaming + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.weeklygaming))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.weeklygaming is not significant; trying Demo.expdataanal
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expdataanal + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expdataanal))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.expdataanal is barely not significant; trying Demo.expdatavis
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expdatavis + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expdatavis))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.expdatavis is not significant; trying Demo.expreadnetvis
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expreadnetvis + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expreadnetvis))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.expreadnetvis is barely not significant; trying Demo.expreadnetvis.alot
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expreadnetvis.alot + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expreadnetvis.alot))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.expreadnetvis.alot is not significant; trying Demo.expcreatenetvis
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expcreatenetvis + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expcreatenetvis))), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Demo.expcreatenetvis is not significant; trying Demo.expcreatenetvis.alot
+
+layout.numhd.lmer <- lmer(LogError ~ Demo.expcreatenetvis.alot + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(!(is.na(Demo.expcreatenetvis.alot))), REML = T)
+
+summary(layout.numhd.lmer) # doesn't reach significance
+
+anova(layout.numhd.lmer)
+
+# Demo.expcreatenetvis.alot is not significant; trying AvgDeg
+
+layout.numhd.lmer.avgdeg <- lmer(LogError ~ AvgDeg + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.avgdeg)
+
+anova(layout.numhd.lmer.avgdeg)
+
+# AvgDeg is significant (p < 2.2e-16); trying Density
+
+layout.numhd.lmer.dens <- lmer(LogError ~ Density + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.dens)
+
+anova(layout.numhd.lmer.dens)
+
+# Density is significant (p < 2.2e-16); trying LargeClust1
+
+layout.numhd.lmer.lgclust <- lmer(LogError ~ LargeClust1 + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.lgclust)
+
+anova(layout.numhd.lmer.lgclust)
+
+# LargeClust1 is significant (p < 2.2e-16); trying Modularity
+
+layout.numhd.lmer.mod <- lmer(LogError ~ Modularity + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.mod)
+
+anova(layout.numhd.lmer.mod)
+
+# Modularity is significant (p < 2.2e-16); trying NumClust
+
+layout.numhd.lmer.numclust <- lmer(LogError ~ NumClust + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.numclust)
+
+anova(layout.numhd.lmer.numclust)
+
+# NumClust is significant (p=3.464e-14); trying NumHighDegree
+
+layout.numhd.lmer.numhd <- lmer(LogError ~ NumHighDegree + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.numhd)
+
+anova(layout.numhd.lmer.numhd)
+
+# NumHighDegree is significant (p=9.988e-09); trying NumLinks
+
+layout.numhd.lmer.numlinks <- lmer(LogError ~ NumLinks + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.numlinks)
+
+anova(layout.numhd.lmer.numlinks)
+
+# NumLinks is  significant (p < 2.2e-16)
+
+layout.numhd.lmer.numnodes <- lmer(LogError ~ NumNodes + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.numnodes)
+
+anova(layout.numhd.lmer.numnodes)
+
+# NumNodes is significant (p < 2.2e-16); trying NumNodesClust1
+
+layout.numhd.lmer.numnodesclust1 <- lmer(LogError ~ NumNodesClust1 + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer.numnodesclust1)
+
+anova(layout.numhd.lmer.numnodesclust1)
+
+# NumNodesClust1 is significant (p < 2.2e-16); 
+
+
+layout.numhd.lmer <- lmer(LogError ~ filename + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# filename is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ NetVisExperience + (1|Demo.ResponseID), data=layouts_numhighdeg, REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# NetVisExperience is not significant
+
+layout.numhd.lmer <- lmer(LogError ~ Stats.CompensationCondition + (1|Demo.ResponseID), data=layouts_numhighdeg %>% filter(filename=="FacultyGrad"), REML = T)
+
+summary(layout.numhd.lmer)
+
+anova(layout.numhd.lmer)
+
+# Stats.CompensationCondition is not significant
+
+```
+
+```{r}
+
+# combinations of individual predictors
+
+temp.numhd <- layouts_numhighdeg %>% 
+  dplyr::select(Demo.ResponseID, LogError, Condition, Dataset, CorrectAnswer, Underestimated, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% 
+  drop_na() %>% 
+  mutate(CorrectAnswer=scale(CorrectAnswer))
+
+layout.numhd.lmer.full <- lmer(LogError ~ Condition + 
+                                Dataset +
+                                Underestimated +
+                                (1|Demo.ResponseID), 
+                              data=temp.numhd, REML = T)
+
+summary(layout.numhd.lmer.full)
+
+anova(layout.numhd.lmer.full)
+
+```
+
+```{r}
+
+# interactions
+
+layout.numhd.lmer.full.int <- lmer(LogError ~ Condition + 
+                                Dataset +
+                                Underestimated +
+                                  Condition:Dataset +
+                                (1|Demo.ResponseID), 
+                              data=temp.numhd, REML = T)
+
+summary(layout.numhd.lmer.full.int)
+
+anova(layout.numhd.lmer.full.int)
+
+anova(layout.numhd.lmer.full.int,layout.numhd.lmer.full)
+
+# definitely keep the interaction
+
+layout.numhd.lmer.full.int.2 <- lmer(LogError ~ Condition + 
+                                Dataset +
+                                Underestimated +
+                                  Condition:Dataset +
+                                  Condition:Underestimated +
+                                (1|Demo.ResponseID), 
+                              data=temp.numhd, REML = T)
+
+summary(layout.numhd.lmer.full.int.2)
+
+anova(layout.numhd.lmer.full.int.2)
+
+anova(layout.numhd.lmer.full.int.2,layout.numhd.lmer.full.int)
+#keep int.2
+
+layout.numhd.lmer.full.int.3 <- lmer(LogError ~ Condition + 
+                                Dataset +
+                                Underestimated +
+                                  Condition:Dataset +
+                                  Condition:Underestimated +
+                                  Dataset:Underestimated +
+                                (1|Demo.ResponseID), 
+                              data=temp.numhd, REML = T)
+
+summary(layout.numhd.lmer.full.int.3)
+
+anova(layout.numhd.lmer.full.int.3)
+
+anova(layout.numhd.lmer.full.int.3,layout.numhd.lmer.full.int.2)
+
+# keeping layout.numhd.lmer.full.int.3
+
+temp.numhd.2 <- temp.numhd %>% filter(Underestimated != "correct")
+
+layout.numhd.lmer.full.int.4 <- lmer(LogError ~ Condition + 
+                                Dataset +
+                                Underestimated +
+                                  Condition:Dataset +
+                                  Condition:Underestimated +
+                                  Dataset:Underestimated +
+                                (1|Demo.ResponseID), 
+                              data=temp.numhd.2, REML = T)
+
+summary(layout.numhd.lmer.full.int.4)
+
+anova(layout.numhd.lmer.full.int.4)
+anova(layout.numhd.lmer.full.int.3)
+AIC(layout.numhd.lmer.full.int.4, layout.numhd.lmer.full.int.3)
+
+# actually, 4 is better anyway
+
+```
+
+```{r}
+
+#SAVE THE RESULTS
+save(layout.numhd.lmer.full.int.4, 
+     file = file.path(analysisDataDir,"fits/layout_numhd_lmer_int.RData"))
+
+```
+
+
+```{r, cache=TRUE}
+
+rand(layout.numhd.lmer.full.int.4)
+
+# result shows that random effects of participant are *not* significant (p=1)
+
+#ranef(layout.numhd.lmer.full.int.4)
+
+# displays the random effects; not that useful
+
+# unlike lme(), lmer() doesn't allow for heterogeneous error variance structures (the "weights")
+
+(r2nsj = r2beta(layout.numhd.lmer.full.int.4, method = 'nsj', partial = TRUE))[1,'Rsq']
+
+ggplot(layouts_numhighdeg) + geom_histogram(aes(LogError), binwidth=.005) + labs(title="Distribution of LogError values for Degree of Highest Degree Node task,\nlayout conditions")
+
+
+
+```
+
+```{r}
+
+plot(layout.numhd.lmer.full.int.4)
+
+plot(layout.numhd.lmer.full.int.4, resid(., scaled=TRUE) ~ fitted(.), abline = 0)
+
+plot(layout.numhd.lmer.full.int.4, resid(.) ~ fitted(.) | Condition, abline = 0)
+
+plot(layout.numhd.lmer.full.int.4, resid(., scaled=TRUE) ~ fitted(.) | Condition, abline = 0)
+
+plot(layout.numhd.lmer.full.int.4, LogError ~ fitted(.), abline = c(0,1))
+
+
+
+```
+
+```{r}
+
+layout.numhd.lmer.full.int.4.f <- fortify(layout.numhd.lmer.full.int.4)
+
+ggplot(layout.numhd.lmer.full.int.4.f, aes(.fitted,.resid)) + 
+  geom_point() +
+  #facet_grid(.~Sex) + 
+  geom_hline(yintercept=0)
+
+ggplot(layout.numhd.lmer.full.int.4.f, aes(.fitted,LogError)) + 
+  geom_point() +
+  geom_abline(aes(slope = 1, intercept = 0))
+
+ggplot(layout.numhd.lmer.full.int.4.f, aes(LogError,.fitted)) +
+geom_point() +
+geom_abline(aes(slope = 1, intercept = 0)) +
+labs(title="Real vs. Predicted LogError values for Degree of Highest Degree Node task,\nlayout conditions")
+
+
+
+```
+
+```{r, eval=FALSE}
+
+# TO DO: check out interpretation for these plots??
+
+prof <-  profile(layout.numhd.lmer.full.int.4, optimizer="Nelder_Mead", which="beta_")
+
+prof.CI <- confint(prof)
+
+CI2 <- confint(layout.numhd.lmer.full.int.4, maxpts = 8)
+
+xyplot(prof)
+
+xyplot(prof, absVal = TRUE)
+
+xyplot(prof, conf = c(0.95, 0.99), main = "95% and 99% profile() intervals")
+
+# can also apply logProf() and varianceProf() to profile object
+
+densityplot(prof)
+
+splom(prof)
+
+```
+
+#### Least Squares Means
+
+Do for each categorical predictor. 
+
+Final model (layout.numhd.lmer.full.int.4):
+LogError ~ Condition + Dataset + Underestimated + Condition:Dataset +  
+    Condition:Underestimated + Dataset:Underestimated + (1 | Demo.ResponseID)
+
+
+##### Condition
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.3) @ grid; .wgt. is number of observations
+
+#grid <- ref_grid(layout.numhd.lmer.full.int.3, at = list(Underestimated = c("over","under")))
+#layout.numhd.emm.cond <- emmeans(grid, "Condition")
+
+
+layout.numhd.emm.cond <- emmeans(layout.numhd.lmer.full.int.4, "Condition")
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numhd.emm.cond
+
+layout.numhd.emm.cond.df <- dplyr::as_data_frame(layout.numhd.emm.cond)
+
+layout.numhd.emm.cond.df
+
+layout.numhd.emm.cond.cld <- cld(layout.numhd.emm.cond,
+                                   details=TRUE,
+                                   #alpha=0.01,
+                                   #by="Dataset",
+                                   #Letters="|||||||||||||||||||",
+                                   sort=TRUE
+)
+
+layout.numhd.emm.cond.cld.df <- layout.numhd.emm.cond.cld$emmeans
+
+layout.numhd.emm.cond.cld.df %>% dplyr::select(Condition,.group)
+
+layout.numhd.emm.cond.cld.df
+
+layout.numhd.emm.cond.cld.df$Condition <- factor(layout.numhd.emm.cond.cld.df$Condition, levels=layout.numhd.emm.cond.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+
+#emmip(layout.numhd.lmer.full.int.4, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.cond, ~Condition, CIs = TRUE)
+plot(layout.numhd.emm.cond)
+#plot(layout.numhd.emm.cond, comparisons = TRUE)
+
+layout.numhd.emm.cond.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.cond.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Condition,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Condition for Degree of\nHighest Degree Node task, layout conditions")
+
+#plot(ref_grid(layout.numhd.lmer.full.int.4), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+
+```
+
+```{r}
+
+layout.numhd.emm.cond.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.cond)) 
+layout.numhd.emm.cond.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+cond.pairs.CI <- confint(pairs(layout.numhd.emm.cond))
+
+layout.numhd.emm.cond.pairs <- full_join(layout.numhd.emm.cond.pairs, cond.pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numhd.emm.cond))
+plot(pairs(layout.numhd.emm.cond), comparisons = TRUE)
+
+
+layout.numhd.emm.cond.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.cond.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.cond.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.cond.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.cond.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.cond.pairs$sig.levels <- factor(layout.numhd.emm.cond.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+layout.numhd.emm.cond.pairs$contrast <- factor(layout.numhd.emm.cond.pairs$contrast, levels=layout.numhd.emm.cond.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numhd.emm.cond.pairs <- layout.numhd.emm.cond.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+ggplot(layout.numhd.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.cond.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+cond.copy <- layout.numhd.emm.cond.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.cond.pairs.compl <- bind_rows(layout.numhd.emm.cond.pairs, cond.copy)
+
+
+cond.lev <- c("Ctrl","Cir","Fru","Ord")
+
+layout.numhd.emm.cond.pairs.compl$From <- factor(layout.numhd.emm.cond.pairs.compl$From, levels=cond.lev)
+layout.numhd.emm.cond.pairs.compl$To <- factor(layout.numhd.emm.cond.pairs.compl$To, levels=cond.lev)
+
+#layout.numlinks.emm.cond.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.cond.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.cond.pairs.compl) +
+  geom_tile(aes(x=To,y=ordered(From,levels=rev(cond.lev)),fill=estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.cond.pairs.compl) +
+  geom_count(aes(x=To,y=ordered(From,levels=rev(cond.lev)),size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+```
+
+##### Dataset
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.numhd.emm.data <- emmeans(layout.numhd.lmer.full.int.4, "Dataset", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numhd.emm.data
+
+layout.numhd.emm.data.df <- dplyr::as_data_frame(layout.numhd.emm.data)
+
+layout.numhd.emm.data.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numhd.emm.data.cld <- cld(layout.numhd.emm.data,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.numhd.emm.data.cld.df <- layout.numhd.emm.data.cld$emmeans
+
+layout.numhd.emm.data.cld.df %>% dplyr::select(Dataset,.group)
+
+layout.numhd.emm.data.cld.df
+
+layout.numhd.emm.data.cld.df$Dataset <- factor(layout.numhd.emm.data.cld.df$Dataset, levels=layout.numhd.emm.data.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Dataset) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.data, ~Dataset, CIs = TRUE)
+plot(layout.numhd.emm.data)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.numhd.emm.data.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.data.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Dataset,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Dataset for Degree of\nHighest Degree Node task, layout conditions")
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.numhd.emm.data.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.data)) 
+layout.numhd.emm.data.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.numhd.emm.data))
+
+layout.numhd.emm.data.pairs <- full_join(layout.numhd.emm.data.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numhd.emm.data))
+plot(pairs(layout.numhd.emm.data), comparisons = TRUE)
+
+layout.numhd.emm.data.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.data.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.data.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.data.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.data.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.data.pairs$sig.levels <- factor(layout.numhd.emm.data.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.numhd.emm.data.pairs$contrast <- factor(layout.numhd.emm.data.pairs$contrast, levels=layout.numhd.emm.data.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numhd.emm.data.pairs <- layout.numhd.emm.data.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numhd.emm.data.pairs %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.data.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+data.copy <- layout.numhd.emm.data.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.data.pairs.compl <- bind_rows(layout.numhd.emm.data.pairs, data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numlinks.emm.data.pairs.compl$From <- factor(layout.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#layout.numlinks.emm.data.pairs.compl$To <- factor(layout.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+layout.numhd.emm.data.pairs.compl$From <- factor(layout.numhd.emm.data.pairs.compl$From, levels=rev(unique(layout.numhd.emm.data.pairs.compl$From)))
+
+#layout.numhd.emm.data.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.data.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.data.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.data.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Underestimated
+
+###### emmeans
+
+```{r}
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numhighdeg, table(Dataset,Overestimated))
+# ref_grid(layout.numhd.lmer.full.int.4) @ grid; .wgt. is number of observations
+
+layout.numhd.emm.under <- emmeans(layout.numhd.lmer.full.int.4, "Underestimated", nesting = NULL)
+#layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
+
+layout.numhd.emm.under
+
+layout.numhd.emm.under.df <- dplyr::as_data_frame(layout.numhd.emm.under)
+
+layout.numhd.emm.under.df
+
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numhd.emm.under.cld <- cld(layout.numhd.emm.under,
+                details=TRUE,
+                #alpha=0.01,
+                #by="Dataset",
+                #Letters="|||||||||||||||||||",
+                sort=TRUE
+)
+
+layout.numhd.emm.under.cld.df <- layout.numhd.emm.under.cld$emmeans
+
+layout.numhd.emm.under.cld.df %>% dplyr::select(Underestimated,.group)
+
+layout.numhd.emm.under.cld.df
+
+layout.numhd.emm.under.cld.df$Underestimated <- factor(layout.numhd.emm.under.cld.df$Underestimated, levels=layout.numhd.emm.under.cld.df %>% arrange(desc(emmean)) %>% dplyr::select(Underestimated) %>% unlist())
+
+
+#emmip(layout.numlinks.lmer.full.int, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.under, ~Underestimated, CIs = TRUE)
+plot(layout.numhd.emm.under)
+#plot(layout.numlinks.emm.cond, comparisons = TRUE)
+
+layout.numhd.emm.under.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.under.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Underestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Underestimated,y=emmean), size=7) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.under.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Underestimated,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  geom_point(aes(x=Underestimated,y=emmean), size=7) +
+  scale_x_discrete(labels=c("Overestimated","Underestimated")) +
+  coord_flip() +
+labs(title="Estimated Marginal Means for Underestimated for Degree of\nHighest Degree Node task, layout conditions")
+
+
+#plot(ref_grid(layout.numnodes.lmer.int.3), by="Condition") 
+# try to figure this out? maybe only works on the interaction?
+```
+
+```{r}
+
+layout.numhd.emm.under.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.under)) 
+layout.numhd.emm.under.pairs
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+pairs.CI <- confint(pairs(layout.numhd.emm.under))
+
+layout.numhd.emm.under.pairs <- full_join(layout.numhd.emm.under.pairs, pairs.CI)
+
+#layout.numhd.diffemm.condition <- emmeans(layout.numhd.lmer.full.int.4, pairwise ~ Condition)
+#layout.numhd.diffemm.condition$contrasts
+#contrast(layout.numhd.emm.condition)
+#confint(layout.numhd.emm.condition)
+#pairs(layout.numhd.emm.condition, details=TRUE)
+#confint(contrast(layout.numhd.emm.condition))
+#confint(pairs(layout.numhd.emm.condition))
+#coef(pairs(layout.numhd.emm.condition))
+
+
+plot(pairs(layout.numhd.emm.under))
+plot(pairs(layout.numhd.emm.under), comparisons = TRUE)
+
+layout.numhd.emm.under.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.under.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.under.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.under.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.under.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.under.pairs$sig.levels <- factor(layout.numhd.emm.under.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+
+layout.numhd.emm.under.pairs$contrast <- factor(layout.numhd.emm.under.pairs$contrast, levels=layout.numhd.emm.under.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+layout.numhd.emm.under.pairs <- layout.numhd.emm.under.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numhd.emm.under.pairs %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+ggplot(layout.numhd.emm.under.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  coord_flip()
+
+```
+
+```{r}
+
+data.copy <- layout.numhd.emm.under.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.under.pairs.compl <- bind_rows(layout.numhd.emm.under.pairs, data.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numlinks.emm.data.pairs.compl$From <- factor(layout.numlinks.emm.data.pairs.compl$From, levels=cond.lev)
+#layout.numlinks.emm.data.pairs.compl$To <- factor(layout.numlinks.emm.data.pairs.compl$To, levels=cond.lev)
+
+layout.numhd.emm.under.pairs.compl$From <- factor(layout.numhd.emm.under.pairs.compl$From, levels=rev(unique(layout.numhd.emm.under.pairs.compl$From)))
+
+#layout.numhd.emm.data.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.under.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.under.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+    scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+ggplot(layout.numhd.emm.under.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From")
+
+
+```
+
+##### Condition:Dataset
+
+###### emmeans
+
+```{r}
+
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numnodes, table(Dataset,Underestimated))
+# ref_grid(layout.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
+layout.numhd.emm.conddata <- emmeans(layout.numhd.lmer.full.int.4, ~ Dataset | Condition, nesting = NULL)
+layout.numhd.emm.conddata.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Condition | Dataset, nesting = NULL)
+
+layout.numhd.emm.conddata
+
+#layout.numnodes.diffemm.conddata <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#layout.numnodes.diffemm.conddata
+
+layout.numhd.emm.conddata.df <- dplyr::as_data_frame(layout.numhd.emm.conddata)
+
+layout.numhd.emm.conddata.df #%>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numhd.emm.conddata.cld <- cld(layout.numhd.emm.conddata,
+                                       details=TRUE,
+                                       #alpha=0.01,
+                                       #by="Dataset",
+                                       #Letters="|||||||||||||||||||",
+                                       sort=TRUE
+)
+
+layout.numhd.emm.conddata.cld[["emmeans"]]
+
+
+layout.numhd.emm.conddata.cld.df <- layout.numhd.emm.conddata.cld[["emmeans"]]
+
+layout.numhd.emm.conddata.cld.df %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
+cld(layout.numhd.emm.conddata.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Condition,.group) %>% print()
+
+# TO DO : get this to print as single table
+
+#layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(layout.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.conddata, ~Condition|Dataset, CIs = TRUE)
+plot(layout.numhd.emm.conddata)
+#plot(layout.numnodes.emm.conddata, comparisons = TRUE)
+
+layout.numhd.emm.conddata.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.conddata.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Condition,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Dataset) + 
+  coord_flip()
+
+ggplot(layout.numhd.emm.conddata.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Condition), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Condition), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Condition, group=Condition), position=position_dodge(width=0.2)) +
+  #scale_color_manual(labels=c("Blue","Black"),values=c("steelblue","black"), name="Node Color") +
+  #scale_color_discrete(labels=c("Control","Color","Phrasing","Size")) +
+  labs(title="Estimated Marginal Means for Condition vs. Dataset for\nDegree of Highest Degree Node task, layout conditions")
+
+ggsave(file.path(figureDir, "emmeansconddatanumhdlayout.pdf"), width=7, height=5)
+
+
+```
+
+```{r}
+
+layout.numhd.emm.conddata.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.conddata)) 
+layout.numhd.emm.conddata.pairs #%>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+conddata.pairs.CI <- confint(pairs(layout.numhd.emm.conddata))
+
+layout.numhd.emm.conddata.pairs <- full_join(layout.numhd.emm.conddata.pairs, conddata.pairs.CI)
+
+#layout.numnodes.diffemm.cond <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Condition)
+#layout.numnodes.diffemm.cond$contrasts
+#contrast(layout.numnodes.emm.cond)
+#confint(layout.numnodes.emm.cond)
+#pairs(layout.numnodes.emm.cond, details=TRUE)
+#confint(contrast(layout.numnodes.emm.cond))
+#confint(pairs(layout.numnodes.emm.cond))
+#coef(pairs(layout.numnodes.emm.cond))
+
+plot(pairs(layout.numhd.emm.conddata))
+plot(pairs(layout.numhd.emm.conddata), comparisons = TRUE)
+
+layout.numhd.emm.conddata.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.conddata.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.conddata.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.conddata.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.conddata.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.conddata.pairs$sig.levels <- factor(layout.numhd.emm.conddata.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+layout.numhd.emm.conddata.pairs$contrast.cond <- paste0(layout.numhd.emm.conddata.pairs$contrast,layout.numhd.emm.conddata.pairs$Condition)
+
+layout.numhd.emm.conddata.pairs$contrast.cond <- factor(layout.numhd.emm.conddata.pairs$contrast.cond, levels=layout.numhd.emm.conddata.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.cond) %>% distinct() %>% unlist())
+
+#layout.numhd.emm.conddata.pairs %>% View()
+
+layout.numhd.emm.conddata.pairs$contrast <- 
+  factor(as.character(layout.numhd.emm.conddata.pairs$contrast), 
+         levels=layout.numhd.emm.conddata.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+layout.numhd.emm.conddata.pairs <- layout.numhd.emm.conddata.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numhd.emm.conddata.pairs %>% arrange(estimate)
+#layout.numlinks.emm.conddata.pairs %>% View()
+
+ggplot(layout.numhd.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast.cond,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+
+ggplot(layout.numhd.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.conddata.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Condition, scales="free_y") +
+  coord_flip()
+
+```
+
+```{r}
+
+conddata.copy <- layout.numhd.emm.conddata.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.conddata.pairs.compl <- bind_rows(layout.numhd.emm.conddata.pairs, conddata.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numnodes.emm.conddata.pairs.compl$From <- factor(layout.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#layout.numnodes.emm.conddata.pairs.compl$To <- factor(layout.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+layout.numhd.emm.conddata.pairs.compl$From <- factor(layout.numhd.emm.conddata.pairs.compl$From, levels=c(9,7,1))
+
+
+#layout.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.conddata.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numhd.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numhd.emm.conddata.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+ggplot(layout.numhd.emm.conddata.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Condition)
+
+
+```
+
+##### Condition:Underestimated
+
+###### emmeans
+
+
+```{r}
+
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numnodes, table(Dataset,Underestimated))
+# ref_grid(layout.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
+layout.numhd.emm.condunder <- emmeans(layout.numhd.lmer.full.int.4, ~ Condition | Underestimated, nesting = NULL)
+layout.numhd.emm.condunder.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Underestimated | Condition, nesting = NULL)
+
+layout.numhd.emm.condunder
+
+#layout.numnodes.diffemm.conddata <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#layout.numnodes.diffemm.conddata
+
+layout.numhd.emm.condunder.df <- dplyr::as_data_frame(layout.numhd.emm.condunder)
+
+layout.numhd.emm.condunder.df #%>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numhd.emm.condunder.cld <- cld(layout.numhd.emm.condunder,
+                                       details=TRUE,
+                                       #alpha=0.01,
+                                       #by="Dataset",
+                                       #Letters="|||||||||||||||||||",
+                                       sort=TRUE
+)
+
+layout.numhd.emm.condunder.cld[["emmeans"]]
+
+
+layout.numhd.emm.condunder.cld.df <- layout.numhd.emm.condunder.cld[["emmeans"]]
+
+layout.numhd.emm.condunder.cld.df %>% dplyr::select(Condition,Underestimated,.group) %>% print()
+
+cld(layout.numhd.emm.condunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Condition,Underestimated,.group) %>% print()
+
+
+# TO DO : get this to print as single table
+
+#layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(layout.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.condunder, ~Condition|Underestimated, CIs = TRUE)
+plot(layout.numhd.emm.condunder)
+#plot(layout.numnodes.emm.conddata, comparisons = TRUE)
+
+layout.numhd.emm.condunder.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.condunder.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Condition,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated) + 
+  coord_flip()
+
+ggplot(layout.numhd.emm.condunder.cld.df) +
+  geom_errorbar(aes(x=Condition,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position="dodge") +
+  geom_point(aes(x=Condition,y=emmean,color=Underestimated),position=position_dodge(width=0.2))+
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Condition vs. Underestimated for\nDegree of Highest Degree Node task, layout conditions")
+
+
+
+```
+
+```{r}
+
+layout.numhd.emm.condunder.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.condunder)) 
+layout.numhd.emm.condunder.pairs #%>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+condunder.pairs.CI <- confint(pairs(layout.numhd.emm.condunder))
+
+layout.numhd.emm.condunder.pairs <- full_join(layout.numhd.emm.condunder.pairs, condunder.pairs.CI)
+
+#layout.numnodes.diffemm.cond <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Condition)
+#layout.numnodes.diffemm.cond$contrasts
+#contrast(layout.numnodes.emm.cond)
+#confint(layout.numnodes.emm.cond)
+#pairs(layout.numnodes.emm.cond, details=TRUE)
+#confint(contrast(layout.numnodes.emm.cond))
+#confint(pairs(layout.numnodes.emm.cond))
+#coef(pairs(layout.numnodes.emm.cond))
+
+plot(pairs(layout.numhd.emm.condunder))
+plot(pairs(layout.numhd.emm.condunder), comparisons = TRUE)
+
+layout.numhd.emm.condunder.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.condunder.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.condunder.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.condunder.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.condunder.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.condunder.pairs$sig.levels <- factor(layout.numhd.emm.condunder.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+layout.numhd.emm.condunder.pairs$contrast.all <- paste0(layout.numhd.emm.condunder.pairs$contrast,layout.numhd.emm.condunder.pairs$Underestimated)
+
+layout.numhd.emm.condunder.pairs$contrast.all <- factor(layout.numhd.emm.condunder.pairs$contrast.all, levels=layout.numhd.emm.condunder.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.all) %>% distinct() %>% unlist())
+
+#layout.numhd.emm.conddata.pairs %>% View()
+
+layout.numhd.emm.condunder.pairs$contrast <- 
+  factor(as.character(layout.numhd.emm.condunder.pairs$contrast), 
+         levels=layout.numhd.emm.condunder.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+layout.numhd.emm.condunder.pairs <- layout.numhd.emm.condunder.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numhd.emm.condunder.pairs %>% arrange(estimate)
+#layout.numlinks.emm.conddata.pairs %>% View()
+
+ggplot(layout.numhd.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+
+ggplot(layout.numhd.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.condunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+```
+
+```{r}
+
+condunder.copy <- layout.numhd.emm.condunder.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.condunder.pairs.compl <- bind_rows(layout.numhd.emm.condunder.pairs, condunder.copy)
+
+
+cond.lev <- c("Ctrl","Cir","Fru","Ord")
+
+layout.numhd.emm.condunder.pairs.compl$From <- factor(layout.numhd.emm.condunder.pairs.compl$From, levels=rev(cond.lev))
+layout.numhd.emm.condunder.pairs.compl$To <- factor(layout.numhd.emm.condunder.pairs.compl$To, levels=cond.lev)
+
+
+
+#layout.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.condunder.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.condunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.condunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.condunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.condunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+
+```
+
+
+##### Dataset:Underestimated
+
+###### emmeans
+
+```{r, eval=FALSE}
+
+# trying to use emmeans package for lsmeans table
+
+# can use ref_grid to see if emmeans is finding nestings within variables, which can cause problems(?)
+# ref_grid(layout.numhd.lmer.full.int.4)
+# unfortunately, considers Overestimated nested in Dataset because I didn't include 
+# Overestimated as a fixed effect; can use nesting = NULL to ignore this auto-detection of nesting
+
+# also want to check if any combination of two factors has zeroes in the cells
+# with(layouts_numnodes, table(Dataset,Underestimated))
+# ref_grid(layout.numnodes.lmer.int.5) @ grid; .wgt. is number of observations
+
+# See also: https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+
+#layout.numnodes.emm.cond <- emmeans(layout.numnodes.lmer.int.3, "Condition", nesting = NULL)
+layout.numhd.emm.dataunder <- emmeans(layout.numhd.lmer.full.int.4, ~ Dataset | Underestimated, nesting = NULL)
+layout.numhd.emm.dataunder.2 <- emmeans(layout.numhd.lmer.full.int.4, ~ Underestimated | Dataset, nesting = NULL)
+
+layout.numhd.emm.dataunder
+
+#layout.numnodes.diffemm.conddata <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Dataset | Condition, nesting = NULL)
+
+#layout.numnodes.diffemm.conddata
+
+layout.numhd.emm.dataunder.df <- dplyr::as_data_frame(layout.numhd.emm.dataunder)
+
+layout.numhd.emm.dataunder.df #%>% View()
+
+# From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
+# The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
+
+# TO DO : can't figure out how to extract data about the arrows in order to reproduce the layout
+
+#xtable::xtable(layout.numhd.emm.condition)
+
+layout.numhd.emm.dataunder.cld <- cld(layout.numhd.emm.dataunder,
+                                       details=TRUE,
+                                       #alpha=0.01,
+                                       #by="Dataset",
+                                       #Letters="|||||||||||||||||||",
+                                       sort=TRUE
+)
+
+layout.numhd.emm.dataunder.cld[["emmeans"]]
+
+
+layout.numhd.emm.dataunder.cld.df <- layout.numhd.emm.dataunder.cld[["emmeans"]]
+
+layout.numhd.emm.dataunder.cld.df %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
+
+cld(layout.numhd.emm.dataunder.2, details=TRUE, sort=TRUE)[["emmeans"]] %>% dplyr::select(Dataset,Underestimated,.group) %>% print()
+
+
+# TO DO : get this to print as single table
+
+#layout.numnodes.emm.conddata.cld.df$Condition <- factor(layout.numnodes.emm.conddata.cld.df$Condition, levels=layout.numnodes.emm.conddata.cld %>% arrange(desc(emmean)) %>% dplyr::select(Condition) %>% unlist())
+
+#emmip(layout.numnodes.lmer.int.3, ~Condition, CIs = TRUE)
+emmip(layout.numhd.emm.dataunder, ~Dataset|Underestimated, CIs = TRUE)
+plot(layout.numhd.emm.dataunder)
+#plot(layout.numnodes.emm.conddata, comparisons = TRUE)
+
+layout.numhd.emm.dataunder.cld.df %>% arrange(desc(emmean))
+
+ggplot(layout.numhd.emm.dataunder.cld.df) +
+  #geom_point(aes(x=Condition,y=emmean), shape=21, size=7) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL), width=.2) +
+  #geom_point(aes(x=Condition,y=emmean), size=7) +
+  geom_point(aes(x=Dataset,y=emmean)) +
+  #scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated) + 
+  coord_flip()
+
+ggplot(layout.numhd.emm.dataunder.cld.df) +
+  geom_errorbar(aes(x=Dataset,ymax=upper.CL,ymin=lower.CL, color=Underestimated), width=.2, position=position_dodge(width=0.2)) +
+  geom_point(aes(x=Dataset,y=emmean, color=Underestimated), position=position_dodge(width=0.2)) +
+  geom_line(aes(x=Dataset,y=emmean, color=Underestimated, group=Underestimated), position=position_dodge(width=0.2)) +
+  scale_color_discrete(labels=c("Overestimated","Underestimated")) +
+  labs(title="Estimated Marginal Means for Dataset vs. Underestimated for\nDegree of Highest Degree Node task, layout conditions")
+
+```
+
+```{r, eval=FALSE}
+
+layout.numhd.emm.dataunder.pairs <- dplyr::as_data_frame(pairs(layout.numhd.emm.dataunder)) 
+layout.numhd.emm.dataunder.pairs #%>% View()
+# for some reason, full.cld$comparisons returns estimates that are all positive; 
+# pairs(layout.numhd.emm.condition) has both negative and positive estimates
+# and joins better to confint()
+
+dataunder.pairs.CI <- confint(pairs(layout.numhd.emm.dataunder))
+
+layout.numhd.emm.dataunder.pairs <- full_join(layout.numhd.emm.dataunder.pairs, dataunder.pairs.CI)
+
+#layout.numnodes.diffemm.cond <- emmeans(layout.numnodes.lmer.int.3, pairwise ~ Condition)
+#layout.numnodes.diffemm.cond$contrasts
+#contrast(layout.numnodes.emm.cond)
+#confint(layout.numnodes.emm.cond)
+#pairs(layout.numnodes.emm.cond, details=TRUE)
+#confint(contrast(layout.numnodes.emm.cond))
+#confint(pairs(layout.numnodes.emm.cond))
+#coef(pairs(layout.numnodes.emm.cond))
+
+plot(pairs(layout.numhd.emm.dataunder))
+plot(pairs(layout.numhd.emm.dataunder), comparisons = TRUE)
+
+layout.numhd.emm.dataunder.pairs$sig.levels <- 
+  case_when(layout.numhd.emm.dataunder.pairs$p.value < .0001 ~ sig.level.names[1],
+            layout.numhd.emm.dataunder.pairs$p.value < .001 ~ sig.level.names[2],
+            layout.numhd.emm.dataunder.pairs$p.value < .01 ~ sig.level.names[3],
+            layout.numhd.emm.dataunder.pairs$p.value < .05 ~ sig.level.names[4],
+            TRUE ~ sig.level.names[5])
+
+layout.numhd.emm.dataunder.pairs$sig.levels <- factor(layout.numhd.emm.dataunder.pairs$sig.levels, levels=sig.level.names,ordered=TRUE)
+
+layout.numhd.emm.dataunder.pairs$contrast.all <- paste0(layout.numhd.emm.dataunder.pairs$contrast,layout.numhd.emm.dataunder.pairs$Underestimated)
+
+layout.numhd.emm.dataunder.pairs$contrast.all <- factor(layout.numhd.emm.dataunder.pairs$contrast.all, levels=layout.numhd.emm.dataunder.pairs %>% arrange(desc(estimate)) %>% dplyr::select(contrast.all) %>% distinct() %>% unlist())
+
+#layout.numhd.emm.conddata.pairs %>% View()
+
+layout.numhd.emm.dataunder.pairs$contrast <- 
+  factor(as.character(layout.numhd.emm.dataunder.pairs$contrast), 
+         levels=layout.numhd.emm.dataunder.pairs %>% group_by(contrast) %>% summarise(avgEst = mean(estimate)) %>% arrange(desc(avgEst)) %>% dplyr::select(contrast) %>% distinct() %>% unlist())
+
+
+layout.numhd.emm.dataunder.pairs <- layout.numhd.emm.dataunder.pairs %>% separate(contrast, c("From", "del", "To"), sep="[ ]", remove=FALSE) %>% dplyr::select(-del)
+
+layout.numhd.emm.dataunder.pairs %>% arrange(estimate)
+#layout.numlinks.emm.conddata.pairs %>% View()
+
+ggplot(layout.numhd.emm.dataunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.dataunder.pairs) +
+  geom_errorbar(aes(x=contrast.all,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast.cond,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast.all,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+
+ggplot(layout.numhd.emm.dataunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+ggplot(layout.numhd.emm.dataunder.pairs) +
+  geom_errorbar(aes(x=contrast,ymax=upper.CL,ymin=lower.CL), width=.5) +
+  #geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21, size=7) +
+  geom_point(aes(x=contrast,y=estimate, fill=sig.levels), shape=21) +
+  geom_hline(aes(yintercept=0)) +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  facet_wrap(~Underestimated, scales="free_y") +
+  coord_flip()
+
+```
+
+```{r, eval=FALSE}
+
+dataunder.copy <- layout.numhd.emm.dataunder.pairs %>% rename(From=To,To=From) %>% 
+  mutate(estimate=-estimate,
+         t.ratio=-t.ratio,
+         lower.CL=-lower.CL,
+         upper.CL=-upper.CL)
+
+layout.numhd.emm.dataunder.pairs.compl <- bind_rows(layout.numhd.emm.dataunder.pairs, dataunder.copy)
+
+
+#cond.lev <- c("Ctrl","Phr","Col","Siz")
+
+#layout.numnodes.emm.conddata.pairs.compl$From <- factor(layout.numnodes.emm.conddata.pairs.compl$From, levels=cond.lev)
+#layout.numnodes.emm.conddata.pairs.compl$To <- factor(layout.numnodes.emm.conddata.pairs.compl$To, levels=cond.lev)
+
+layout.numhd.emm.dataunder.pairs.compl$From <- factor(layout.numhd.emm.dataunder.pairs.compl$From, levels=c(9,7,1))
+
+
+#layout.numlinks.emm.conddata.pairs.compl %>% arrange(desc(estimate))
+layout.numhd.emm.dataunder.pairs.compl %>% arrange(estimate)
+
+ggplot(layout.numhd.emm.dataunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=sig.levels), color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.dataunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=sig.levels), shape=21, color="black") +
+  scale_fill_manual("Significance Levels", values=sig.colors) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.dataunder.pairs.compl) +
+  geom_tile(aes(x=To,y=From,fill=estimate)) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+ggplot(layout.numhd.emm.dataunder.pairs.compl) +
+  geom_count(aes(x=To,y=From,size=abs(estimate),fill=estimate, color=p.value<.01), shape=21) +
+  scale_fill_distiller(type="div", palette=4) +
+  scale_color_manual(values=c("grey90","black")) +
+  scale_x_discrete(drop=FALSE, position = "top") +
+  scale_y_discrete(drop=FALSE, name="From") +
+  facet_wrap(~Underestimated)
+
+
+```
+
+
