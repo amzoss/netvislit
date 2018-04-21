@@ -5,13 +5,22 @@ date: "March 25, 2018"
 output: github_document
 ---
 
-```{r layout-setup-bc}
+```{r}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-```{r layout-load-environment-bc, message=FALSE}
+```{r, message=FALSE}
 
-source('LayoutSetup.R')
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+layouts_bc <- readRDS(file.path(analysisDataDir, "LayoutsBC.rds"))
+
 
 ```
 
@@ -583,14 +592,19 @@ anova(layout.bc.nb.dataset, layout.bc.nb.dataset.offset)
 
 ```
 
-
 ```{r}
+
+temp.bc <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes, CorrectAnswer=scale(CorrectAnswer))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
 
 #---------------------------------
 # Multiple predictors
 #---------------------------------
-
-temp.bc <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes, CorrectAnswer=scale(CorrectAnswer))
 
 layout.bc.nb.full <- glmer.nb(NodeRank ~ Condition + Dataset + 
                                 CorrectAnswer +
@@ -610,6 +624,15 @@ anova(layout.bc.nb.full, layout.bc.nb.full.null)
 ```
 
 ```{r}
+
+temp.bc.2 <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes)
+
+
+```
+
+Run this one
+
+```{r, cache=TRUE, eval=FALSE}
 #---------------------------------
 # Interactions
 #---------------------------------
@@ -623,10 +646,9 @@ layout.bc.nb.full.int <- glmer.nb(NodeRank ~ Condition + Dataset +
 
 summary(layout.bc.nb.full.int)
 
-anova(layout.bc.nb.full, layout.bc.nb.full.int)
+#anova(layout.bc.nb.full, layout.bc.nb.full.int)
 # yes, interaction is significantly different from just main effects (p < 2.2e-16)
 
-temp.bc.2 <- layouts_bc %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, Demo.acfield, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(NormRank=NodeRank/NumNodes)
 
 layout.bc.nb.full.int.2 <- glmer.nb(NodeRank ~ Condition + Dataset + 
                                 CorrectAnswer +
@@ -637,14 +659,26 @@ layout.bc.nb.full.int.2 <- glmer.nb(NodeRank ~ Condition + Dataset +
 
 summary(layout.bc.nb.full.int.2)
 
+# TO DO should have scaled CorrectAnswer
 
 ```
 
+Run this one
 
-```{r}
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(layout.bc.nb.full.int, file = file.path(analysisDataDir,"fits/layout_bc_nb_full_int.RData"))
+save(layout.bc.nb.full.int.2, file = file.path(analysisDataDir,"fits/layout_bc_nb_full_int.2.RData"))
+
+```
+
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/layout_bc_nb_full_int.RData"))
+load(file.path(analysisDataDir,"fits/layout_bc_nb_full_int.2.RData"))
 
 ```
 
@@ -697,6 +731,10 @@ geom_abline(aes(slope = 1, intercept = 0)) +
 #scale_y_continuous(limits=c(0,0.3)) +
 labs(title="Real vs. Predicted NodeRank values for\nNode Betweenness Centrality task, layout conditions")
 
+```
+
+
+```{r, eval=FALSE}
 (r2nsj = r2beta(layout.bc.nb.full.int.2, method = 'nsj', partial = TRUE))[1,'Rsq']
 
 layout.bc.nb.full.int.2.f <- fortify(layout.bc.nb.full.int.2)
@@ -869,8 +907,8 @@ Full model (layout.bc.nb.full.int):
 # with(layouts_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(layout.bc.nb.full.int) @ grid; .wgt. is number of observations
 
+#layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int, "Condition", nesting = NULL)
 layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int.2, "Condition", nesting = NULL)
-#layout.bc.emm.cond <- emmeans(layout.bc.nb.full.int, "Condition", nesting = NULL, cov.reduce = FALSE)
 
 layout.bc.emm.cond
 

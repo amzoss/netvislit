@@ -1,0 +1,37 @@
+---
+title: "Overall Summary for Layouts Data"
+author: "Angela Zoss"
+date: "April 20, 2018"
+output: github_document
+---
+
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+layouts <- readRDS(file.path(analysisDataDir, "Layouts.rds"))
+
+
+```
+
+```{r}
+
+layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_violin() + scale_y_log10()
+
+layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
+  ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
+  labs(title="Distribution of LogError for Numerical Response Tasks,\nlayout conditions")
+
+
+```

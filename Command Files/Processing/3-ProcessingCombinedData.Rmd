@@ -589,15 +589,6 @@ network_props <- num_ans_lookup %>% spread(Task, CorrectAnswer)
 
 all_exp <- left_join(all_exp, network_props)
 
-
-graphics <- all_exp %>% filter(Condition %in% c("Ctrl","Phr","Siz","Col"), filename %in% c("MTurkFinal","MTurkPilot3")) 
-  
-layout_fac_1_7_9 <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), Dataset %in% c(1, 7, 9)) 
-layout_mturk_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), filename %in% c("MTurkFinal","MTurkPilot3"))
-
-layout_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"))
-
-
 ```
 
 ## Omit participants based on response patterns 
@@ -657,13 +648,13 @@ exp_only <- exp_only %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-Re
 
 all_exp <- all_exp %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
-graphics <- graphics %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+#graphics <- graphics %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
-layout_all <- layout_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+#layout_all <- layout_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
-layout_fac_1_7_9 <- layout_fac_1_7_9 %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+#layout_fac_1_7_9 <- layout_fac_1_7_9 %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
-layout_mturk_all <- layout_mturk_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
+#layout_mturk_all <- layout_mturk_all %>% filter(!(`Demo-ResponseID` %in% all_omit_users$`Demo-ResponseID`))
 
 ```
 
@@ -676,32 +667,56 @@ table(num_users$Dataset, num_users$Condition, num_users$NetVisExperience)
 
 ```
 
+```{r, eval=FALSE}
+
+graphics <- all_exp %>% filter(Condition %in% c("Ctrl","Phr","Siz","Col"), filename %in% c("MTurkFinal","MTurkPilot3")) 
+  
+layout_fac_1_7_9 <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), Dataset %in% c(1, 7, 9)) 
+layout_mturk_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), filename %in% c("MTurkFinal","MTurkPilot3"))
+
+layout_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"))
+
+
+```
+
 ## Write analysis files
 
 ```{r}
 
-write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
+#write_csv(stats_demo, file.path(analysisDataDir,"Stats_Demo.csv"))
+saveRDS(stats_demo, file.path(analysisDataDir,"Stats_Demo.rds"))
 
-write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+#write_csv(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.csv"))
+saveRDS(stats_datasets_tall, file.path(analysisDataDir,"Stats_Datasets_Tall.rds"))
 
-write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
+#write_csv(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.csv"))
+saveRDS(exp_responses_with_order, file.path(analysisDataDir,"CombinedResponsesWithOrder.rds"))
 
-write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
+#write_csv(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.csv"))
+saveRDS(graded_num_ans, file.path(analysisDataDir,"GradedNumAnswers.rds"))
 
-write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
+#write_csv(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.csv"))
+saveRDS(graded_nodes_top, file.path(analysisDataDir,"GradedNodes.rds"))
 
-write_csv(BC_summary, file.path(analysisDataDir,"BCSummary.csv"))
+#write_csv(BC_summary, file.path(analysisDataDir,"BCSummary.csv"))
+saveRDS(BC_summary, file.path(analysisDataDir,"BCSummary.rds"))
 
-write_csv(exp_only, file.path(analysisDataDir,"ExpOnly.csv"))
+#write_csv(exp_only, file.path(analysisDataDir,"ExpOnly.csv"))
+saveRDS(exp_only, file.path(analysisDataDir,"ExpOnly.rds"))
 
-write_csv(all_exp, file.path(analysisDataDir,"AllExperimental.csv"))
+#write_csv(all_exp, file.path(analysisDataDir,"AllExperimental.csv"))
+saveRDS(all_exp, file.path(analysisDataDir,"AllExperimental.rds"))
 
-write_csv(graphics, file.path(analysisDataDir,"Graphics.csv"))
+#write_csv(graphics, file.path(analysisDataDir,"Graphics.csv"))
+#saveRDS(graphics, file.path(analysisDataDir,"Graphics.rds"))
 
-write_csv(layout_all, file.path(analysisDataDir,"LayoutAll.csv"))
+#write_csv(layout_all, file.path(analysisDataDir,"LayoutAll.csv"))
+#saveRDS(layout_all, file.path(analysisDataDir,"LayoutAll.rds"))
 
-write_csv(layout_fac_1_7_9, file.path(analysisDataDir,"LayoutFac.csv"))
+#write_csv(layout_fac_1_7_9, file.path(analysisDataDir,"LayoutFac.csv"))
+#saveRDS(layout_fac_1_7_9, file.path(analysisDataDir,"LayoutFac.rds"))
 
-write_csv(layout_mturk_all, file.path(analysisDataDir,"LayoutTurk.csv"))
+#write_csv(layout_mturk_all, file.path(analysisDataDir,"LayoutTurk.csv"))
+#saveRDS(layout_mturk_all, file.path(analysisDataDir,"LayoutTurk.rds"))
 
 ```

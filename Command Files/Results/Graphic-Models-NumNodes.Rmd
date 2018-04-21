@@ -6,9 +6,22 @@ output: github_document
 ---
 
 
-```{r load-environment-numnodes, message=FALSE, eval=FALSE}
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
 
-source('GraphicsSetup.R')
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_numnodes <- readRDS(file.path(analysisDataDir, "GraphicsNumNodes.rds"))
+
 
 ```
 
@@ -47,7 +60,7 @@ ggsave(file.path(figureDir, "logerror9hist.pdf"), width=6, height=3)
 
 #### lme4
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Condition
 
@@ -432,6 +445,12 @@ anova(graph.numnodes.lmer.sizeclust1)
 
 temp.numnodes <- graphics_numnodes %>% dplyr::select(Demo.ResponseID, LogError, Condition, Ctrl_dummy, ConditionPhrasing, ConditionGraphics, ConditionColor, Dataset, QuestionOrder, DatasetOrder, CorrectAnswer, Underestimated, Overestimated, UnderestDummy, Demo.acfieldGrouped, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(QuestionOrderSc=scale(QuestionOrder))
 
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
 graph.numnodes.lmer.full <- lmer(LogError ~ Condition + Dataset +
                                    QuestionOrderSc +
                                    DatasetOrder +
@@ -446,7 +465,9 @@ anova(graph.numnodes.lmer.full)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 graph.numnodes.lmer.int <- lmer(LogError ~ Condition + Dataset +
                                   Condition:Dataset +
@@ -526,11 +547,21 @@ anova(graph.numnodes.lmer.int.3,graph.numnodes.lmer.int.5)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.numnodes.lmer.int.3, 
      file = file.path(analysisDataDir,"fits/graph_numnodes_lmer_int.RData"))
+
+```
+
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_numnodes_lmer_int.RData"))
 
 ```
 
@@ -632,7 +663,7 @@ Final model: LogError ~ Condition + Dataset + QuestionOrderSc + UnderestDummy +
 
 ###### lsmeans
 
-```{r}
+```{r, eval=FALSE}
 
 # trying lmerTest::lsmeansLT
 
@@ -675,7 +706,7 @@ ggplot(graph.numnodes.lsmlt.cond.df) +
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 # LSMeans Difference data
 

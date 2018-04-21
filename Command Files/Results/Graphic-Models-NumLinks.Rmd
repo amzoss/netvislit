@@ -5,9 +5,29 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_numlinks <- readRDS(file.path(analysisDataDir, "GraphicsNumLinks.rds"))
+
+
+```
+
+
 #### lme4
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Condition
 
@@ -388,6 +408,12 @@ temp <- graphics_numlinks %>%
                 Overestimated,AvgDeg,Density,LargeClust1,Modularity,NumClust,NumLinks,
                 NumNodes,NumNodesClust1) %>% drop_na()
 
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
 graph.numlinks.lmer.full <- lmer(LogError ~ Condition + 
                                    Dataset +
                                    DatasetDuration +
@@ -400,7 +426,9 @@ anova(graph.numlinks.lmer.full)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 
 graph.numlinks.lmer.full.int <- lmer(LogError ~ Condition + 
@@ -418,7 +446,9 @@ anova(graph.numlinks.lmer.full,graph.numlinks.lmer.full.int)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.numlinks.lmer.full.int, 
@@ -426,6 +456,13 @@ save(graph.numlinks.lmer.full.int,
 
 ```
 
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_numlinks_lmer_int.RData"))
+
+```
 
 ```{r, cache=TRUE}
 
@@ -1211,7 +1248,7 @@ graph.numlinks.emm.conddata
 
 graph.numlinks.emm.conddata.df <- dplyr::as_data_frame(graph.numlinks.emm.conddata)
 
-graph.numlinks.emm.conddata.df %>% View()
+graph.numlinks.emm.conddata.df #%>% View()
 
 # From: https://cran.r-project.org/web/packages/emmeans/vignettes/comparisons.html
 # The blue bars are confidence intervals for the EMMs, and the red arrows are for the comparisons among them. If an arrow from one mean overlaps an arrow from another group, the difference is not significant, based on the adjust setting (which defaults to "tukey"). (Note: Don’t ever use confidence intervals for EMMs to perform comparisons; they can be very misleading.)
@@ -1272,7 +1309,7 @@ ggsave(file.path(figureDir, "emmeanscolordatanumlinksgraphics.pdf"), width=7, he
 ```{r}
 
 graph.numlinks.emm.conddata.pairs <- dplyr::as_data_frame(pairs(graph.numlinks.emm.conddata)) 
-graph.numlinks.emm.conddata.pairs %>% View()
+graph.numlinks.emm.conddata.pairs #%>% View()
 # for some reason, full.cld$comparisons returns estimates that are all positive; 
 # pairs(graph.numhd.emm.condition) has both negative and positive estimates
 # and joins better to confint()

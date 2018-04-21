@@ -5,9 +5,29 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_numhighdeg <- readRDS(file.path(analysisDataDir, "GraphicsNumHD.rds"))
+
+
+```
+
+
 #### lme4
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Condition
 
@@ -355,12 +375,20 @@ anova(graph.numhd.lmer)
 
 ```{r}
 
-# combinations of individual predictors
-
 temp <- graphics_numhighdeg %>% dplyr::select(
   Demo.ResponseID, LogError, Condition, Ctrl_dummy, ConditionPhrasing, ConditionGraphics, ConditionColor, Dataset, DatasetOrder, Underestimated, Overestimated, StatsNumPixels, Demo.age, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumNodes) %>% drop_na()
 
 temp <- temp %>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+temp.numhd.gr <- temp %>% mutate(DatasetOrder=factor(DatasetOrder))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
+# combinations of individual predictors
 
 graph.numhd.lmer.full <- lmer(LogError ~ Condition + 
                                 Dataset +
@@ -376,7 +404,9 @@ anova(graph.numhd.lmer.full)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 # interactions
 
@@ -468,8 +498,6 @@ anova(graph.numhd.lmer.full.int.4, graph.numhd.lmer.full.int.5)
 
 # redoing 5 with factor in the dataset
 
-temp.numhd.gr <- temp %>% mutate(DatasetOrder=factor(DatasetOrder))
-
 graph.numhd.lmer.full.int.6 <- lmer(LogError ~ Condition + 
                                     Dataset +
                                     Condition:Dataset +
@@ -484,7 +512,9 @@ anova(graph.numhd.lmer.full.int.6)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.numhd.lmer.full.int.6, 
@@ -492,6 +522,13 @@ save(graph.numhd.lmer.full.int.6,
 
 ```
 
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_numhd_lmer_int.RData"))
+
+```
 
 ```{r, cache=TRUE}
 
@@ -585,7 +622,7 @@ LogError ~ Condition + Dataset + Condition:Dataset + Dataset:Overestimated + Dat
 ##### Condition
 
 ###### lsmeans - older than, e.g., numnodes
-```{r}
+```{r, eval=FALSE}
 
 # trying lmerTest::lsmeansLT
 
@@ -623,7 +660,7 @@ ggplot(graph.numhd.lsmlt.cond.2.df) +
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 
 # LSMeans Difference data
 

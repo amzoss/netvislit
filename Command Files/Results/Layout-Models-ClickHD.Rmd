@@ -5,16 +5,24 @@ date: "March 25, 2018"
 output: github_document
 ---
 
-```{r layout-setup-clickhd}
+```{r}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-```{r layout-load-environment-clickhd, message=FALSE}
+```{r, message=FALSE}
 
-source('LayoutSetup.R')
+source('GlobalSetup.R')
 
 ```
 
+```{r}
+
+# load full graphics dataset for summary graphics
+
+layouts_clickhighdeg <- readRDS(file.path(analysisDataDir, "LayoutsClickHD.rds"))
+
+
+```
 
 #### Negative binomial model for click questions Node Rank
 
@@ -603,13 +611,19 @@ anova(layout.clickhd.nb,layout.clickhd.nb.null.2)
 
 ```{r}
 
-#---------------------------------
-# Multiple predictors
-#---------------------------------
-
 temp.clickhd <- layouts_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(CorrectAnswer=scale(CorrectAnswer))
 
 #temp <- temp %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
+#---------------------------------
+# Multiple predictors
+#---------------------------------
 
 layout.clickhd.nb.full <- glmer.nb(NodeRank ~ Condition + Dataset + CorrectAnswer +
                                     (1|Demo.ResponseID),
@@ -619,6 +633,15 @@ summary(layout.clickhd.nb.full)
 ```
 
 ```{r}
+
+temp.clickhd.2 <- layouts_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na() %>% mutate(CorrectAnswer=scale(CorrectAnswer))
+
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
 #---------------------------------
 # Interactions
 #---------------------------------
@@ -634,8 +657,6 @@ summary(layout.clickhd.nb.full.int)
 #anova(layout.clickhd.nb.full, layout.clickhd.nb.full.int)
 # keep int
 
-temp.clickhd.2 <- layouts_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Condition, Dataset, CorrectAnswer, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumHighDegree, NumLinks, NumNodes, NumNodesClust1) %>% drop_na()
-
 layout.clickhd.nb.full.int.2 <- glmer.nb(NodeRank ~ Condition + Dataset + CorrectAnswer +
                                          Condition:Dataset +
                                         (1|Demo.ResponseID),
@@ -648,14 +669,24 @@ summary(layout.clickhd.nb.full.int.2)
 
 ```
 
+Run this one
 
-```{r}
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(layout.clickhd.nb.full.int, file = file.path(analysisDataDir,"fits/layout_clickhd_nb_full_int.RData"))
+save(layout.clickhd.nb.full.int.2, file = file.path(analysisDataDir,"fits/layout_clickhd_nb_full_int.2.RData"))
 
 ```
 
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/layout_clickhd_nb_full_int.RData"))
+load(file.path(analysisDataDir,"fits/layout_clickhd_nb_full_int.2.RData"))
+
+```
 
 ```{r}
 
@@ -860,7 +891,7 @@ NodeRank ~ Condition + Dataset + CorrectAnswer + Condition:Dataset + (1|Demo.Res
 
 layout.clickhd.broom.tidy <- tidy(layout.clickhd.nb.full.int, conf.int=TRUE)
 layout.clickhd.broom.aug <- augment(layout.clickhd.nb.full.int, temp.clickhd)
-layout.clickhd.broom.ci <- confint_tidy(layout.clickhd.nb.full.int)
+#layout.clickhd.broom.ci <- confint_tidy(layout.clickhd.nb.full.int)
 #layout.clickhd.broom.tidyci <- bind_cols(layout.clickhd.broom.tidy %>% arrange(group), layout.clickhd.broom.ci)
 
 #layout.clickhd.broom.tidyci$term <- factor(layout.clickhd.broom.tidyci$term,
@@ -900,6 +931,7 @@ ggplot(layout.clickhd.broom.aug) +
 # with(layouts_numhighdeg, table(Dataset,Overestimated))
 # ref_grid(layout.clickhd.nb.full.int.2) @ grid; .wgt. is number of observations
 
+#layout.clickhd.emm.data <- emmeans(layout.clickhd.nb.full.int, "Dataset", nesting = NULL)
 layout.clickhd.emm.data <- emmeans(layout.clickhd.nb.full.int.2, "Dataset", nesting = NULL)
 #layout.numhd.emm.condition <- emmeans(layout.numhd.lmer.full.int.4, "Condition", lmer.df = "satterthwaite")
 

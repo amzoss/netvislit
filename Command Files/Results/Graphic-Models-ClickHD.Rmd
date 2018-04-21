@@ -5,6 +5,26 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_clickhighdeg <- readRDS(file.path(analysisDataDir, "GraphicsClickHD.rds"))
+
+
+```
+
+
 #### Negative binomial model for click questions Node Rank
 
 Ranks are like count data, in that they are nonnegative integers, so using a negative binomial distribution to model. Negative binomial is especially useful for over-dispersed data - data where the conditional variances exceed conditional means. 
@@ -606,13 +626,19 @@ anova(graph.clickhd.nb.numnodesclust1, graph.clickhd.nb.null.2)
 
 ```{r}
 
-#---------------------------------
-# Multiple predictors
-#---------------------------------
-
 temp <- graphics_clickhighdeg %>% dplyr::select(Demo.ResponseID, NodeRank, Dataset, CorrectAnswer, Demo.acfieldGrouped3, Demo.dailytech_SmartPhone, AvgDeg, NumClust, NumHighDegree, NumNodesClust1) %>% drop_na()
 
 #temp <- temp %>% mutate(Stats.Q_TotalDuration=scale(Stats.Q_TotalDuration))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
+#---------------------------------
+# Multiple predictors
+#---------------------------------
 
 graph.clickhd.nb.full <- glmer.nb(NodeRank ~ Dataset +
                                     Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone +
@@ -646,11 +672,20 @@ anova(graph.clickhd.nb.full, graph.clickhd.nb.full.int)
 
 ```
 
+Run this one
 
-```{r}
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.clickhd.nb.full, file = file.path(analysisDataDir,"fits/graph_clickhd_nb_full.RData"))
+
+```
+
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_clickhd_nb_full.RData"))
 
 ```
 
@@ -848,14 +883,22 @@ NodeRank ~ Dataset + Demo.acfieldGrouped3 + Demo.dailytech_SmartPhone + (1|Demo.
 
 graph.clickhd.broom.tidy <- tidy(graph.clickhd.nb.full, conf.int=TRUE)
 graph.clickhd.broom.aug <- augment(graph.clickhd.nb.full, temp)
-graph.clickhd.broom.ci <- confint_tidy(graph.clickhd.nb.full)
-graph.clickhd.broom.tidyci <- bind_cols(graph.clickhd.broom.tidy %>% arrange(group), graph.clickhd.broom.ci)
+#graph.clickhd.broom.ci <- confint_tidy(graph.clickhd.nb.full)
+#graph.clickhd.broom.tidyci <- bind_cols(graph.clickhd.broom.tidy %>% arrange(group), graph.clickhd.broom.ci)
 
-graph.clickhd.broom.tidyci$term <- factor(graph.clickhd.broom.tidyci$term,
-                                          levels=graph.clickhd.broom.tidyci %>% arrange(estimate) %>%
+#graph.clickhd.broom.tidyci$term <- factor(graph.clickhd.broom.tidyci$term,
+#                                          levels=graph.clickhd.broom.tidyci %>% arrange(estimate) %>%
+#                                            dplyr::select(term) %>% unlist())
+
+#ggplot(graph.clickhd.broom.tidyci, aes(term, estimate)) + 
+#  geom_point() + 
+#  coord_flip()
+
+graph.clickhd.broom.tidy$term <- factor(graph.clickhd.broom.tidy$term,
+                                          levels=graph.clickhd.broom.tidy %>% arrange(estimate) %>%
                                             dplyr::select(term) %>% unlist())
 
-ggplot(graph.clickhd.broom.tidyci, aes(term, estimate)) + 
+ggplot(graph.clickhd.broom.tidy, aes(term, estimate)) + 
   geom_point() + 
   coord_flip()
 

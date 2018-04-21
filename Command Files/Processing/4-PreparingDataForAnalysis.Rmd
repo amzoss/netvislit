@@ -1,0 +1,362 @@
+---
+title: "Preparing Data For Analysis"
+author: "Angela Zoss"
+date: "April 20, 2018"
+output: github_document
+---
+
+## Detach previous packages
+
+```{r}
+
+detachAllPackages <- function() {
+
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+
+  package.list <- setdiff(package.list,basic.packages)
+
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+
+}
+
+detachAllPackages()
+
+```
+
+## Load packages
+
+```{r}
+
+require(tidyverse)
+#require(readxl)
+
+```
+
+
+## Environmental Variables
+
+```{r}
+
+#originalDataDir <- "../../Original Data"
+analysisDataDir <- "../../Analysis Data"
+
+#generatedDataDir <- file.path(originalDataDir, "Generated data")
+
+#figureDir <- "../../Documents/"
+
+```
+
+## Loading analysis data files
+
+```{r}
+
+all_exp <- readRDS(file.path(analysisDataDir, "AllExperimental.rds"))
+
+```
+
+## Slight processing for analysis
+
+```{r}
+
+all_exp <- set_tidy_names(all_exp, syntactic=TRUE)
+
+all_exp$ClustConf <- factor(all_exp$ClustConf, 
+                             levels=c("Very doubtful (0-25%)",
+                                      "Somewhat doubtful (26-50%)",
+                                      "Somewhat confident (51-75%)",
+                                      "Very confident (76-100%)"),
+                             ordered = TRUE)
+
+all_exp$Dataset <- factor(all_exp$Dataset, ordered = TRUE)
+
+#Make control the reference group
+#TO DO: decide on reference group for task??
+
+all_exp <- all_exp %>% mutate(ConditionPhrasing = case_when(
+  Condition == "Ctrl" ~ "1-Technical",
+  Condition == "Phr" ~ "2-Informal",
+  Condition == "Col" ~ "1-Technical",
+  Condition == "Siz" ~ "1-Technical"
+)
+)
+
+all_exp <- all_exp %>% mutate(ConditionGraphics = case_when(
+  Condition == "Ctrl" ~ "1-Default",
+  Condition == "Phr" ~ "1-Default",
+  Condition == "Col" ~ "2-Color",
+  Condition == "Siz" ~ "3-Size"
+)
+)
+
+all_exp <- all_exp %>% mutate(ConditionColor = case_when(
+  Condition == "Col" ~ "1-Color",
+  Condition == "Phr" ~ "2-Other",
+  Condition == "Ctrl" ~ "2-Other",
+  Condition == "Siz" ~ "2-Other"
+)
+)
+
+
+all_exp <- all_exp %>% mutate(Condition1 = factor(
+  case_when(
+    Condition == "Ctrl" ~ 0,
+    Condition == "Phr" ~ 1,
+    Condition == "Col" ~ 2,
+    Condition == "Siz" ~ 3)
+)
+)
+
+all_exp$Condition <- factor(all_exp$Condition)
+
+all_exp$Condition <- relevel(all_exp$Condition, ref = "Ctrl")
+
+all_exp <- all_exp %>% mutate(Ctrl_dummy = 
+                                  case_when(
+                                    Condition == "Ctrl" ~ 1,
+                                    Condition != "Ctrl" ~ 2)
+)
+
+
+all_exp$Demo.lang <- factor(all_exp$Demo.lang)
+
+all_exp$Demo.educ <- factor(all_exp$Demo.educ, 
+                             levels = c("High School diploma",
+                                        "Bachelor’s degree",
+                                        "Master’s degree",
+                                        "Professional degree",
+                                        "Doctorate degree",
+                                        "Other"),
+                             ordered = TRUE)
+
+freq4 <- c("None", "A little", "Some", "A lot", "Skipped")
+
+all_exp$Demo.expdataanal <- factor(all_exp$Demo.expdataanal,
+                                    levels = c(freq4),
+                                    ordered = TRUE)
+
+all_exp$Demo.expdatavis <- factor(all_exp$Demo.expdatavis,
+                                   levels = c(freq4),
+                                   ordered = TRUE)
+
+all_exp$Demo.expreadnetvis <- factor(all_exp$Demo.expreadnetvis,
+                                      levels = c(freq4),
+                                      ordered = TRUE)
+
+all_exp <- all_exp %>% mutate(Demo.expreadnetvis.alot = ifelse(Demo.expreadnetvis == "A lot",1,0))
+
+all_exp$Demo.expreadnetvis.alot <- factor(all_exp$Demo.expreadnetvis.alot)
+
+all_exp <- all_exp %>% mutate(Demo.expreadnetvis.none = ifelse(Demo.expreadnetvis == "None",1,0))
+
+all_exp$Demo.expreadnetvis.none <- factor(all_exp$Demo.expreadnetvis.none)
+
+all_exp <- all_exp %>% mutate(Demo.expreadnetvis.three = case_when(
+  Demo.expreadnetvis == "None" ~ "None",
+  Demo.expreadnetvis == "A little" ~ "A little",
+  TRUE ~ "Other"
+))
+
+all_exp$Demo.expreadnetvis.three <- factor(all_exp$Demo.expreadnetvis.three)
+
+all_exp$Demo.expcreatenetvis <- factor(all_exp$Demo.expcreatenetvis,
+                                        levels = c(freq4),
+                                        ordered = TRUE)
+
+all_exp <- all_exp %>% mutate(Demo.expcreatenetvis.alot = ifelse(Demo.expcreatenetvis == "A lot",1,0))
+
+all_exp$Demo.expcreatenetvis.alot <- factor(all_exp$Demo.expcreatenetvis.alot)
+
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemCombined = case_when(
+  str_detect(Stats.OperatingSystem, "Android") ~ "Android",
+  str_detect(Stats.OperatingSystem, "Windows") ~ "Windows",
+  str_detect(Stats.OperatingSystem, "CrOS") ~ "CrOS",
+  str_detect(Stats.OperatingSystem, "Linux") | str_detect(Stats.OperatingSystem, "Ubuntu") ~ "Linux/Ubuntu",
+  TRUE ~ Stats.OperatingSystem)
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemCombined2 = case_when(
+  str_detect(Stats.OperatingSystemCombined, "Android") | str_detect(Stats.OperatingSystemCombined, "iPhone") ~ "Android/iPhone",
+  TRUE ~ Stats.OperatingSystemCombined)
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemCombined3 = case_when(
+  str_detect(Stats.OperatingSystemCombined2, "Macintosh") | str_detect(Stats.OperatingSystemCombined2, "Windows") ~ Stats.OperatingSystemCombined2,
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemCombined4 = case_when(
+  str_detect(Stats.OperatingSystem, "Macintosh") | str_detect(Stats.OperatingSystem, "Windows") ~ "Mac/Windows",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemCombined5 = case_when(
+  str_detect(Stats.OperatingSystem, "Macintosh") | str_detect(Stats.OperatingSystem, "Windows") | str_detect(Stats.OperatingSystem, "CrOS") ~ "Mac/Windows/CrOS",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemWindows = case_when(
+  str_detect(Stats.OperatingSystem, "Windows") ~ "Windows",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemMacintosh = case_when(
+  str_detect(Stats.OperatingSystem, "Windows") ~ "Macintosh",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemAndroid = case_when(
+  str_detect(Stats.OperatingSystem, "Windows") ~ "Android",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>% mutate(Stats.OperatingSystemiPhone = case_when(
+  str_detect(Stats.OperatingSystem, "Windows") ~ "iPhone",
+  TRUE ~ "Other")
+)
+
+all_exp <- all_exp %>%  mutate(Stats.OperatingSystemNumClust = case_when(
+  str_detect(Stats.OperatingSystem, "Android 6.0.1") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "CrOS x86_64 9592.96.0") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "Linux x86_64") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "Ubuntu") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "Windows NT 10.0") ~ "1-HighSig",
+  str_detect(Stats.OperatingSystem, "Windows NT 5.1") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "Windows NT 6.0") ~ "1-HighSig", 
+  str_detect(Stats.OperatingSystem, "Windows NT 6.1") ~ "1-HighSig",
+  TRUE ~ "Other"))
+
+all_exp <- all_exp %>% mutate(Demo.acfieldGrouped = case_when(
+  Demo.acfield %in% c("Anthropology","Arts","Classics","History","Languages","Literature","Philosophy","Religion") ~ "Humanities",
+  Demo.acfield %in% c("Archaeology","Communication studies","Cultural and ethnic studies","Economics","Geography","Information science","Linguistics","Political science","Psychology","Sociology") ~ "Social sciences",
+  Demo.acfield %in% c("Biology","Chemistry","Earth sciences","Physics","Space sciences") ~ "Life sciences",
+  Demo.acfield %in% c("Mathematics","Computer sciences","Logic","Statistics","Systems science") ~ "Formal sciences",
+  Demo.acfield %in% c("Architecture and design","Business","Divinity","Education","Engineering","Human physical performance and recreation","Journalism, media studies and communication","Law","Library and museum studies","Medicine","Military sciences","Public administration") ~ "Professional",
+  TRUE ~ Demo.acfield
+))
+
+all_exp <- all_exp %>% mutate(Demo.acfieldGrouped2 = case_when(
+  Demo.acfield %in% c("Architecture and design", "Arts", "Business","Earth sciences","Information science","Languages","Library and museum studies","Other","Political science","Psychology") ~ "SignificantGroup",
+  TRUE ~ "ZZ-Etc."
+))
+
+all_exp <- all_exp %>% mutate(Demo.acfieldGrouped3 = case_when(
+  Demo.acfield %in% c("Business", "Arts", "Computer sciences", "Economics", "Information science", "Law", "Linguistics", "Medicine", "Other", "Political science", "Skipped", "Sociology") ~ "SignificantGroup",
+  TRUE ~ "ZZ-Etc."
+))
+
+all_exp <- all_exp %>% mutate(Overestimated = case_when(
+  Underestimated == "over" ~ "1-Overestimated",
+  Underestimated %in% c("correct","under") ~ "2-CorrectOrUnder"
+))
+
+all_exp <- all_exp %>% mutate(UnderestDummy = case_when(
+  Underestimated == "under" ~ "1-Underestimated",
+  Underestimated %in% c("correct","over") ~ "2-CorrectOrOver"
+))
+
+```
+
+
+## Split into graphics, layout
+
+```{r}
+
+graphics <- all_exp %>% filter(Condition %in% c("Ctrl","Phr","Siz","Col"), filename %in% c("MTurkFinal","MTurkPilot3")) 
+
+layouts <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), Dataset %in% c(1, 7, 9)) 
+
+#layout_mturk_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"), filename %in% c("MTurkFinal","MTurkPilot3"))
+
+#layout_all <- all_exp %>% filter(Condition %in% c("Ctrl","Fru","Ord","Cir"))
+
+
+```
+
+## separate datasets for each Task
+
+```{r}
+
+graphics_avgdeg <- graphics %>% filter(Task == "AvgDeg")
+
+graphics_bc <- graphics %>% filter(Task == "BC")
+
+graphics_clickhighdeg <- graphics %>% filter(Task == "ClickHighDeg")
+
+graphics_lgclust <- graphics %>% filter(Task == "LargeClust1")
+
+graphics_numclust <- graphics %>% filter(Task == "NumClust")
+
+graphics_numhighdeg <- graphics %>% filter(Task == "NumHighDegree")
+
+graphics_numlinks <- graphics %>% filter(Task == "NumLinks")
+
+graphics_numnodes <- graphics %>% filter(Task == "NumNodes")
+```
+
+```{r}
+
+layouts_avgdeg <- layouts %>% filter(Task == "AvgDeg")
+
+layouts_bc <- layouts %>% filter(Task == "BC")
+
+layouts_clickhighdeg <- layouts %>% filter(Task == "ClickHighDeg")
+
+layouts_lgclust <- layouts %>% filter(Task == "LargeClust1")
+
+layouts_numclust <- layouts %>% filter(Task == "NumClust")
+
+layouts_numhighdeg <- layouts %>% filter(Task == "NumHighDegree")
+
+layouts_numlinks <- layouts %>% filter(Task == "NumLinks")
+
+layouts_numnodes <- layouts %>% filter(Task == "NumNodes")
+
+
+```
+
+## save files out
+
+```{r}
+
+saveRDS(graphics, file.path(analysisDataDir,"Graphics.rds"))
+
+saveRDS(graphics_avgdeg, file.path(analysisDataDir,"GraphicsAvgDeg.rds"))
+
+saveRDS(graphics_bc, file.path(analysisDataDir,"GraphicsBC.rds"))
+
+saveRDS(graphics_clickhighdeg, file.path(analysisDataDir,"GraphicsClickHD.rds"))
+
+saveRDS(graphics_lgclust, file.path(analysisDataDir,"GraphicsLgClust.rds"))
+
+saveRDS(graphics_numclust, file.path(analysisDataDir,"GraphicsNumClust.rds"))
+
+saveRDS(graphics_numhighdeg, file.path(analysisDataDir,"GraphicsNumHD.rds"))
+
+saveRDS(graphics_numlinks, file.path(analysisDataDir,"GraphicsNumLinks.rds"))
+
+saveRDS(graphics_numnodes, file.path(analysisDataDir,"GraphicsNumNodes.rds"))
+
+saveRDS(layouts, file.path(analysisDataDir,"Layouts.rds"))
+
+saveRDS(layouts_avgdeg, file.path(analysisDataDir,"LayoutsAvgDeg.rds"))
+
+saveRDS(layouts_bc, file.path(analysisDataDir,"LayoutsBC.rds"))
+
+saveRDS(layouts_clickhighdeg, file.path(analysisDataDir,"LayoutsClickHD.rds"))
+
+saveRDS(layouts_lgclust, file.path(analysisDataDir,"LayoutsLgClust.rds"))
+
+saveRDS(layouts_numclust, file.path(analysisDataDir,"LayoutsNumClust.rds"))
+
+saveRDS(layouts_numhighdeg, file.path(analysisDataDir,"LayoutsNumHD.rds"))
+
+saveRDS(layouts_numlinks, file.path(analysisDataDir,"LayoutsNumLinks.rds"))
+
+saveRDS(layouts_numnodes, file.path(analysisDataDir,"LayoutsNumNodes.rds"))
+
+
+```
+

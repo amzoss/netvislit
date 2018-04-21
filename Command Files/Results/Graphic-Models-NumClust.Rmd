@@ -5,9 +5,28 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_numclust <- readRDS(file.path(analysisDataDir, "GraphicsNumClust.rds"))
+
+
+```
+
 #### lme4
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Individual fixed effects
 
@@ -454,11 +473,17 @@ anova(graph.numclust.lmer)
 
 ```{r}
 
-# combining individual predictors
-
 temp <- graphics_numclust %>% dplyr::select(Demo.ResponseID, LogError, Condition, ConditionPhrasing, ConditionGraphics, ConditionColor, Dataset, CorrectAnswer, Underestimated, Overestimated, Stats.OperatingSystemNumClust, StatsNumPixels, Demo.dailytech_SmartPhone, Demo.expreadnetvis, Demo.expreadnetvis.alot, Demo.expcreatenetvis, Demo.expcreatenetvis.alot, AvgDeg, Density, LargeClust1, Modularity, NumClust, NumNodes) %>% drop_na()
 
 #temp <- temp%>% mutate(StatsNumPixels=scale(StatsNumPixels))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
+# combining individual predictors
 
 graph.numclust.lmer.full <- lmer(LogError ~ ConditionColor + Dataset + 
                                    Overestimated + 
@@ -473,7 +498,9 @@ anova(graph.numclust.lmer.full)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 # adding interactions
 
@@ -594,7 +621,9 @@ anova(graph.numclust.lmer.full.int.7, graph.numclust.lmer.full.int.6)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.numclust.lmer.full.int.7, 
@@ -602,6 +631,13 @@ save(graph.numclust.lmer.full.int.7,
 
 ```
 
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_numclust_lmer_int.RData"))
+
+```
 
 ```{r, cache=TRUE}
 

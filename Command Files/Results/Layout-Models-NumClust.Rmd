@@ -5,19 +5,29 @@ date: "March 25, 2018"
 output: github_document
 ---
 
-```{r layout-setup-numclust}
+```{r}
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-```{r layout-load-environment-numclust, message=FALSE}
+```{r, message=FALSE}
 
-source('LayoutSetup.R')
+source('GlobalSetup.R')
 
 ```
 
+```{r}
+
+# load full graphics dataset for summary graphics
+
+layouts_numclust <- readRDS(file.path(analysisDataDir, "LayoutsNumClust.rds"))
+
+
+```
+
+
 #### lme4
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Individual fixed effects
 
@@ -461,12 +471,18 @@ anova(layout.numclust.lmer)
 
 ```{r}
 
-# combining individual predictors
-
 temp.numclust <- layouts_numclust %>% 
   dplyr::select(Demo.ResponseID, LogError, CorrectAnswer, Underestimated, UnderestDummy, Overestimated, ClustConf, Stats.OperatingSystem, Stats.OperatingSystemCombined, Stats.OperatingSystemCombined2, Stats.OperatingSystemCombined3, StatsNumPixels, Demo.age, Demo.educ, Demo.acfieldGrouped, Demo.expdataanal, Demo.expdatavis, Demo.expreadnetvis, Demo.expreadnetvis.none, filename, NetVisExperience) %>% 
   drop_na() %>%
   mutate(StatsNumPixels=scale(StatsNumPixels))
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
+
+# combining individual predictors
 
 layout.numclust.lmer.full <- lmer(LogError ~ 
                                     #CorrectAnswer + 
@@ -491,7 +507,9 @@ anova(layout.numclust.lmer.full)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 # adding interactions
 
@@ -564,7 +582,9 @@ anova(layout.numclust.lmer.full.int.3,layout.numclust.lmer.full.int)
 # going to use first int because Demo.expdataanal has too few observations in some buckets
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(layout.numclust.lmer.full.int, 
@@ -572,6 +592,13 @@ save(layout.numclust.lmer.full.int,
 
 ```
 
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/layout_numclust_lmer_int.RData"))
+
+```
 
 ```{r, cache=TRUE}
 

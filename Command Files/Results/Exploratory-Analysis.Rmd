@@ -20,6 +20,34 @@ It is often convenient to write all the commands for the analysis phase in a sin
 Save the command files you write for the analysis phase in the Command Files folder.
 
 
+## Clear environment
+
+```{r}
+
+rm(list=ls())
+
+```
+
+```{r}
+
+# Detach previous packages
+
+detachAllPackages <- function() {
+  
+  basic.packages <- c("package:stats","package:graphics","package:grDevices","package:utils","package:datasets","package:methods","package:base")
+  
+  package.list <- search()[ifelse(unlist(gregexpr("package:",search()))==1,TRUE,FALSE)]
+  
+  package.list <- setdiff(package.list,basic.packages)
+  
+  if (length(package.list)>0)  for (package in package.list) detach(package, character.only=TRUE)
+  
+}
+
+detachAllPackages()
+
+```
+
 ## Load packages
 
 ```{r}
@@ -50,7 +78,7 @@ figureDir <- "../../Documents/"
 
 ## Loading analysis data files
 
-```{r}
+```{r, eval=FALSE}
 
 #all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
 
@@ -79,6 +107,47 @@ all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
 graphics <- read_csv(file.path(analysisDataDir, "Graphics.csv"))
 
 layoutfac <- read_csv(file.path(analysisDataDir, "LayoutFac.csv"))
+
+```
+
+```{r}
+
+#all_nodes <- read_csv(file.path(generatedDataDir, "all_nodes.csv"))
+
+all_edges <- read_csv(file.path(generatedDataDir, "all_edges.csv"))
+
+node_lookup <- read_csv(file.path(generatedDataDir, "node_lookup.csv"), col_types = cols(MaxValue = col_double(),NodeValue = col_double()))
+
+#graded_num_ans <- read_csv(file.path(analysisDataDir, "GradedNumAnswers.csv"))
+graded_num_ans <- readRDS(file.path(analysisDataDir, "GradedNumAnswers.rds"))
+
+#graded_nodes <- read_csv(file.path(analysisDataDir, "GradedNodes.csv"))
+graded_nodes <- readRDS(file.path(analysisDataDir, "GradedNodes.rds"))
+
+#stats_datasets_tall <- read_csv(file.path(analysisDataDir, "Stats_Datasets_Tall.csv"))
+stats_datasets_tall <- readRDS(file.path(analysisDataDir, "Stats_Datasets_Tall.rds"))
+
+#stats_demo <- read_csv(file.path(analysisDataDir, "Stats_Demo.csv"))
+stats_demo <- readRDS(file.path(analysisDataDir, "Stats_Demo.rds"))
+
+#responses <- read_csv(file.path(analysisDataDir, "CombinedResponsesWithOrder.csv"))
+responses <- readRDS(file.path(analysisDataDir, "CombinedResponsesWithOrder.rds"))
+
+num_ans_lookup <- read_csv(file.path(generatedDataDir, "numerical_answer_lookup.csv"))
+
+#responses <- read_csv(file.path(analysisDataDir, "Pilot3ResponsesWithOrder.csv"))
+
+#exp_only <- read_csv(file.path(analysisDataDir, "ExpOnly.csv"))
+exp_only <- readRDS(file.path(analysisDataDir, "ExpOnly.rds"))
+
+#all_exp <- read_csv(file.path(analysisDataDir, "AllExperimental.csv"))
+all_exp <- readRDS(file.path(analysisDataDir, "AllExperimental.rds"))
+
+#graphics <- read_csv(file.path(analysisDataDir, "Graphics.csv"))
+graphics <- readRDS(file.path(analysisDataDir, "Graphics.rds"))
+
+#layoutfac <- read_csv(file.path(analysisDataDir, "LayoutFac.csv"))
+layoutfac <- readRDS(file.path(analysisDataDir, "Layouts.rds"))
 
 ```
 
@@ -133,7 +202,7 @@ graphics$ClustConf <- factor(graphics$ClustConf,
                                         "Very doubtful (0-25%)"),
                              ordered = TRUE)
 
-
+num_ans_lookup$Dataset <- factor(num_ans_lookup$Dataset, ordered = TRUE)
 
 ```
 
@@ -899,7 +968,7 @@ ggplot(graphics %>%
   facet_wrap(~Dataset) +
   labs(title="Standard Deviation of the Response by Cluster Confidence",y="Standard deviation of the response",x="Cluster Confidence")
 
-ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf)) %>% left_join(num_ans_lookup %>% filter(Task=="NumNodes") %>% rename(NumNodes=CorrectAnswer) %>% select(Dataset,NumNodes))) +
+ggplot(graphics %>% filter(Task=="NumClust",!is.na(ClustConf)) %>% left_join(num_ans_lookup %>% filter(Task=="NumNodes") %>% rename(NumNodes=CorrectAnswer) %>% dplyr::select(Dataset,NumNodes))) +
   geom_point(aes(x=Response, y=NumNodes)) +
   #coord_flip() +
   labs(title="Estimated Number of Clusters by Number of Nodes in Network") +

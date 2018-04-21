@@ -5,6 +5,25 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_lgclust <- readRDS(file.path(analysisDataDir, "GraphicsLgClust.rds"))
+
+
+```
+
 #### Beta regression for percentage
 
 
@@ -532,7 +551,9 @@ plotBEINF(mu=fitted(mod01)[1],
 
 ```
 
-```{r, cache=TRUE}
+Run this one
+
+```{r, cache=TRUE, eval=FALSE}
 
 
 
@@ -623,10 +644,20 @@ mod7<-stepGAIC(mod3, what="sigma", scope=~Dataset + UnderestDummy + Demo.gender 
 # final sigma: ~Dataset + UnderestDummy 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(mod7, file = file.path(analysisDataDir,"fits/graph_lgclust_beinf_int.RData"))
+
+```
+
+###### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_lgclust_beinf_int.RData"))
 
 ```
 
@@ -640,17 +671,17 @@ mod7$call
 mod7.tidy.df <- tidy(mod7)
 mod7.tidy.df.mu <- mod7.tidy.df %>% filter(parameter == "mu")
 
-mod7.ci.df <- confint_tidy(mod7)
-mod7.ci.df.nona <- mod7.ci.df %>% drop_na()
+#mod7.ci.df <- confint_tidy(mod7)
+#mod7.ci.df.nona <- mod7.ci.df %>% drop_na()
 
-mod7.tidyci.df <- bind_cols(mod7.tidy.df.mu, mod7.ci.df.nona)
+#mod7.tidyci.df <- bind_cols(mod7.tidy.df.mu, mod7.ci.df.nona)
 
 mod7.aug.df <- augment(mod7,temp) # augment isn't supposed to work but seems to
 #mod7.summ.df <- glance(mod7) #glance doesn't work
 
-mod7.tidyci.df$term <- factor(mod7.tidyci.df$term,
-                                          levels=mod7.tidyci.df %>% arrange(estimate) %>%
-                                            dplyr::select(term) %>% unlist())
+#mod7.tidyci.df$term <- factor(mod7.tidyci.df$term,
+#                                          levels=mod7.tidyci.df %>% arrange(estimate) %>%
+#                                            dplyr::select(term) %>% unlist())
 
 ggplot(mod7.aug.df) + geom_point(aes(ResponsePct,.fitted))
 

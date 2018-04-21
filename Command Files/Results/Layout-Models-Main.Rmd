@@ -9,25 +9,12 @@ output: github_document
 knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 ```
 
-```{r layout-load-environment, message=FALSE}
+## Summary
 
-source('LayoutSetup.R')
-
+```{r layoutsum, child = 'Layout-Summary.Rmd'}
 ```
 
 ## Mixed Models
-
-```{r}
-
-layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
-  ggplot(aes(Task, LogError)) + geom_violin() + scale_y_log10()
-
-layouts %>% filter(Task %in% c("AvgDeg","NumClust","NumHighDegree","NumLinks","NumNodes")) %>% 
-  ggplot(aes(Task, LogError)) + geom_boxplot() + #scale_y_log10() +
-  labs(title="Distribution of LogError for Numerical Response Tasks,\nlayout conditions")
-
-
-```
 
 ### Average Degree
 

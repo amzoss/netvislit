@@ -5,9 +5,29 @@ date: "March 23, 2018"
 output: github_document
 ---
 
+```{r}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r, message=FALSE}
+
+source('GlobalSetup.R')
+
+```
+
+```{r}
+
+# load full graphics dataset for summary graphics
+
+graphics_avgdeg <- readRDS(file.path(analysisDataDir, "GraphicsAvgDeg.rds"))
+
+
+```
+
+
 #### nlme
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # https://iucat.iu.edu/catalog/14518998, chapters 3 and 5
 # data at http://www-personal.umich.edu/~bwest/almmussp.html
@@ -371,7 +391,7 @@ p.val <- 0.5*(1-pchisq(test.stat,1)) + 0.5*(1-pchisq(test.stat,2))
 
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # adding weights to have a separate residual variance for each treatment group
 # TO DO: are these the only weights I need to consider???  check that these weights make sense
@@ -396,7 +416,7 @@ anova(graph.avgdeg.lme.SP, graph.avgdeg.weight)
 
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 graph.avgdeg.weight.pooled <- lme(LogError ~ Demo.dailytech_SmartPhone, 
                  random = ~ 1 | Demo.ResponseID, 
@@ -414,7 +434,7 @@ anova(graph.avgdeg.weight)
 
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # TO DO: need to conduct Type I F-test (section 5.7)? to try to remove nonsignficant fixed effects?
 # note p. 223 explains that large F-statistics can indicate significance, even when you don't compute
@@ -448,7 +468,7 @@ modsum$sigma # 0.711... what is sigma, exactly?
 ```
 
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Residuals plot
 plot(graph.avgdeg.weight)
@@ -514,7 +534,7 @@ anova(graph.avgdeg.lmer.SP.RNVAL)
 
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, eval=FALSE}
 
 # Condition
 
@@ -905,10 +925,15 @@ anova(graph.avgdeg.lmer)
 
 ```
 
-
 ```{r}
 
 temp <- graphics_avgdeg %>% dplyr::select(Demo.ResponseID, LogError, Underestimated, Demo.dailytech_SmartPhone) %>% drop_na()
+
+```
+
+Run this one
+
+```{r, eval=FALSE}
 
 graph.avgdeg.lmer.SP <- lmer(LogError ~ Demo.dailytech_SmartPhone + (1|Demo.ResponseID), data=temp, REML = T)
 
@@ -935,12 +960,23 @@ anova(graph.avgdeg.lmer.full, graph.avgdeg.lmer.int)
 
 ```
 
-```{r}
+Run this one
+
+```{r, eval=FALSE}
 
 #SAVE THE RESULTS
 save(graph.avgdeg.lmer.full, file = file.path(analysisDataDir,"fits/graph_avgdeg_lmer_full.RData"))
 
 ```
+
+##### Load pre-built model
+
+```{r}
+
+load(file.path(analysisDataDir,"fits/graph_avgdeg_lmer_full.RData"))
+
+```
+
 
 ```{r, cache=TRUE}
 
