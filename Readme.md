@@ -1,4 +1,4 @@
-# Readme
+# Network Visualization Literacy: Task, Context, and Layout
 
 This repository processes data for a [doctoral dissertation](https://scholarworks.iu.edu/dspace/handle/2022/22117) on Network Visualization Literacy.
 
